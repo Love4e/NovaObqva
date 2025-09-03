@@ -1,52 +1,32 @@
 <!doctype html>
 <html lang="bg">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NovaObqva — Admin</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>const SUPABASE_URL="https://brlfymnsgaibkozprrrq.supabase.co"; const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJybGZ5bW5zZ2FpYmtvenBycnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5MDg3MjcsImV4cCI6MjA3MjQ4NDcyN30.Jw7_mwGjZNfshrMqk4z2RYkMRDvFRFXpI8W4IXqaUZI"; window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NovaObqva — Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
+  <script>
+    window.supabaseClient = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+  </script>
 </head>
 <body class="bg-slate-50 min-h-screen">
-<main class="max-w-5xl mx-auto p-4">
-<h1 class="text-2xl font-bold mb-4">Админ — чакащи обяви</h1>
-<div class="flex items-center gap-2 mb-4">
-<input id="adminId" placeholder="Админ ID" class="px-3 py-2 rounded-xl border" />
-<button id="loadBtn" class="px-4 py-2 rounded-xl border">Зареди</button>
-</div>
-<div id="list" class="space-y-4"></div>
-</main>
+  <main class="max-w-5xl mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Админ — чакащи обяви</h1>
+    <div class="flex items-center gap-2 mb-4">
+      <input id="adminId" placeholder="Админ ID" class="px-3 py-2 rounded-xl border" />
+      <button id="loadBtn" class="px-4 py-2 rounded-xl border">Зареди</button>
+    </div>
+    <div id="list" class="space-y-4"></div>
+  </main>
 
+  <script>
+    const list = document.getElementById('list');
+    document.getElementById('loadBtn').addEventListener('click', load);
 
-<script>
-const list = document.getElementById('list');
-document.getElementById('loadBtn').addEventListener('click', load);
-
-
-async function load(){
-const pass = document.getElementById('adminId').value.trim();
-if(!pass){ alert('Въведи админ ID'); return; }
-if(pass !== 'brlfymns-admin'){ alert('Невалиден админ ID'); return; }
-const { data } = await supabaseClient.from('ads').select('id,title,price,created_at,ad_images(url,position)').eq('status','pending').order('created_at');
-list.innerHTML = (data||[]).map(row =>
-`<div class="bg-white p-4 rounded-2xl border">
-<div class="flex items-center justify-between">
-<div class="font-semibold">${row.title}</div>
-<div class="text-emerald-700 font-bold">${new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(row.price)}</div>
-</div>
-<div class="text-sm text-slate-500">${new Date(row.created_at).toLocaleString('bg-BG')}</div>
-<div class="mt-3 flex gap-2">
-<button onclick="approve('${row.id}')" class="px-3 py-2 bg-emerald-600 text-white rounded-xl">Одобри</button>
-<button onclick="hideAd('${row.id}')" class="px-3 py-2 bg-slate-200 rounded-xl">Скрий</button>
-</div>
-</div>`
-).join('') || '<p class="text-slate-500">Няма чакащи.</p>';
-}
-
-
-async function approve(id){ await supabaseClient.from('ads').update({ status:'approved', approved_at: new Date().toISOString() }).eq('id', id); load(); }
-async function hideAd(id){ await supabaseClient.from('ads').update({ status:'hidden' }).eq('id', id); load(); }
-</script>
-</body>
-</html>
+    async function load(){
+      const pass = document.getElementById('adminId').value.trim();
+      if(!pass){ alert('Въведи админ ID'); return; }
+      if(pass !== 'brlfymns-admin'){ alert('Невалиден админ ID'); return; }
+      const { data } = await supabaseClient.from('ads').select('id,title,
