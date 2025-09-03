@@ -9,24 +9,13 @@
   <link rel="stylesheet" href="styles/base.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
-  <script>
-    window.supabaseClient = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
-    window.NOVAOBQVA_ADMIN_ID = "brlfymns-admin";
-
-    window.utils = {
-      money(n) { try { return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)); } catch { return n; } },
-      qs:(s,r=document)=>r.querySelector(s),
-      qsa:(s,r=document)=>[...r.querySelectorAll(s)],
-      parseQuery(){return Object.fromEntries(new URL(location.href).searchParams.entries());}
-    };
-  </script>
 </head>
 <body class="bg-slate-50 min-h-screen">
   <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto p-4 flex items-center gap-4">
       <a href="/" class="text-2xl font-bold">NovaObqva</a>
       <div class="flex-1"></div>
-      <a href="submit.html" class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">Публикувай обява</a>
+      <a href="submit.html" class="hidden md:inline-block px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">Публикувай обява</a>
     </div>
   </header>
 
@@ -41,7 +30,63 @@
     <p id="empty" class="text-center text-slate-500 hidden">Няма резултати.</p>
   </main>
 
+  <!-- FABs мобилно -->
+  <div class="fixed z-50 bottom-4 right-4 flex flex-col gap-3 md:hidden">
+    <a href="submit.html" class="rounded-full px-4 py-3 bg-emerald-600 text-white shadow-lg">+ Обява</a>
+    <a href="account.html" class="rounded-full px-4 py-3 bg-indigo-600 text-white shadow-lg">Абонамент</a>
+    <a id="fabAuth" href="auth.html" class="rounded-full px-4 py-3 bg-slate-800 text-white shadow-lg">Профил</a>
+  </div>
+  <!-- Desktop dock -->
+  <div class="hidden md:flex fixed z-50 bottom-6 right-6 items-center gap-3">
+    <a href="submit.html" class="px-4 py-2 rounded-xl bg-emerald-600 text-white shadow">+ Обява</a>
+    <a href="account.html" class="px-4 py-2 rounded-xl bg-indigo-600 text-white shadow">Абонамент</a>
+    <a id="dockAuth" href="auth.html" class="px-4 py-2 rounded-xl bg-slate-800 text-white shadow">Профил</a>
+  </div>
+
+  <!-- App scripts -->
   <script>
+    // Supabase client
+    const supabaseClient = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+
+    // Общ мини-скрипт за навигация (логнат/нелогнат) + изход
+    (async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      const header = document.querySelector('header .max-w-6xl') || document.querySelector('header div');
+      if (header) {
+        const container = document.createElement('div');
+        container.className = "flex items-center gap-3";
+        if (user) {
+          container.innerHTML = `
+            <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
+            <button id="logoutBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>
+          `;
+        } else {
+          const redirect = encodeURIComponent(location.href);
+          container.innerHTML = `
+            <a href="auth.html?redirectTo=${redirect}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>
+          `;
+        }
+        header.appendChild(container);
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', async () => { await supabaseClient.auth.signOut(); location.reload(); });
+      }
+      // Обнови FAB/док
+      const fab = document.getElementById('fabAuth');
+      const dock = document.getElementById('dockAuth');
+      const target = user ? 'account.html' : `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
+      const text = user ? 'Моят профил' : 'Вход';
+      if (fab) { fab.href = target; fab.textContent = text; }
+      if (dock) { dock.href = target; dock.textContent = text; }
+    })();
+
+    // Утилити
+    const utils = {
+      money(n){try{return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n));}catch{return n;}},
+      qs:(s,r=document)=>r.querySelector(s),
+      qsa:(s,r=document)=>[...r.querySelectorAll(s)]
+    };
+
+    // Данни
     const listEl = utils.qs('#list');
     const emptyEl = utils.qs('#empty');
     const qEl = utils.qs('#q');
@@ -55,26 +100,31 @@
     async function search(){
       const q = qEl.value.trim();
       const cat = catEl.value;
-      let query = supabaseClient.from('ads').select('id,title,price,created_at,ad_images(url,position)').eq('status','approved').order('created_at', { ascending: false });
+      let query = supabaseClient.from('ads').select('id,title,price,created_at,priority,priority_until,brand,ad_images(url,position)').eq('status','approved').order('approved_at', { ascending: false });
       if(cat) query = query.eq('category_id', cat);
       const { data, error } = await query;
       if(error){ console.error(error); return; }
-      let rows = data;
-      if(q){
-        const qq = q.toLowerCase();
-        rows = rows.filter(r => r.title?.toLowerCase().includes(qq));
-      }
+      const rows = (data||[]).sort((a,b)=>{
+        const now=Date.now();
+        const pr = v => (v && new Date(v).getTime()>now);
+        const ra = pr(a.priority_until)?(a.priority==='gold'?2:(a.priority==='vip'?1:0)):0;
+        const rb = pr(b.priority_until)?(b.priority==='gold'?2:(b.priority==='vip'?1:0)):0;
+        if (rb!==ra) return rb-ra;
+        return new Date(b.created_at)-new Date(a.created_at);
+      }).filter(r => !q || r.title?.toLowerCase().includes(q.toLowerCase()));
       render(rows);
     }
 
     function card(ad){
       const thumb = (ad.ad_images||[]).sort((a,b)=>a.position-b.position)[0]?.url || 'https://placehold.co/400x240?text=NovaObqva';
+      const badge = ad.brand ? `<span class="ml-2 text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">Brand</span>` : '';
+      const pr = (ad.priority==='gold'?'bg-yellow-50 border-yellow-200': ad.priority==='vip'?'bg-violet-50 border-violet-200':'bg-white');
       return `
-        <a href="ad.html?id=${ad.id}" class="group bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition">
+        <a href="ad.html?id=${ad.id}" class="group ${pr} rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition">
           <div class="aspect-video bg-slate-100"><img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy"></div>
           <div class="p-4">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="font-semibold line-clamp-1">${ad.title}</h3>
+              <h3 class="font-semibold line-clamp-1">${ad.title}${badge}</h3>
               <div class="text-emerald-700 font-bold whitespace-nowrap">${utils.money(ad.price)}</div>
             </div>
             <div class="text-sm text-slate-500 mt-1">Публикувана: ${new Date(ad.created_at).toLocaleDateString('bg-BG')}</div>
@@ -88,7 +138,7 @@
       listEl.innerHTML = rows.map(card).join('');
     }
 
-    utils.qs('#searchBtn').addEventListener('click', search);
+    document.getElementById('searchBtn').addEventListener('click', search);
     loadCategories().then(search);
   </script>
 </body>
