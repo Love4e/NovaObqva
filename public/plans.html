@@ -6,41 +6,206 @@
   <title>NovaObqva — Планове</title>
   <link rel="icon" type="image/png" href="favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/base.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
-  <header class="sticky top-0 bg-white/90 backdrop-blur border-b">
-    <div class="max-w-4xl mx-auto p-4 flex items-center gap-4">
-      <a href="/" class="text-2xl font-bold">NovaObqva</a>
+  <!-- HEADER: desktop + mobile drawer -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <!-- Brand -->
+      <a href="/" class="flex items-center gap-2">
+        <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
+        <span class="text-xl font-bold">NovaObqva</span>
+      </a>
+
+      <!-- Desktop nav -->
+      <nav class="hidden md:flex items-center gap-2 ml-4">
+        <a href="index.html"  class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Обяви</a>
+        <a href="submit.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Публикувай</a>
+        <a href="plans.html"  class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
+      </nav>
+
       <div class="flex-1"></div>
-      <a href="submit.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white">Публикувай</a>
+
+      <!-- Desktop auth area -->
+      <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
+
+      <!-- Mobile hamburger -->
+      <button id="nav-open" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border hover:bg-slate-50" aria-label="Отвори меню">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile drawer -->
+    <div id="drawer" class="fixed inset-0 z-50 hidden">
+      <div id="backdrop" class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute right-0 top-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl p-4 flex flex-col">
+        <div class="flex items-center justify-between">
+          <span class="text-lg font-semibold">Меню</span>
+          <button id="nav-close" class="inline-flex w-10 h-10 items-center justify-center rounded-lg border hover:bg-slate-50" aria-label="Затвори">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <nav class="mt-4 grid gap-2">
+          <a href="index.html"  class="px-3 py-2 rounded-lg hover:bg-slate-100">Обяви</a>
+          <a href="submit.html" class="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Публикувай</a>
+          <a href="plans.html"  class="px-3 py-2 rounded-lg hover:bg-slate-100">Планове</a>
+        </nav>
+
+        <div class="mt-auto pt-4 border-t">
+          <!-- Mobile auth area -->
+          <div id="nav-auth-mobile" class="grid gap-2"></div>
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Абонаментни планове</h1>
-    <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <!-- MAIN -->
+  <main class="max-w-6xl mx-auto p-4">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold">Абонаментни планове</h1>
+
+      <!-- Валутен превключвател -->
+      <div class="inline-flex rounded-xl border bg-white overflow-hidden">
+        <button id="btnBGN" class="px-3 py-1.5 text-sm bg-emerald-600 text-white">BGN</button>
+        <button id="btnEUR" class="px-3 py-1.5 text-sm hover:bg-slate-50">EUR</button>
+      </div>
+    </div>
+
+    <p class="text-slate-600 mb-6">
+      Плащането се извършва съгласно изискванията на ЕС. Цените са показани в BGN и EUR.
+      Публикуването е позволено при активен план. Изборът финално се прави в <a class="text-emerald-700 underline" href="submit.html">Публикувай</a>.
+    </p>
+
+    <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </main>
 
   <script>
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    (async () => {
-      const { data: plans } = await sb.from('subscription_plans').select('*').order('sort');
-      document.getElementById('grid').innerHTML = (plans||[]).map(p => `
-        <div class="bg-white rounded-2xl border p-5 shadow-sm">
-          <div class="text-lg font-semibold">${p.name}</div>
-          <div class="text-sm text-slate-600 mt-1">${p.description||''}</div>
-          <div class="mt-3 text-emerald-700 font-bold">${p.price_bgn.toFixed(2)} лв / ${p.price_eur.toFixed(2)} €</div>
-          <div class="text-sm text-slate-500">Срок: ${p.days_total} дни</div>
-          ${p.vip_days ? `<div class="text-sm text-violet-700">VIP: ${p.vip_days} дни</div>`:''}
-          ${p.brand ? `<div class="text-xs mt-1 px-2 py-0.5 inline-block rounded bg-amber-100 text-amber-700">Brand</div>`:''}
-          ${p.gold ? `<div class="text-xs mt-1 px-2 py-0.5 inline-block rounded bg-yellow-100 text-yellow-700 ml-2">Gold позиция</div>`:''}
-          <a href="submit.html" class="mt-4 inline-block px-4 py-2 rounded-xl bg-slate-800 text-white">Избери при публикуване</a>
-        </div>
-      `).join('') || '<p class="text-slate-500">Няма дефинирани планове.</p>';
+    // ---------------- Навигация ----------------
+    async function renderAuthAreas() {
+      const { data: { user } } = await sb.auth.getUser();
+      const d = document.getElementById('nav-auth-desktop');
+      const m = document.getElementById('nav-auth-mobile');
+      const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
+
+      let desktopHTML = '', mobileHTML  = '';
+      if (user) {
+        desktopHTML = `
+          <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
+          <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
+        mobileHTML = `
+          <a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
+          <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>`;
+      } else {
+        desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
+        mobileHTML  = `<a href="${loginHref}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a>`;
+      }
+      if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
+      if (m) { m.innerHTML = mobileHTML; }
+
+      [document.getElementById('nav-logout'), document.getElementById('nav-logout-m')]
+        .filter(Boolean)
+        .forEach(btn => btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); }));
+    }
+
+    (function initDrawer(){
+      const drawer   = document.getElementById('drawer'); if (!drawer) return;
+      const openBtn  = document.getElementById('nav-open');
+      const closeBtn = document.getElementById('nav-close');
+      const backdrop = document.getElementById('backdrop');
+      function open(){ drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
+      function close(){ drawer.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
+      openBtn?.addEventListener('click',open);
+      closeBtn?.addEventListener('click',close);
+      backdrop?.addEventListener('click',close);
+      window.addEventListener('keydown',(e)=>{ if(e.key==='Escape') close(); });
     })();
+
+    renderAuthAreas();
+
+    // ---------------- Планове ----------------
+    let currency = 'BGN';
+    const btnBGN = document.getElementById('btnBGN');
+    const btnEUR = document.getElementById('btnEUR');
+    btnBGN.addEventListener('click', ()=>{ currency='BGN'; btnBGN.classList.add('bg-emerald-600','text-white'); btnEUR.classList.remove('bg-emerald-600','text-white'); render(plansData); });
+    btnEUR.addEventListener('click', ()=>{ currency='EUR'; btnEUR.classList.add('bg-emerald-600','text-white'); btnBGN.classList.remove('bg-emerald-600','text-white'); render(plansData); });
+
+    const FMT = {
+      BGN: new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}),
+      EUR: new Intl.NumberFormat('bg-BG',{style:'currency',currency:'EUR'})
+    };
+
+    function price(p){ return FMT[currency].format(Number(p||0)); }
+
+    // Fallback планове (ако таблицата е празна)
+    const FALLBACK = [
+      {
+        code: 'standard', name: 'Стандартен', description: '15 дни видимост.',
+        days_total: 15, vip_days: 0, brand: false, gold: false,
+        price_bgn: 9.99, price_eur: 5.10
+      },
+      {
+        code: 'vip', name: 'VIP', description: '7 дни VIP + 20 дни стандарт + бранд.',
+        days_total: 27, vip_days: 7, brand: true, gold: false,
+        price_bgn: 19.99, price_eur: 10.22
+      },
+      {
+        code: 'gold', name: 'GOLD', description: '30 дни на първа позиция (Gold) + бранд.',
+        days_total: 30, vip_days: 30, brand: true, gold: true,
+        price_bgn: 39.99, price_eur: 20.45
+      }
+    ];
+
+    let plansData = [];
+
+    (async ()=>{
+      const { data, error } = await sb.from('subscription_plans').select('*').order('sort');
+      plansData = (data && data.length) ? data : FALLBACK;
+      render(plansData);
+    })();
+
+    function render(plans){
+      const grid = document.getElementById('grid');
+      grid.innerHTML = (plans||[]).map(p => {
+        const priceNow = currency==='BGN' ? p.price_bgn : p.price_eur;
+        const revolutLink = (currency==='BGN' ? p.revolut_url_bgn : p.revolut_url_eur) || '';
+        return `
+          <div class="bg-white rounded-2xl border p-5 shadow-sm flex flex-col">
+            <div class="flex items-center justify-between">
+              <div class="text-lg font-semibold">${p.name}</div>
+              ${p.gold ? `<span class="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">GOLD</span>` : p.vip_days ? `<span class="text-xs px-2 py-0.5 rounded bg-violet-100 text-violet-700">VIP</span>` : ''}
+            </div>
+            <p class="text-sm text-slate-600 mt-1">${p.description || ''}</p>
+
+            <div class="mt-4 text-emerald-700 text-xl font-bold">${price(priceNow)}</div>
+            <div class="text-sm text-slate-500">Срок: ${p.days_total} дни</div>
+            ${p.vip_days ? `<div class="text-sm text-violet-700">VIP: ${p.vip_days} дни</div>` : ''}
+            ${p.brand ? `<div class="text-xs mt-1 px-2 py-0.5 inline-block rounded bg-amber-100 text-amber-700">Brand</div>` : ''}
+
+            <div class="mt-5 grid gap-2">
+              <a href="submit.html" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-center">Избери при публикуване</a>
+              ${revolutLink ? `<a href="${revolutLink}" target="_blank" rel="noopener" class="px-4 py-2 rounded-xl border text-center hover:bg-slate-50">Плащане през Revolut (${currency})</a>` : ''}
+            </div>
+
+            <ul class="mt-4 text-sm text-slate-600 list-disc list-inside space-y-1">
+              <li>Валидност: ${p.days_total} дни</li>
+              ${p.gold ? '<li>Първа позиция през целия период</li>' : p.vip_days ? `<li>${p.vip_days} дни VIP позиция</li>` : '<li>Стандартна позиция</li>'}
+              ${p.brand ? '<li>Бранд отгоре на картата</li>' : ''}
+              <li>Съвместимо с мобилни и настолни</li>
+            </ul>
+          </div>
+        `;
+      }).join('') || '<p class="text-slate-500">Няма дефинирани планове.</p>';
+    }
   </script>
 </body>
 </html>
