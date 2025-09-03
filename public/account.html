@@ -11,37 +11,135 @@
 </head>
 <body class="min-h-screen bg-slate-50">
   <header class="sticky top-0 bg-white/80 backdrop-blur border-b">
-    <div class="max-w-xl mx-auto p-4 flex items-center gap-3">
+    <div class="max-w-3xl mx-auto p-4 flex items-center gap-3">
       <a href="/" class="text-2xl font-bold">NovaObqva</a>
       <div class="flex-1"></div>
-      <a href="/" class="text-sm text-slate-600 hover:text-slate-900">Начало</a>
     </div>
   </header>
 
-  <main class="max-w-xl mx-auto p-6">
-    <div class="bg-white rounded-2xl border shadow-sm p-6">
-      <h1 class="text-xl font-semibold mb-4">Моят профил</h1>
-      <div id="info" class="text-slate-700 mb-6"></div>
-      <button id="logoutBtn" class="px-4 py-2 rounded-lg bg-slate-800 text-white">Изход</button>
-    </div>
+  <main class="max-w-3xl mx-auto p-4 space-y-6">
+    <section id="profileCard" class="bg-white rounded-2xl border p-6">
+      <div class="flex items-center gap-4">
+        <img id="avatar" class="w-16 h-16 rounded-xl object-cover border" src="https://placehold.co/128x128?text=NO" alt="">
+        <div class="flex-1">
+          <div id="fullName" class="text-lg font-semibold">—</div>
+          <div id="email" class="text-slate-600 text-sm">—</div>
+        </div>
+      </div>
+
+      <form id="profileForm" class="grid sm:grid-cols-2 gap-4 mt-6">
+        <div>
+          <label class="block text-sm text-slate-600 mb-1">Имена</label>
+          <input id="inpName" class="w-full px-3 py-2 rounded-xl border" placeholder="Име и фамилия" />
+        </div>
+        <div>
+          <label class="block text-sm text-slate-600 mb-1">Телефон</label>
+          <input id="inpPhone" class="w-full px-3 py-2 rounded-xl border" placeholder="+359..." />
+        </div>
+        <div class="sm:col-span-2 flex items-center gap-3">
+          <label class="block text-sm text-slate-600">Снимка (URL)</label>
+          <input id="inpAvatar" class="flex-1 px-3 py-2 rounded-xl border" placeholder="https://..." />
+        </div>
+        <div class="sm:col-span-2 flex justify-between items-center mt-1">
+          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white">Запази</button>
+          <button id="logoutBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 text-white">Изход</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="bg-white rounded-2xl border p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Моите обяви</h2>
+        <a href="submit.html" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">+ Нова обява</a>
+      </div>
+      <div id="myAds" class="space-y-3"></div>
+      <p id="noAds" class="text-slate-500 hidden">Все още няма обяви.</p>
+    </section>
   </main>
 
   <script>
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+
     (async () => {
       const { data: { user } } = await sb.auth.getUser();
-      if (!user) { location.href = 'auth.html'; return; }
+      if (!user) { location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href); return; }
 
-      // upsert профил при първи вход (MVP)
-      await sb.from('profiles').upsert({ user_id: user.id, email: user.email || null }, { onConflict: 'user_id' });
+      // Извличаме Google метаданни (име/снимка) и upsert в profiles
+      const meta = user.user_metadata || {};
+      const fallbackAvatar = meta.picture || '';
+      const fallbackName = meta.full_name || meta.name || '';
 
-      document.getElementById('info').innerHTML = `
-        <div><span class="text-slate-500">Имейл:</span> ${user.email}</div>
-      `;
-      document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await sb.auth.signOut();
-        location.href = 'auth.html';
+      await sb.from('profiles').upsert({
+        user_id: user.id,
+        email: user.email || null,
+        full_name: fallbackName || null,
+        avatar_url: fallbackAvatar || null
+      }, { onConflict: 'user_id' });
+
+      // Зареждаме профила
+      const { data: profile } = await sb.from('profiles')
+        .select('email, full_name, avatar_url, phone').eq('user_id', user.id).single();
+
+      const fullName = profile?.full_name || fallbackName || '—';
+      const avatar = profile?.avatar_url || fallbackAvatar || 'https://placehold.co/128x128?text=NO';
+
+      document.getElementById('fullName').textContent = fullName;
+      document.getElementById('email').textContent = profile?.email || user.email || '—';
+      document.getElementById('avatar').src = avatar;
+
+      // Попълваме формата
+      document.getElementById('inpName').value = profile?.full_name || '';
+      document.getElementById('inpPhone').value = profile?.phone || '';
+      document.getElementById('inpAvatar').value = profile?.avatar_url || '';
+
+      // Запис на профил
+      document.getElementById('profileForm').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const full_name = document.getElementById('inpName').value.trim();
+        const phone = document.getElementById('inpPhone').value.trim();
+        const avatar_url = document.getElementById('inpAvatar').value.trim();
+
+        const { error } = await sb.from('profiles').update({
+          full_name: full_name || null,
+          phone: phone || null,
+          avatar_url: avatar_url || null,
+          updated_at: new Date().toISOString()
+        }).eq('user_id', user.id);
+
+        if (error) { alert('Грешка при запис на профил'); console.error(error); return; }
+        location.reload();
       });
+
+      // Изход
+      document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+        await sb.auth.signOut(); location.href = 'auth.html';
+      });
+
+      // Моите обяви (всякакъв статус)
+      const { data: ads } = await sb.from('ads')
+        .select('id,title,status,created_at,approved_at,price')
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('myAds');
+      const empty = document.getElementById('noAds');
+      if (!ads || ads.length===0){ container.innerHTML = ''; empty.classList.remove('hidden'); }
+      else {
+        empty.classList.add('hidden');
+        container.innerHTML = ads.map(a => `
+          <div class="border rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <div class="font-medium">${a.title}</div>
+              <div class="text-sm text-slate-500">
+                Статус: <span class="${a.status==='approved'?'text-emerald-700':a.status==='pending'?'text-amber-600':'text-slate-600'}">${a.status}</span>
+                • Създадена: ${new Date(a.created_at).toLocaleString('bg-BG')}
+                ${a.approved_at ? `• Одобрена: ${new Date(a.approved_at).toLocaleString('bg-BG')}`:''}
+              </div>
+            </div>
+            <a href="ad.html?id=${a.id}" class="text-emerald-700">Виж</a>
+          </div>
+        `).join('');
+      }
     })();
   </script>
 </body>
