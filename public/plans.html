@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NovaObqva — Планове</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <header class="sticky top-0 bg-white/90 backdrop-blur border-b">
+    <div class="max-w-4xl mx-auto p-4 flex items-center gap-4">
+      <a href="/" class="text-2xl font-bold">NovaObqva</a>
+      <div class="flex-1"></div>
+      <a href="submit.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white">Публикувай</a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Абонаментни планове</h1>
+    <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </main>
+
+  <script>
+    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+
+    (async () => {
+      const { data: plans } = await sb.from('subscription_plans').select('*').order('sort');
+      document.getElementById('grid').innerHTML = (plans||[]).map(p => `
+        <div class="bg-white rounded-2xl border p-5 shadow-sm">
+          <div class="text-lg font-semibold">${p.name}</div>
+          <div class="text-sm text-slate-600 mt-1">${p.description||''}</div>
+          <div class="mt-3 text-emerald-700 font-bold">${p.price_bgn.toFixed(2)} лв / ${p.price_eur.toFixed(2)} €</div>
+          <div class="text-sm text-slate-500">Срок: ${p.days_total} дни</div>
+          ${p.vip_days ? `<div class="text-sm text-violet-700">VIP: ${p.vip_days} дни</div>`:''}
+          ${p.brand ? `<div class="text-xs mt-1 px-2 py-0.5 inline-block rounded bg-amber-100 text-amber-700">Brand</div>`:''}
+          ${p.gold ? `<div class="text-xs mt-1 px-2 py-0.5 inline-block rounded bg-yellow-100 text-yellow-700 ml-2">Gold позиция</div>`:''}
+          <a href="submit.html" class="mt-4 inline-block px-4 py-2 rounded-xl bg-slate-800 text-white">Избери при публикуване</a>
+        </div>
+      `).join('') || '<p class="text-slate-500">Няма дефинирани планове.</p>';
+    })();
+  </script>
+</body>
+</html>
