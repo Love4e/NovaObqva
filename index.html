@@ -1,61 +1,94 @@
 <!doctype html>
-</main>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NovaObqva — Обяви</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/base.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
+  <script>
+    window.supabaseClient = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    window.NOVAOBQVA_ADMIN_ID = "brlfymns-admin";
 
+    window.utils = {
+      money(n) { try { return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)); } catch { return n; } },
+      qs:(s,r=document)=>r.querySelector(s),
+      qsa:(s,r=document)=>[...r.querySelectorAll(s)],
+      parseQuery(){return Object.fromEntries(new URL(location.href).searchParams.entries());}
+    };
+  </script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto p-4 flex items-center gap-4">
+      <a href="/" class="text-2xl font-bold">NovaObqva</a>
+      <div class="flex-1"></div>
+      <a href="submit.html" class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">Публикувай обява</a>
+    </div>
+  </header>
 
-<script>
-const listEl = utils.qs('#list');
-const emptyEl = utils.qs('#empty');
-const qEl = utils.qs('#q');
-const catEl = utils.qs('#cat');
+  <main class="max-w-6xl mx-auto p-4">
+    <div class="grid md:grid-cols-4 gap-4 items-end mb-6">
+      <input id="q" placeholder="Търси в заглавие/описание" class="md:col-span-2 w-full px-4 py-2 rounded-xl border" />
+      <select id="cat" class="w-full px-4 py-2 rounded-xl border"></select>
+      <button id="searchBtn" class="w-full px-4 py-2 rounded-xl border bg-white hover:bg-slate-100">Търси</button>
+    </div>
 
+    <div id="list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <p id="empty" class="text-center text-slate-500 hidden">Няма резултати.</p>
+  </main>
 
-async function loadCategories(){
-const { data } = await supabaseClient.from('categories').select('id,name').order('name');
-catEl.innerHTML = `<option value="">Всички категории</option>` + (data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-}
+  <script>
+    const listEl = utils.qs('#list');
+    const emptyEl = utils.qs('#empty');
+    const qEl = utils.qs('#q');
+    const catEl = utils.qs('#cat');
 
+    async function loadCategories(){
+      const { data } = await supabaseClient.from('categories').select('id,name').order('name');
+      catEl.innerHTML = `<option value="">Всички категории</option>` + (data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    }
 
-async function search(){
-const q = qEl.value.trim();
-const cat = catEl.value;
-let query = supabaseClient.from('ads').select('id,title,price,created_at,ad_images(url,position)').eq('status','approved').order('created_at', { ascending: false });
-if(cat) query = query.eq('category_id', cat);
-const { data, error } = await query;
-if(error){ console.error(error); return; }
-let rows = data;
-if(q){
-const qq = q.toLowerCase();
-rows = rows.filter(r => r.title?.toLowerCase().includes(qq)); // за MVP филтър в клиента
-}
-render(rows);
-}
+    async function search(){
+      const q = qEl.value.trim();
+      const cat = catEl.value;
+      let query = supabaseClient.from('ads').select('id,title,price,created_at,ad_images(url,position)').eq('status','approved').order('created_at', { ascending: false });
+      if(cat) query = query.eq('category_id', cat);
+      const { data, error } = await query;
+      if(error){ console.error(error); return; }
+      let rows = data;
+      if(q){
+        const qq = q.toLowerCase();
+        rows = rows.filter(r => r.title?.toLowerCase().includes(qq));
+      }
+      render(rows);
+    }
 
+    function card(ad){
+      const thumb = (ad.ad_images||[]).sort((a,b)=>a.position-b.position)[0]?.url || 'https://placehold.co/400x240?text=NovaObqva';
+      return `
+        <a href="ad.html?id=${ad.id}" class="group bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition">
+          <div class="aspect-video bg-slate-100"><img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy"></div>
+          <div class="p-4">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-semibold line-clamp-1">${ad.title}</h3>
+              <div class="text-emerald-700 font-bold whitespace-nowrap">${utils.money(ad.price)}</div>
+            </div>
+            <div class="text-sm text-slate-500 mt-1">Публикувана: ${new Date(ad.created_at).toLocaleDateString('bg-BG')}</div>
+          </div>
+        </a>`;
+    }
 
-function card(ad){
-const thumb = (ad.ad_images||[]).sort((a,b)=>a.position-b.position)[0]?.url || 'https://placehold.co/400x240?text=NovaObqva';
-return `
-<a href="ad.html?id=${ad.id}" class="group bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition">
-<div class="aspect-video bg-slate-100"><img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy"></div>
-<div class="p-4">
-<div class="flex items-center justify-between gap-2">
-<h3 class="font-semibold line-clamp-1">${ad.title}</h3>
-<div class="text-emerald-700 font-bold whitespace-nowrap">${utils.money(ad.price)}</div>
-</div>
-<div class="text-sm text-slate-500 mt-1">Публикувана: ${new Date(ad.created_at).toLocaleDateString('bg-BG')}</div>
-</div>
-</a>`;
-}
+    function render(rows){
+      if(!rows || rows.length===0){ listEl.innerHTML=''; emptyEl.classList.remove('hidden'); return; }
+      emptyEl.classList.add('hidden');
+      listEl.innerHTML = rows.map(card).join('');
+    }
 
-
-function render(rows){
-if(!rows || rows.length===0){ listEl.innerHTML=''; emptyEl.classList.remove('hidden'); return; }
-emptyEl.classList.add('hidden');
-listEl.innerHTML = rows.map(card).join('');
-}
-
-
-utils.qs('#searchBtn').addEventListener('click', search);
-loadCategories().then(search);
-</script>
+    utils.qs('#searchBtn').addEventListener('click', search);
+    loadCategories().then(search);
+  </script>
 </body>
 </html>
