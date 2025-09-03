@@ -11,15 +11,66 @@
   <script src="env.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
-  <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
-    <div class="max-w-6xl mx-auto p-4 flex items-center gap-4">
-      <a href="/" class="text-2xl font-bold">NovaObqva</a>
+  <!-- HEADER: desktop + mobile drawer -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <!-- Brand -->
+      <a href="/" class="flex items-center gap-2">
+        <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
+        <span class="text-xl font-bold">NovaObqva</span>
+      </a>
+
+      <!-- Desktop nav -->
+      <nav class="hidden md:flex items-center gap-2 ml-4">
+        <a href="index.html"  class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Обяви</a>
+        <a href="submit.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Публикувай</a>
+        <a href="plans.html"  class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
+      </nav>
+
       <div class="flex-1"></div>
-      <a href="submit.html" class="hidden md:inline-block px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">Публикувай обява</a>
+
+      <!-- Desktop auth area (динамична) -->
+      <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
+
+      <!-- Mobile hamburger -->
+      <button id="nav-open" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border hover:bg-slate-50" aria-label="Отвори меню">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile drawer -->
+    <div id="drawer" class="fixed inset-0 z-50 hidden">
+      <div id="backdrop" class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute right-0 top-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl p-4 flex flex-col">
+        <div class="flex items-center justify-between">
+          <span class="text-lg font-semibold">Меню</span>
+          <button id="nav-close" class="inline-flex w-10 h-10 items-center justify-center rounded-lg border hover:bg-slate-50" aria-label="Затвори">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <nav class="mt-4 grid gap-2">
+          <a href="index.html"  class="px-3 py-2 rounded-lg hover:bg-slate-100">Обяви</a>
+          <a href="submit.html" class="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Публикувай</a>
+          <a href="plans.html"  class="px-3 py-2 rounded-lg hover:bg-slate-100">Планове</a>
+        </nav>
+
+        <div class="mt-auto pt-4 border-t">
+          <!-- Mobile auth area (динамична) -->
+          <div id="nav-auth-mobile" class="grid gap-2"></div>
+        </div>
+      </div>
     </div>
   </header>
 
+  <!-- MAIN -->
   <main class="max-w-6xl mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Обяви</h1>
+
     <div class="grid md:grid-cols-4 gap-4 items-end mb-6">
       <input id="q" placeholder="Търси в заглавие/описание" class="md:col-span-2 w-full px-4 py-2 rounded-xl border" />
       <select id="cat" class="w-full px-4 py-2 rounded-xl border"></select>
@@ -30,80 +81,88 @@
     <p id="empty" class="text-center text-slate-500 hidden">Няма резултати.</p>
   </main>
 
-  <!-- FABs мобилно -->
-  <div class="fixed z-50 bottom-4 right-4 flex flex-col gap-3 md:hidden">
-    <a href="submit.html" class="rounded-full px-4 py-3 bg-emerald-600 text-white shadow-lg">+ Обява</a>
-    <a href="account.html" class="rounded-full px-4 py-3 bg-indigo-600 text-white shadow-lg">Абонамент</a>
-    <a id="fabAuth" href="auth.html" class="rounded-full px-4 py-3 bg-slate-800 text-white shadow-lg">Профил</a>
-  </div>
-  <!-- Desktop dock -->
-  <div class="hidden md:flex fixed z-50 bottom-6 right-6 items-center gap-3">
-    <a href="submit.html" class="px-4 py-2 rounded-xl bg-emerald-600 text-white shadow">+ Обява</a>
-    <a href="account.html" class="px-4 py-2 rounded-xl bg-indigo-600 text-white shadow">Абонамент</a>
-    <a id="dockAuth" href="auth.html" class="px-4 py-2 rounded-xl bg-slate-800 text-white shadow">Профил</a>
-  </div>
-
-  <!-- App scripts -->
+  <!-- APP SCRIPT -->
   <script>
     // Supabase client
-    const supabaseClient = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // Общ мини-скрипт за навигация (логнат/нелогнат) + изход
-    (async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      const header = document.querySelector('header .max-w-6xl') || document.querySelector('header div');
-      if (header) {
-        const container = document.createElement('div');
-        container.className = "flex items-center gap-3";
-        if (user) {
-          container.innerHTML = `
-            <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
-            <button id="logoutBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>
-          `;
-        } else {
-          const redirect = encodeURIComponent(location.href);
-          container.innerHTML = `
-            <a href="auth.html?redirectTo=${redirect}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>
-          `;
-        }
-        header.appendChild(container);
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) logoutBtn.addEventListener('click', async () => { await supabaseClient.auth.signOut(); location.reload(); });
+    // -------- Навигация: Вход/Профил/Изход + мобилен drawer --------
+    async function renderAuthAreas() {
+      const { data: { user } } = await sb.auth.getUser();
+      const d = document.getElementById('nav-auth-desktop');
+      const m = document.getElementById('nav-auth-mobile');
+      const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
+
+      let desktopHTML = '', mobileHTML  = '';
+      if (user) {
+        desktopHTML = `
+          <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
+          <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
+        mobileHTML = `
+          <a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
+          <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>`;
+      } else {
+        desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
+        mobileHTML  = `<a href="${loginHref}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a>`;
       }
-      // Обнови FAB/док
-      const fab = document.getElementById('fabAuth');
-      const dock = document.getElementById('dockAuth');
-      const target = user ? 'account.html' : `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
-      const text = user ? 'Моят профил' : 'Вход';
-      if (fab) { fab.href = target; fab.textContent = text; }
-      if (dock) { dock.href = target; dock.textContent = text; }
+
+      if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
+      if (m) { m.innerHTML = mobileHTML; }
+
+      // logout
+      [document.getElementById('nav-logout'), document.getElementById('nav-logout-m')].filter(Boolean).forEach(btn => {
+        btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+      });
+    }
+
+    (function initDrawer(){
+      const drawer   = document.getElementById('drawer'); if (!drawer) return;
+      const openBtn  = document.getElementById('nav-open');
+      const closeBtn = document.getElementById('nav-close');
+      const backdrop = document.getElementById('backdrop');
+
+      function open()  { drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
+      function close() { drawer.classList.add('hidden');    document.body.classList.remove('overflow-hidden'); }
+
+      openBtn?.addEventListener('click', open);
+      closeBtn?.addEventListener('click', close);
+      backdrop?.addEventListener('click', close);
+      window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
     })();
 
-    // Утилити
+    renderAuthAreas();
+
+    // -------- Търсене / зареждане на категории и обяви --------
     const utils = {
-      money(n){try{return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n));}catch{return n;}},
-      qs:(s,r=document)=>r.querySelector(s),
-      qsa:(s,r=document)=>[...r.querySelectorAll(s)]
+      money(n){ try { return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)); } catch { return n; } }
     };
 
-    // Данни
-    const listEl = utils.qs('#list');
-    const emptyEl = utils.qs('#empty');
-    const qEl = utils.qs('#q');
-    const catEl = utils.qs('#cat');
+    const listEl = document.getElementById('list');
+    const emptyEl = document.getElementById('empty');
+    const qEl = document.getElementById('q');
+    const catEl = document.getElementById('cat');
 
     async function loadCategories(){
-      const { data } = await supabaseClient.from('categories').select('id,name').order('name');
+      const { data } = await sb.from('categories').select('id,name').order('name');
       catEl.innerHTML = `<option value="">Всички категории</option>` + (data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
     }
 
     async function search(){
       const q = qEl.value.trim();
       const cat = catEl.value;
-      let query = supabaseClient.from('ads').select('id,title,price,created_at,priority,priority_until,brand,ad_images(url,position)').eq('status','approved').order('approved_at', { ascending: false });
-      if(cat) query = query.eq('category_id', cat);
+
+      let query = sb
+        .from('ads')
+        .select('id,title,price,created_at,priority,priority_until,brand,ad_images(url,position)')
+        .eq('status','approved')
+        .order('approved_at', { ascending: false });
+
+      if (cat) query = query.eq('category_id', cat);
+
       const { data, error } = await query;
-      if(error){ console.error(error); return; }
+      if (error) { console.error(error); return; }
+
+      // приоритизация: gold > vip (докато priority_until е валидно), после по новост
       const rows = (data||[]).sort((a,b)=>{
         const now=Date.now();
         const pr = v => (v && new Date(v).getTime()>now);
@@ -112,6 +171,7 @@
         if (rb!==ra) return rb-ra;
         return new Date(b.created_at)-new Date(a.created_at);
       }).filter(r => !q || r.title?.toLowerCase().includes(q.toLowerCase()));
+
       render(rows);
     }
 
@@ -121,7 +181,9 @@
       const pr = (ad.priority==='gold'?'bg-yellow-50 border-yellow-200': ad.priority==='vip'?'bg-violet-50 border-violet-200':'bg-white');
       return `
         <a href="ad.html?id=${ad.id}" class="group ${pr} rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition">
-          <div class="aspect-video bg-slate-100"><img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy"></div>
+          <div class="aspect-video bg-slate-100">
+            <img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy">
+          </div>
           <div class="p-4">
             <div class="flex items-center justify-between gap-2">
               <h3 class="font-semibold line-clamp-1">${ad.title}${badge}</h3>
