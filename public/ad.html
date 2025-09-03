@@ -8,25 +8,47 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
-  <script>
-    window.supabaseClient = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
-  </script>
 </head>
 <body class="bg-slate-50 min-h-screen">
   <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
     <div class="max-w-4xl mx-auto p-4 flex items-center gap-4">
       <a href="/" class="text-2xl font-bold">NovaObqva</a>
       <div class="flex-1"></div>
-      <a href="submit.html" class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">Публикувай обява</a>
+      <a href="submit.html" class="hidden md:inline-block px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">Публикувай обява</a>
     </div>
   </header>
 
   <main id="root" class="max-w-4xl mx-auto p-4"></main>
 
   <script>
-    const params = new URL(location.href).searchParams; const id = params.get('id');
-    if(!id){ document.getElementById('root').innerHTML = '<p class="text-center text-slate-500">Липсва ID на обява.</p>'; }
+    const supabaseClient = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+
+    // Навигация (Вход/Профил/Изход)
+    (async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      const header = document.querySelector('header .max-w-4xl');
+      if (header) {
+        const container = document.createElement('div');
+        container.className = "flex items-center gap-3";
+        if (user) {
+          container.innerHTML = `
+            <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
+            <button id="logoutBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>
+          `;
+        } else {
+          const redirect = encodeURIComponent(location.href);
+          container.innerHTML = `<a href="auth.html?redirectTo=${redirect}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
+        }
+        header.appendChild(container);
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', async () => { await supabaseClient.auth.signOut(); location.reload(); });
+      }
+    })();
+
+    // Детайл
     (async ()=>{
+      const params = new URL(location.href).searchParams; const id = params.get('id');
+      if(!id){ document.getElementById('root').innerHTML = '<p class="text-center text-slate-500">Липсва ID на обява.</p>'; return; }
       const { data: ad } = await supabaseClient.from('ads').select('*, categories(name), ad_images(url,position)').eq('id', id).single();
       if(!ad || ad.status!=='approved'){ document.getElementById('root').innerHTML = '<p class="text-center text-slate-500">Обявата не е налична.</p>'; return; }
       const imgs = (ad.ad_images||[]).sort((a,b)=>a.position-b.position);
