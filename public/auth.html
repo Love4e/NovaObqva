@@ -37,8 +37,7 @@
     const redirectTo = new URL(location.href).searchParams.get('redirectTo') || (location.origin + '/account.html');
 
     document.getElementById('googleBtn').addEventListener('click', async () => {
-      // redirect OAuth flow
-      const { data, error } = await sb.auth.signInWithOAuth({
+      const { error } = await sb.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo }
       });
@@ -47,7 +46,6 @@
         el.textContent = error.message || 'Грешка при вход.';
         el.classList.remove('hidden');
       }
-      // При success Supabase ще пренасочи браузъра към Google → обратно към redirectTo
     });
   </script>
 </body>
