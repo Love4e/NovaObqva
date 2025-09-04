@@ -15,59 +15,63 @@
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
 
-    /* === HERO (gold) добавки === */
-    .hero-gold{
-      position:relative; isolation:isolate;
-      background:#0f172a; color:#fff;
-      padding:56px 0 72px;
-      overflow:hidden;
+    /* ===== HERO (Gold) — ТОЧНО както поиска ===== */
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui;background:#0f172a;color:#fff;overflow-x:hidden;}
+    .hero{
+      position:relative;height:100vh;display:flex;align-items:center;justify-content:center;
+      perspective:1200px;overflow:hidden;
     }
-    .hero-gold .glow{
-      position:absolute; inset:-20%; z-index:-1; filter:blur(32px); opacity:.6;
-      background:
-        radial-gradient(60% 50% at 20% 20%, rgba(250,204,21,.25), transparent 60%),
-        radial-gradient(60% 50% at 80% 70%, rgba(251,191,36,.18), transparent 60%),
-        radial-gradient(40% 40% at 60% 30%, rgba(245,158,11,.18), transparent 60%);
+    .background-tiles{
+      position:absolute;inset:0;display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(100px,1fr));grid-auto-rows:100px;
+      opacity:0.05;animation:bgMove 30s linear infinite;
     }
-    .hero-gold .title{
-      font-weight:900; letter-spacing:-.02em;
-      font-size:clamp(28px,4.5vw,48px); line-height:1.05;
+    .background-tiles div{
+      background:#facc15;margin:2px;border-radius:8px;transform:scale(1);
+      animation:tilePulse 6s ease-in-out infinite;
+    }
+    @keyframes bgMove{to{transform:translateY(-200px);}}
+    @keyframes tilePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
+    .center-box{
+      position:relative;z-index:2;padding:40px;background:rgba(255,255,255,0.08);
+      border-radius:20px;backdrop-filter:blur(20px);text-align:center;
+      box-shadow:0 0 40px rgba(250,204,21,0.3);
+    }
+    .center-box h1{
+      font-size:clamp(28px,4vw,52px);font-weight:800;margin:0 0 20px;
       background:linear-gradient(90deg,#facc15,#fbbf24,#f59e0b);
-      -webkit-background-clip:text; background-clip:text; color:transparent;
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
     }
-    .hero-gold .subtitle{color:#fef9c3}
-    .hero-gold .cta{
-      display:inline-flex; align-items:center; gap:.5rem;
-      padding:.9rem 1.25rem; border-radius:14px;
-      background:linear-gradient(90deg,#facc15,#fbbf24);
-      color:#111827; font-weight:800; text-decoration:none;
-      border:1px solid rgba(255,255,255,.15); position:relative;
-      box-shadow:0 8px 30px rgba(250,204,21,.25);
-      animation:ctaPulse 2.4s ease-in-out infinite;
+    .center-box p{color:#fef9c3;margin:0 0 30px;font-size:18px;}
+    .cta{
+      display:inline-block;padding:14px 30px;background:linear-gradient(90deg,#facc15,#fbbf24);
+      color:#0f172a;font-weight:700;border-radius:12px;text-decoration:none;font-size:18px;
+      animation:pulse 2s infinite;
     }
-    @keyframes ctaPulse {
-      0%,100% { box-shadow:0 8px 30px rgba(250,204,21,.25) }
-      50%     { box-shadow:0 8px 46px rgba(250,204,21,.38) }
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.7);}50%{box-shadow:0 0 25px 12px rgba(250,204,21,.25);}}
+    .orbit{position:absolute;width:500px;height:500px;border-radius:50%;animation:rotateOrbit 40s linear infinite;z-index:1;}
+    @keyframes rotateOrbit{to{transform:rotate(360deg);}}
+    .plan{
+      position:absolute;width:160px;padding:20px;background:#fff;color:#0f172a;border-radius:16px;text-align:center;
+      font-weight:600;box-shadow:0 10px 25px rgba(0,0,0,.25);transition:.3s;
     }
-    /* Плавна преливка към основния светъл фон (bg-slate-50) */
-    .gold-bridge{height:64px; background:linear-gradient(#0f172a, #f8fafc);}
+    .plan:hover{transform:scale(1.15) translateZ(40px);}
+    .plan h3{margin:0;font-size:18px;}
+    .plan .price{font-size:20px;font-weight:800;color:#b45309;margin:10px 0;}
+    .plan.std{top:-80px;left:50%;transform:translateX(-50%);}
+    .plan.vip{right:-60px;top:50%;transform:translateY(-50%);background:linear-gradient(180deg,#faf5ff,#ede9fe);}
+    .plan.gold{bottom:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#fef9c3,#facc15);}
+
+    /* Плавна преливка от тъмния hero към светлия списък */
+    .gold-bridge{height:64px;background:linear-gradient(#0f172a, #f8fafc);}
 
     /* Мека мигаща подцветка за НОВИ обяви (последни 48ч) */
-    .ad-new{
-      position:relative;
-      box-shadow:0 0 0 0 rgba(250,204,21,.0);
-      animation:newGlow 2.2s ease-in-out infinite;
-    }
+    .ad-new{position:relative;box-shadow:0 0 0 0 rgba(250,204,21,.0);animation:newGlow 2.2s ease-in-out infinite;}
     .ad-new::after{
-      content:"НОВА"; position:absolute; top:10px; left:10px; z-index:10;
-      font-size:11px; font-weight:800; letter-spacing:.02em;
-      color:#78350f; background:#fde68a; border:1px solid #f59e0b;
-      padding:2px 8px; border-radius:999px;
+      content:"НОВА";position:absolute;top:10px;left:10px;z-index:10;font-size:11px;font-weight:800;letter-spacing:.02em;
+      color:#78350f;background:#fde68a;border:1px solid #f59e0b;padding:2px 8px;border-radius:999px;
     }
-    @keyframes newGlow{
-      0%,100% { box-shadow:0 0 0 0 rgba(250,204,21,.0) }
-      50%     { box-shadow:0 0 22px 2px rgba(250,204,21,.35) }
-    }
+    @keyframes newGlow{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.0)}50%{box-shadow:0 0 22px 2px rgba(250,204,21,.35)}}
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -90,46 +94,47 @@
 
       <!-- Desktop auth + Chat (динамични) -->
       <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
-
       <!-- Премахнато: Mobile hamburger и drawer -->
     </div>
   </header>
 
-  <!-- HERO (вграден, с преливка към списъка) -->
-  <section class="hero-gold">
-    <div class="glow" aria-hidden="true"></div>
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="grid md:grid-cols-2 gap-6 items-center">
-        <div>
-          <h1 class="title">Публикувай и изпъкни с VIP и GOLD</h1>
-          <p class="subtitle mt-2">NovaObqva — бързи продажби, ясни планове и видимост отпред.</p>
-          <a href="submit.html" class="cta mt-4"> Публикувай обява</a>
-        </div>
-        <div class="hidden md:block justify-self-end">
-          <!-- мини визуализация на плановете -->
-          <div class="grid grid-cols-3 gap-3">
-            <div class="rounded-2xl border border-yellow-200/30 bg-white/5 p-4 text-center">
-              <div class="text-xs text-yellow-200/80 mb-1">Starter</div>
-              <div class="text-yellow-300 font-extrabold text-xl">9.99 BGN</div>
-            </div>
-            <div class="rounded-2xl border border-purple-200/30 bg-white/5 p-4 text-center">
-              <div class="text-xs text-purple-200/80 mb-1">VIP</div>
-              <div class="text-white font-extrabold text-xl">19.99 BGN</div>
-            </div>
-            <div class="rounded-2xl border border-amber-200/40 bg-white/5 p-4 text-center shadow-[0_0_30px_rgba(250,204,21,.25)]">
-              <div class="text-xs text-amber-200/80 mb-1">GOLD</div>
-              <div class="text-amber-300 font-extrabold text-xl">39.99 BGN</div>
-            </div>
-          </div>
-        </div>
+  <!-- ===== ТОЧНИЯТ GOLD HERO ===== -->
+  <section class="hero">
+    <div class="background-tiles" aria-hidden="true">
+      <!-- генерирани плочки -->
+      <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+
+    <div class="orbit" aria-hidden="true">
+      <div class="plan std">
+        <h3>Стандартен</h3>
+        <div class="price">9.99 BGN</div>
+        <p>30 дни</p>
       </div>
+      <div class="plan vip">
+        <h3>VIP ⭐</h3>
+        <div class="price">19.99 BGN</div>
+        <p>7 дни VIP + 20 дни</p>
+      </div>
+      <div class="plan gold">
+        <h3>GOLD 🏆</h3>
+        <div class="price">39.99 BGN</div>
+        <p>30 дни първа позиция</p>
+      </div>
+    </div>
+
+    <div class="center-box">
+      <h1>NovaObqva</h1>
+      <p>Твоето място за уникални обяви.<br> Изпъкни с VIP и GOLD плановете!</p>
+      <a href="submit.html" class="cta"> Публикувай обява</a>
     </div>
   </section>
   <div class="gold-bridge"></div>
 
   <!-- MAIN -->
   <main class="max-w-6xl mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Обяви</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">Обяви</h1>
 
     <div class="grid md:grid-cols-4 gap-4 items-end mb-6">
       <input id="q" placeholder="Търси в заглавие/описание" class="md:col-span-2 w-full px-4 py-2 rounded-xl border" />
@@ -165,7 +170,6 @@
       const d = document.getElementById('nav-auth-desktop');
       const m = document.getElementById('nav-auth-mobile'); // няма елемент; безопасно
 
-      // Chat link (само ако е логнат)
       const chatDesktop = user
         ? `<a href="chat.html" class="relative px-3 py-1.5 rounded-lg hover:bg-slate-100">
              Съобщения
@@ -187,16 +191,13 @@
       if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
       if (m) { m.innerHTML = mobileHTML; }
 
-      // logout
       [document.getElementById('nav-logout'), document.getElementById('nav-logout-m')].filter(Boolean).forEach(btn => {
         btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
       });
 
-      // unread badges (optional RPC)
       if (user) {
         async function updateUnread(){
           try{
-            // очаква се RPC: chat_unread_count() RETURNS int
             const { data, error } = await sb.rpc('chat_unread_count');
             if (!error && typeof data === 'number') {
               const n = data;
@@ -208,26 +209,24 @@
                 else { el.classList.add('hidden'); }
               });
             }
-          }catch(_){ }}
+          }catch(_){}}
         updateUnread();
         setInterval(updateUnread, 20000);
       }
     }
 
-    // Инициалиране (drawer е премахнат, но функцията остава безвредна)
+    // (drawer е премахнат, функцията остава безвредна)
     (function initDrawer(){
       const drawer   = document.getElementById('drawer'); if (!drawer) return;
       const openBtn  = document.getElementById('nav-open');
       const closeBtn = document.getElementById('nav-close');
       const backdrop = document.getElementById('backdrop');
-
-      function open()  { drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
-      function close() { drawer.classList.add('hidden');    document.body.classList.remove('overflow-hidden'); }
-
-      openBtn?.addEventListener('click', open);
-      closeBtn?.addEventListener('click', close);
-      backdrop?.addEventListener('click', close);
-      window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
+      function open(){ drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
+      function close(){ drawer.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
+      openBtn?.addEventListener('click',open);
+      closeBtn?.addEventListener('click',close);
+      backdrop?.addEventListener('click',close);
+      window.addEventListener('keydown',(e)=>{ if(e.key==='Escape') close(); });
     })();
 
     renderAuthAreas();
@@ -426,7 +425,6 @@
         });
       }
 
-      // чат бутон
       modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=>{
         startChat(data.id, data.user_id);
       });
