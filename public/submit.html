@@ -9,9 +9,18 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <style>
+    /* тънък хоризонтален скрол */
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+    /* градиентна рамка за избраната карта */
+    .planWrap{ position:relative }
+    .planWrap::before{
+      content:""; position:absolute; inset:-1.5px; border-radius:18px;
+      background:linear-gradient(135deg,#6366f1,#a855f7,#10b981);
+      opacity:0; transition:opacity .25s ease;
+    }
+    .planWrap.is-selected::before,.planWrap:hover::before{ opacity:1 }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -70,22 +79,37 @@
           <p class="text-xs text-slate-500 mt-2">Първата снимка е основна. Можете да премахвате и добавяте за смяна на реда.</p>
         </div>
 
-        <!-- ПЛАНОВЕ + ВАЛУТА -->
+        <!-- ПЛАНОВЕ + ВАЛУТА (WOW версия) -->
         <div>
-          <div class="flex items-end gap-3">
+          <div class="flex items-end gap-4">
             <div class="flex-1">
               <label class="block text-sm font-medium mb-2">Изберете план</label>
-              <div id="plansBar" class="flex gap-4 overflow-x-auto pb-2 scrollbar-thin"></div>
+
+              <!-- Хоризонтален барабан с карти -->
+              <div id="plansBar" class="flex gap-5 overflow-x-auto pb-3 scrollbar-thin snap-x snap-mandatory">
+                <!-- картите се инжектират от JS -->
+              </div>
             </div>
-            <div class="w-40">
+
+            <!-- Сегментиран превключвател за валута -->
+            <div class="w-44">
               <label class="block text-sm font-medium mb-1">Валута</label>
-              <select id="currency" class="border rounded-lg px-3 py-2 w-full">
-                <option value="bgn">Лева (BGN)</option>
-                <option value="eur">Евро (EUR)</option>
-              </select>
+              <div id="currencySwitch" class="inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
+                <button type="button" data-cur="bgn"
+                        class="curBtn px-3 py-2 text-sm font-medium aria-selected:bg-emerald-600 aria-selected:text-white">
+                  🇧🇬 BGN
+                </button>
+                <button type="button" data-cur="eur"
+                        class="curBtn px-3 py-2 text-sm font-medium text-slate-600">
+                  🇪🇺 EUR
+                </button>
+              </div>
             </div>
           </div>
-          <p class="text-xs text-slate-500 mt-2">Планът определя видимост и допълнителни опции. Плащането става след изпращане.</p>
+
+          <p class="text-xs text-slate-500 mt-2">
+            Планът определя видимост и допълнителни опции. Плащането се прави след изпращане.
+          </p>
         </div>
 
         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">
@@ -117,7 +141,7 @@
       'Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'
     ];
 
-    // ПАДАТ-БЕК планове с BGN/EUR линкове (по твоя списък)
+    // Fallback планове с BGN/EUR линкове (по твоите линкове)
     const FALLBACK_PLANS = [
       {
         id: 'starter',
@@ -159,8 +183,9 @@
 
     let currentUser = null;
     let plans = [];           // от БД или fallback
-    let selectedPlan = null;  // текущо избрания план
+    let selectedPlan = null;  // текущо избран план
     let selectedFiles = [];   // File[]
+    let currentCurrency = 'bgn'; // 'bgn' | 'eur'
 
     (async () => {
       // 1) require login
@@ -168,24 +193,32 @@
       if (!user) { location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href); return; }
       currentUser = user;
 
-      // 2) fill categories
+      // 2) categories
       const catSel = el('category');
       CATEGORIES.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c; opt.textContent = c; catSel.appendChild(opt);
       });
 
-      // 3) load plans table (ако имаш), иначе fallback
+      // 3) load plans table (ако има), иначе fallback
       try {
         const { data, error } = await sb.from('plans').select('id,name,price,pay_url,features,price_bgn,price_eur');
         if (!error && data?.length) {
-          plans = data.map(p => ({
-            id: p.id, name: p.name,
-            price_bgn: Number(p.price_bgn ?? p.price), // съвместимост
-            price_eur: Number(p.price_eur ?? p.price),
-            pay_url: typeof p.pay_url === 'object' ? p.pay_url : { bgn: p.pay_url, eur: p.pay_url },
-            features: p.features || []
-          }));
+          plans = data.map(p => {
+            // поддръжка ако pay_url е json текст
+            let pay = p.pay_url;
+            if (typeof pay === 'string' && pay.trim().startsWith('{')) {
+              try { pay = JSON.parse(pay); } catch { pay = { bgn: pay, eur: pay }; }
+            }
+            if (typeof pay !== 'object') pay = { bgn: pay, eur: pay };
+            return {
+              id: p.id, name: p.name,
+              price_bgn: Number(p.price_bgn ?? p.price),
+              price_eur: Number(p.price_eur ?? p.price),
+              pay_url: pay,
+              features: p.features || []
+            };
+          });
         }
       } catch(_) {}
       if (!plans.length) plans = FALLBACK_PLANS;
@@ -203,38 +236,85 @@
       // 5) submit
       el('adForm').addEventListener('submit', onSubmit);
 
-      // 6) currency change → rerender prices
-      el('currency').addEventListener('change', renderPlans);
+      // 6) currency switch (BGN/EUR)
+      document.querySelectorAll('#currencySwitch .curBtn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          currentCurrency = btn.dataset.cur; // 'bgn' | 'eur'
+          // визуално състояние
+          document.querySelectorAll('#currencySwitch .curBtn')
+            .forEach(b=>{
+              const isSel = b === btn;
+              b.setAttribute('aria-selected', isSel ? 'true' : 'false');
+              b.classList.toggle('text-slate-600', !isSel);
+              b.classList.toggle('text-white', isSel);
+              b.classList.toggle('bg-emerald-600', isSel);
+            });
+          renderPlans();
+        });
+      });
+      // по подразбиране BGN
+      document.querySelector('#currencySwitch [data-cur="bgn"]').click();
     })();
 
     function renderPlans(){
       const bar = el('plansBar'); bar.innerHTML = '';
-      const currency = el('currency').value; // 'bgn' | 'eur'
-      plans.forEach(p => {
-        const price = currency === 'eur' ? Number(p.price_eur) : Number(p.price_bgn);
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'min-w-[240px] text-left border rounded-2xl p-4 bg-white hover:border-slate-400';
-        card.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div class="text-lg font-semibold">${escapeHTML(p.name)}</div>
-            <div class="text-emerald-700 font-bold">${isFinite(price) ? price.toFixed(2) : '—'} ${currency.toUpperCase()}</div>
-          </div>
-          <ul class="mt-2 text-sm text-slate-600 space-y-1">${
-            (p.features||[]).map(f=>`<li>• ${escapeHTML(String(f))}</li>`).join('') || '<li class="text-slate-400">Без описани екстри</li>'
-          }</ul>
-          <div class="mt-3">
-            <span class="inline-block text-xs px-2 py-1 rounded bg-slate-100 text-slate-700">избери</span>
-          </div>
+      const cur = currentCurrency; // 'bgn' | 'eur'
+
+      plans.forEach((p) => {
+        const price = cur === 'eur' ? Number(p.price_eur) : Number(p.price_bgn);
+        const isSelected = selectedPlan?.id === p.id;
+        const wrap = document.createElement('div');
+        wrap.className = 'planWrap snap-start';
+        if (isSelected) wrap.classList.add('is-selected');
+
+        const isPro = (p.name||'').toLowerCase() === 'pro';
+        const badge = isPro
+          ? `<span class="absolute -top-3 left-4 z-10 text-[11px] px-2 py-1 rounded-full bg-indigo-600 text-white shadow">Най-популярен</span>`
+          : '';
+
+        wrap.innerHTML = `
+          ${badge}
+          <button type="button"
+                  class="relative group min-w-[260px] rounded-2xl border bg-white/70 backdrop-blur-md
+                         hover:shadow-lg transition-all duration-300 p-5 text-left">
+            <div class="flex items-center justify-between">
+              <div class="text-xl font-semibold">${escapeHTML(p.name)}</div>
+              <div class="text-lg font-bold">
+                <span class="bg-gradient-to-r from-emerald-600 to-indigo-600 bg-clip-text text-transparent">
+                  ${isFinite(price) ? price.toFixed(2) : '—'} ${cur.toUpperCase()}
+                </span>
+              </div>
+            </div>
+            <ul class="mt-3 text-sm text-slate-600 space-y-1">
+              ${(p.features||[]).map(f=>`<li class="flex items-center gap-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" class="shrink-0 text-emerald-600">
+                    <path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>
+                  </svg>${escapeHTML(String(f))}
+                </li>`).join('') || '<li class="text-slate-400">Без описани екстри</li>'}
+            </ul>
+            <div class="mt-4">
+              <span class="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-lg
+                           bg-slate-100 text-slate-700 group-hover:bg-slate-200 transition">
+                избери
+              </span>
+            </div>
+          </button>
         `;
-        card.addEventListener('click', ()=>{
+
+        wrap.querySelector('button').addEventListener('click', ()=>{
           selectedPlan = p;
-          [...bar.children].forEach(c=>c.classList.remove('ring-2','ring-indigo-500'));
-          card.classList.add('ring-2','ring-indigo-500');
+          [...bar.children].forEach(c=>c.classList.remove('is-selected'));
+          wrap.classList.add('is-selected');
         });
-        bar.appendChild(card);
+
+        bar.appendChild(wrap);
       });
-      if (bar.children.length) bar.children[0].click();
+
+      // ако няма избран → първия
+      if (!selectedPlan && bar.children.length) {
+        bar.children[0].classList.add('is-selected');
+        selectedPlan = plans[0];
+      }
     }
 
     function addFiles(files){
@@ -275,7 +355,7 @@
       const category = el('category').value;
       const city = el('city').value.trim();
       const price = parseFloat(el('price').value);
-      const currency = el('currency').value; // bgn|eur
+      const currency = currentCurrency; // 'bgn' | 'eur'
 
       if (!title || !description || !category || isNaN(price)) { msg('Попълнете всички задължителни полета.', true); return; }
       if (!selectedPlan) { msg('Моля, изберете план.', true); return; }
@@ -304,7 +384,7 @@
       const { data, error } = await sb.from('ads').insert([insertPayload]).select('id').single();
       if (error) { console.error(error); msg('Грешка при запис. Проверете правата (RLS) и полетата в таблицата.', true); return; }
 
-      // 3) покажи резултат + бутон за плащане според валутата
+      // 3) резултат + бутон за плащане според валутата
       el('adForm').classList.add('hidden');
       const res = el('result'); res.classList.remove('hidden');
       el('viewBtn').href = 'ad.html?id=' + encodeURIComponent(data.id);
