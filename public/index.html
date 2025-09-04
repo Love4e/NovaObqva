@@ -9,79 +9,117 @@
   <link rel="stylesheet" href="styles/base.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
+
   <style>
     /* за хоризонталния скрол на thumb-овете в popup */
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
 
-    /* ===== HERO (Gold) — ТОЧНО както поиска ===== */
-    body{margin:0;font-family:Inter,ui-sans-serif,system-ui;background:#0f172a;color:#fff;overflow-x:hidden;}
-    .hero{
-      position:relative;height:100vh;display:flex;align-items:center;justify-content:center;
-      perspective:1200px;overflow:hidden;
-    }
-    .background-tiles{
-      position:absolute;inset:0;display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(100px,1fr));grid-auto-rows:100px;
-      opacity:0.05;animation:bgMove 30s linear infinite;
-    }
-    .background-tiles div{
-      background:#facc15;margin:2px;border-radius:8px;transform:scale(1);
-      animation:tilePulse 6s ease-in-out infinite;
-    }
-    @keyframes bgMove{to{transform:translateY(-200px);}}
-    @keyframes tilePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
-    .center-box{
-      position:relative;z-index:2;padding:40px;background:rgba(255,255,255,0.08);
-      border-radius:20px;backdrop-filter:blur(20px);text-align:center;
-      box-shadow:0 0 40px rgba(250,204,21,0.3);
-    }
-    .center-box h1{
-      font-size:clamp(28px,4vw,52px);font-weight:800;margin:0 0 20px;
-      background:linear-gradient(90deg,#facc15,#fbbf24,#f59e0b);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    }
-    .center-box p{color:#fef9c3;margin:0 0 30px;font-size:18px;}
-    .cta{
-      display:inline-block;padding:14px 30px;background:linear-gradient(90deg,#facc15,#fbbf24);
-      color:#0f172a;font-weight:700;border-radius:12px;text-decoration:none;font-size:18px;
-      animation:pulse 2s infinite;
-    }
-    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.7);}50%{box-shadow:0 0 25px 12px rgba(250,204,21,.25);}}
-    .orbit{position:absolute;width:500px;height:500px;border-radius:50%;animation:rotateOrbit 40s linear infinite;z-index:1;}
-    @keyframes rotateOrbit{to{transform:rotate(360deg);}}
-    .plan{
-      position:absolute;width:160px;padding:20px;background:#fff;color:#0f172a;border-radius:16px;text-align:center;
-      font-weight:600;box-shadow:0 10px 25px rgba(0,0,0,.25);transition:.3s;
-    }
-    .plan:hover{transform:scale(1.15) translateZ(40px);}
-    .plan h3{margin:0;font-size:18px;}
-    .plan .price{font-size:20px;font-weight:800;color:#b45309;margin:10px 0;}
-    .plan.std{top:-80px;left:50%;transform:translateX(-50%);}
-    .plan.vip{right:-60px;top:50%;transform:translateY(-50%);background:linear-gradient(180deg,#faf5ff,#ede9fe);}
-    .plan.gold{bottom:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#fef9c3,#facc15);}
-
-    /* Плавна преливка от тъмния hero към светлия списък */
-    .gold-bridge{height:64px;background:linear-gradient(#0f172a, #f8fafc);}
-
-    /* Мека мигаща подцветка за НОВИ обяви (последни 48ч) */
+    /* ---------- Мек маркер за НОВИ обяви (последни 48ч) ---------- */
     .ad-new{position:relative;box-shadow:0 0 0 0 rgba(250,204,21,.0);animation:newGlow 2.2s ease-in-out infinite;}
     .ad-new::after{
       content:"НОВА";position:absolute;top:10px;left:10px;z-index:10;font-size:11px;font-weight:800;letter-spacing:.02em;
       color:#78350f;background:#fde68a;border:1px solid #f59e0b;padding:2px 8px;border-radius:999px;
     }
     @keyframes newGlow{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.0)}50%{box-shadow:0 0 22px 2px rgba(250,204,21,.35)}}
+
+    /* ---------- Светъл контейнер за списъка след тъмния hero ---------- */
+    .bridge{height:56px;background:linear-gradient(#0a0f1a, #f8fafc);}
+    .light-surface{background:#f8fafc;color:#0f172a;}
+  </style>
+
+  <!-- ====== ТВОЯТ “Orbital Hero” (вграден дословно) ====== -->
+  <style>
+    :root{
+      --c1:#22c55e; /* emerald */
+      --c2:#6366f1; /* indigo */
+      --c3:#0ea5e9; /* sky */
+      --c4:#f59e0b; /* amber */
+      --ink:#0b1220;
+      --bg:#0a0f1a;
+      --glass: rgba(255,255,255,.08);
+      --glass-stroke: rgba(255,255,255,.18);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:#e5e7eb;font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
+
+    /* ===== Scene ===== */
+    .scene{position:relative;min-height:88vh;display:grid;place-items:center;overflow:hidden}
+    .scene::before{ /* ambient gradient fog */
+      content:"";position:absolute;inset:-30%;
+      background:radial-gradient(60% 60% at 20% 10%, rgba(34,197,94,.22), transparent 60%),
+                 radial-gradient(60% 60% at 90% 80%, rgba(99,102,241,.18), transparent 60%),
+                 radial-gradient(50% 60% at 50% 50%, rgba(14,165,233,.18), transparent 65%);
+      filter: blur(20px);
+      z-index:0;
+    }
+
+    /* Dynamic tilefield background */
+    .tilefield{position:absolute;inset:-10%;z-index:0;opacity:.18;perspective:1000px}
+    .tiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(14,1fr);grid-auto-rows:7vh;transform:rotateX(55deg) translateY(-20vh);transform-origin:50% 0}
+    .tile{border:1px solid rgba(255,255,255,.05);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0));animation:float 8s ease-in-out infinite;}
+    .tile:nth-child(odd){animation-duration:10s}
+    .tile:nth-child(3n){animation-duration:12s}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+    /* ===== Center glass module ===== */
+    .center{position:relative;z-index:2;display:grid;gap:18px;place-items:center;text-align:center;padding:20px 18px}
+    .glass{backdrop-filter: blur(14px);-webkit-backdrop-filter: blur(14px);background:var(--glass);border:1px solid var(--glass-stroke);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+    .title{padding:22px 26px}
+    .title h1{margin:0;font-weight:900;letter-spacing:-.02em;font-size:clamp(26px,4.2vw,52px);line-height:1.05}
+    .title h1 .brand{background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .subtitle{color:#cbd5e1;font-size:clamp(14px,1.5vw,16px);margin-top:6px}
+
+    .cta{margin-top:6px;display:inline-flex;align-items:center;gap:10px;padding:13px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.28);background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06));color:#fff;font-weight:800;text-decoration:none;position:relative;overflow:hidden}
+    .cta::after{content:"";position:absolute;inset:-1px;border-radius:14px;padding:1px;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3),var(--c1));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:hue 8s linear infinite}
+    .cta:hover{transform:translateY(-1px)}
+    @keyframes hue{to{filter:hue-rotate(360deg)}}
+
+    /* ===== Orbital plans ===== */
+    .orbit{position:absolute;inset:0;z-index:1;pointer-events:none}
+    .orbit-3d{position:absolute;inset:0;transform-style:preserve-3d;perspective:1200px}
+    .ring{position:absolute;top:50%;left:50%;transform-style:preserve-3d;animation:spin 32s linear infinite}
+    .ring--rev{animation-direction:reverse;animation-duration:44s}
+    .ring--mid{animation-duration:38s}
+    @keyframes spin{to{transform:rotateZ(360deg)}}
+
+    .planet{position:absolute;top:-50%;left:-50%;transform:translate3d(var(--tx), var(--ty), var(--tz)) rotateX(10deg) rotateY(-15deg);}
+    .card{width:230px;max-width:36vw;border-radius:18px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.45);pointer-events:auto}
+    .card .hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.08);backdrop-filter: blur(6px);-webkit-backdrop-filter: blur(6px)}
+    .chip{font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px}
+    .chip.vip{background:#ede9fe;color:#5b21b6;border:1px solid rgba(91,33,182,.25)}
+    .chip.gold{background:linear-gradient(135deg,#facc15,#f59e0b);color:#111827;border:1px solid rgba(0,0,0,.2)}
+    .body{background:#0e1624;border:1px solid rgba(255,255,255,.12);padding:12px}
+    .price{font-size:22px;font-weight:900;color:#86efac}
+    .body ul{margin:10px 0 0;padding:0;list-style:none;color:#cbd5e1;font-size:13px}
+    .body li{display:flex;gap:8px;align-items:center;margin:.25rem 0}
+    .tick{color:#86efac}
+    .card:hover{transform:translateZ(12px) scale(1.02)}
+
+    /* positions in orbit (CSS vars define 3D offsets) */
+    .p1{--tx: -36vmin; --ty:-10vmin; --tz:  40vmin}
+    .p2{--tx:  38vmin; --ty: 12vmin; --tz: -20vmin}
+    .p3{--tx:   0vmin; --ty:-36vmin; --tz:   0vmin}
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce){
+      .ring,.cta::after,.tile{animation:none}
+    }
+    @media (max-width: 820px){
+      .card{width:200px}
+      .title{padding:18px}
+    }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body>
   <!-- HEADER: desktop only (мобилното горно меню е премахнато) -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
       <!-- Brand -->
       <a href="/" class="flex items-center gap-2">
         <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
-        <span class="text-xl font-bold">NovaObqva</span>
+        <span class="text-xl font-bold text-slate-900">NovaObqva</span>
       </a>
 
       <!-- Desktop nav -->
@@ -98,53 +136,109 @@
     </div>
   </header>
 
-  <!-- ===== ТОЧНИЯТ GOLD HERO ===== -->
-  <section class="hero">
-    <div class="background-tiles" aria-hidden="true">
-      <!-- генерирани плочки -->
-      <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
-      <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+  <!-- ======= ORBITAL HERO (ТОЧНО както го даде) ======= -->
+  <section class="scene" aria-label="NovaObqva hero">
+    <!-- animated tile background -->
+    <div class="tilefield" aria-hidden="true">
+      <div class="tiles">
+        <!-- generate ~140 tiles -->
+        <script>
+          const f=document.currentScript.parentElement;
+          for(let i=0;i<140;i++){ const d=document.createElement('div'); d.className='tile'; f.appendChild(d);} 
+        </script>
+      </div>
     </div>
 
+    <!-- orbital layer -->
     <div class="orbit" aria-hidden="true">
-      <div class="plan std">
-        <h3>Стандартен</h3>
-        <div class="price">9.99 BGN</div>
-        <p>30 дни</p>
-      </div>
-      <div class="plan vip">
-        <h3>VIP ⭐</h3>
-        <div class="price">19.99 BGN</div>
-        <p>7 дни VIP + 20 дни</p>
-      </div>
-      <div class="plan gold">
-        <h3>GOLD 🏆</h3>
-        <div class="price">39.99 BGN</div>
-        <p>30 дни първа позиция</p>
+      <div class="orbit-3d">
+        <div class="ring ring--mid">
+          <div class="planet p1">
+            <div class="card glass">
+              <div class="hdr">
+                <strong>VIP план</strong>
+                <span class="chip vip">VIP</span>
+              </div>
+              <div class="body">
+                <div class="price">19.99 BGN</div>
+                <ul>
+                  <li><span class="tick">✔</span> 7 дни VIP позиция</li>
+                  <li><span class="tick">✔</span> + 20 дни стандарт</li>
+                  <li><span class="tick">✔</span> Бранд на картата</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ring ring--rev">
+          <div class="planet p2">
+            <div class="card glass">
+              <div class="hdr">
+                <strong>GOLD план</strong>
+                <span class="chip gold">GOLD</span>
+              </div>
+              <div class="body">
+                <div class="price" style="color:#facc15">39.99 BGN</div>
+                <ul>
+                  <li><span class="tick">✔</span> 30 дни първа позиция</li>
+                  <li><span class="tick">✔</span> Бранд на картата</li>
+                  <li><span class="tick">✔</span> Макс. видимост</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ring">
+          <div class="planet p3">
+            <div class="card glass">
+              <div class="hdr">
+                <strong>Стандартен</strong>
+                <span class="chip" style="background:rgba(255,255,255,.1);color:#e5e7eb;border:1px solid rgba(255,255,255,.18)">Starter</span>
+              </div>
+              <div class="body">
+                <div class="price">9.99 BGN</div>
+                <ul>
+                  <li><span class="tick">✔</span> 30 дни видимост</li>
+                  <li><span class="tick">✔</span> Стандартна позиция</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="center-box">
-      <h1>NovaObqva</h1>
-      <p>Твоето място за уникални обяви.<br> Изпъкни с VIP и GOLD плановете!</p>
-      <a href="submit.html" class="cta"> Публикувай обява</a>
+    <!-- center content -->
+    <div class="center">
+      <div class="title glass">
+        <h1>Публикувай и продавай по-бързо с <span class="brand">NovaObqva</span></h1>
+        <div class="subtitle">Уникална платформа с VIP и GOLD видимост, вграден чат и планове за всякакви нужди.</div>
+      </div>
+      <a class="cta" href="#" aria-label="Публикувай обява">
+        Публикувай обява
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
     </div>
   </section>
-  <div class="gold-bridge"></div>
 
-  <!-- MAIN -->
-  <main class="max-w-6xl mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">Обяви</h1>
+  <!-- плавен преход към светлия списък -->
+  <div class="bridge"></div>
 
-    <div class="grid md:grid-cols-4 gap-4 items-end mb-6">
-      <input id="q" placeholder="Търси в заглавие/описание" class="md:col-span-2 w-full px-4 py-2 rounded-xl border" />
-      <select id="cat" class="w-full px-4 py-2 rounded-xl border"></select>
-      <button id="searchBtn" class="w-full px-4 py-2 rounded-xl border bg-white hover:bg-slate-100">Търси</button>
-    </div>
+  <!-- MAIN (светъл фон) -->
+  <div class="light-surface">
+    <main class="max-w-6xl mx-auto p-4">
+      <h1 class="text-2xl font-bold mb-4">Обяви</h1>
 
-    <div id="list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    <p id="empty" class="text-center text-slate-500 hidden">Няма резултати.</p>
-  </main>
+      <div class="grid md:grid-cols-4 gap-4 items-end mb-6">
+        <input id="q" placeholder="Търси в заглавие/описание" class="md:col-span-2 w-full px-4 py-2 rounded-xl border" />
+        <select id="cat" class="w-full px-4 py-2 rounded-xl border"></select>
+        <button id="searchBtn" class="w-full px-4 py-2 rounded-xl border bg-white hover:bg-slate-100">Търси</button>
+      </div>
+
+      <div id="list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <p id="empty" class="text-center text-slate-500 hidden">Няма резултати.</p>
+    </main>
+  </div>
 
   <!-- Modal: детайли за обява -->
   <div id="adModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
@@ -215,7 +309,7 @@
       }
     }
 
-    // (drawer е премахнат, функцията остава безвредна)
+    // (drawer е премахнат; функцията е безвредна)
     (function initDrawer(){
       const drawer   = document.getElementById('drawer'); if (!drawer) return;
       const openBtn  = document.getElementById('nav-open');
