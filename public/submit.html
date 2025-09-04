@@ -23,7 +23,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-  <!-- ====== ХЕДЪР (без „Публикувай“) + динамичен вход/изход ====== -->
+  <!-- Хедър (без „Публикувай“) + динамичен вход/изход -->
   <header class="sticky top-0 bg-white/80 backdrop-blur border-b z-40">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
       <a href="/" class="flex items-center gap-2 text-2xl font-bold">
@@ -72,7 +72,7 @@
   <main class="max-w-5xl mx-auto p-4 md:p-6 pb-24 md:pb-6">
     <div class="bg-white rounded-2xl border shadow-sm p-4 md:p-6">
       <h1 class="text-xl md:text-2xl font-semibold mb-1">Подай нова обява</h1>
-      <p class="text-slate-600 mb-6">Попълни полетата, добави снимки, избери план и валута, и изпрати за одобрение.</p>
+      <p class="text-slate-600 mb-6">Попълни полетата, добави снимки, контакт, избери план и валута, и изпрати за одобрение.</p>
 
       <form id="adForm" class="space-y-5">
         <div class="grid gap-4 md:grid-cols-2">
@@ -103,6 +103,23 @@
             <textarea id="description" rows="5" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="Опишете подробно…"></textarea>
             <p class="text-xs text-slate-500 mt-1">Съвет: включете ключови характеристики, състояние, локация и условия.</p>
           </div>
+
+          <!-- Контакти на публикуващия -->
+          <div class="md:col-span-2 grid md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1" for="c_name">Име и фамилия</label>
+              <input id="c_name" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="Име Фамилия">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="c_phone">Телефон</label>
+              <input id="c_phone" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="+359…">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="c_email">Имейл</label>
+              <input id="c_email" type="email" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="you@example.com">
+            </div>
+          </div>
+          <p class="md:col-span-2 text-xs text-slate-500 -mt-2">Тези данни се виждат в Админ панела само за проверка и контакт.</p>
         </div>
 
         <!-- Снимки с „Основна“ -->
@@ -162,22 +179,19 @@
     </div>
   </div>
 
-  <!-- ====== ГЛОБАЛЕН SB + ГАРД + ХЕДЪР ЛОГИКА ====== -->
+  <!-- Глобален SB + гард + хедър логика -->
   <script>
-    // Supabase клиент (един)
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // Единен гард за вход (мобилни/десктоп)
     async function ensureAuth() {
       const { data:{ user } } = await sb.auth.getUser();
       if (!user) {
         location.replace('/auth.html?redirectTo=' + encodeURIComponent(location.href));
-        return new Promise(()=>{}); // stop further code
+        return new Promise(()=>{});
       }
       return user;
     }
 
-    // Хедър: активен линк + login state
     (function setActiveNav() {
       const path = location.pathname.replace(/\/+$/, '') || '/';
       document.querySelectorAll('header a[data-nav]').forEach(a => {
@@ -218,7 +232,7 @@
     })();
   </script>
 
-  <!-- ====== СТРАНИЧНА ЛОГИКА: форма за обява ====== -->
+  <!-- Странична логика: форма за обява -->
   <script>
     const CATEGORIES = ['Недвижими имоти','Автомобили','Работа','Услуги','Техника','Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'];
 
@@ -243,13 +257,20 @@
     let currentUser=null, plans=[], selectedPlan=null, selectedFiles=[], currentCurrency='bgn', selectedCoverIndex=0;
 
     (async ()=>{
-      // ЕДИНЕН ГАРД (изисква вход)
+      // Гард
       currentUser = await ensureAuth();
 
       // Категории
       const catSel=el('category'); CATEGORIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
 
-      // Планове от БД (ако има); иначе fallback
+      // Авто-попълване на контактни данни от профила
+      try {
+        const meta = currentUser.user_metadata || {};
+        el('c_name').value  = meta.full_name || meta.name || '';
+        el('c_email').value = currentUser.email || '';
+      } catch (_) {}
+
+      // Планове от БД (ако има)
       try{
         const { data, error } = await sb.from('plans').select('id,name,price_bgn,price_eur,pay_url,features,is_active,position').order('position');
         if (!error && data?.length){
@@ -265,7 +286,7 @@
 
       renderPlans();
 
-      // Снимки — drag&drop / file input
+      // Снимки
       const drop=el('dropzone'), input=el('images');
       drop.addEventListener('click', ()=>input.click());
       drop.addEventListener('dragover', e=>{e.preventDefault(); drop.classList.add('bg-slate-50');});
@@ -365,6 +386,7 @@
 
     async function onSubmit(e){
       e.preventDefault(); msg('');
+
       const title=el('title').value.trim();
       const description=el('description').value.trim();
       const category=el('category').value;
@@ -372,7 +394,12 @@
       const price=parseFloat(el('price').value);
       const currency=currentCurrency;
 
+      const contact_name  = el('c_name').value.trim();
+      const contact_phone = el('c_phone').value.trim();
+      const contact_email = el('c_email').value.trim();
+
       if (!title || !description || !category || isNaN(price)) { msg('Попълнете всички задължителни полета.', true); return; }
+      if (!contact_name || !contact_phone || !contact_email) { msg('Попълнете контактното име, телефон и имейл.', true); return; }
       if (!selectedPlan) { msg('Моля, изберете план.', true); return; }
 
       let image_urls=[];
@@ -390,13 +417,19 @@
       const cover_image=image_urls[cover_index] || null;
 
       const plan_price = currency==='eur'?Number(selectedPlan.price_eur):Number(selectedPlan.price_bgn);
+      const userObj = (await sb.auth.getUser()).data.user;
+
       const insertPayload = {
-        user_id: (await sb.auth.getUser()).data.user.id,
+        user_id: userObj.id,
         title, description, price, city, category,
         images: image_urls, cover_image, cover_index,
         plan_id: selectedPlan.id, plan_name: selectedPlan.name,
         plan_price: plan_price, plan_currency: currency.toUpperCase(),
-        ad_status: 'pending'
+        ad_status: 'pending',
+        // НОВО: контакт + плащане
+        contact_name, contact_phone, contact_email,
+        posted_by_email: userObj.email,
+        payment_status: 'unpaid'
       };
 
       const { data, error } = await sb.from('ads').insert([insertPayload]).select('id').single();
@@ -416,9 +449,10 @@
     async function uploadImages(files){
       try{
         const urls=[];
+        const userId = (await sb.auth.getUser()).data.user.id;
         for (const f of files){
           const ext=(f.name.split('.').pop()||'jpg').toLowerCase();
-          const path=`${(await sb.auth.getUser()).data.user.id}/${crypto.randomUUID()}.${ext}`;
+          const path=`${userId}/${crypto.randomUUID()}.${ext}`;
           const { error: upErr } = await sb.storage.from('ad-images').upload(path, f, { upsert:false, contentType:f.type });
           if (upErr) return { error:'Качването прекъсна: ' + upErr.message };
           const { data: pub } = sb.storage.from('ad-images').getPublicUrl(path);
@@ -431,10 +465,9 @@
     function escapeHTML(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
   </script>
 
-  <!-- По избор: ако липсват тези колони:
-  alter table public.ads
-    add column if not exists cover_image text,
-    add column if not exists cover_index int;
+  <!-- Бележка:
+  За да работи това, в БД трябва да има колоните:
+  contact_name, contact_phone, contact_email, posted_by_email, payment_status.
   -->
 </body>
 </html>
