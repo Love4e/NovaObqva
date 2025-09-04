@@ -25,96 +25,110 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
   <header class="sticky top-0 bg-white/80 backdrop-blur border-b">
-    <div class="max-w-3xl mx-auto p-4 flex items-center gap-3">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
       <a href="/" class="text-2xl font-bold">NovaObqva</a>
       <div class="flex-1"></div>
       <a href="auth.html" class="text-sm text-slate-600 hover:text-slate-900">Вход</a>
     </div>
   </header>
 
-  <main class="max-w-3xl mx-auto p-6">
-    <div class="bg-white rounded-2xl border shadow-sm p-6">
-      <h1 class="text-xl font-semibold mb-1">Подай нова обява</h1>
+  <main class="max-w-4xl mx-auto p-4 md:p-6">
+    <div class="bg-white rounded-2xl border shadow-sm p-4 md:p-6">
+      <h1 class="text-xl md:text-2xl font-semibold mb-1">Подай нова обява</h1>
       <p class="text-slate-600 mb-6">Попълни полетата, добави снимки, избери план и валута, и изпрати за одобрение.</p>
 
       <!-- ФОРМА -->
       <form id="adForm" class="space-y-5">
-        <div>
-          <label class="block text-sm font-medium mb-1">Заглавие</label>
-          <input type="text" id="title" required class="w-full border rounded-lg px-3 py-2" placeholder="Пример: Двустаен апартамент до метро">
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-1">Категория</label>
-          <select id="category" required class="w-full border rounded-lg px-3 py-2">
-            <option value="" disabled selected>— изберете —</option>
-          </select>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Град / Населено място</label>
-            <input type="text" id="city" class="w-full border rounded-lg px-3 py-2" placeholder="София">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label for="title" class="block text-sm font-medium mb-1">Заглавие</label>
+            <input id="title" type="text" required
+                   class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                   placeholder="Пример: Двустаен апартамент до метро">
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Цена (число)</label>
-            <input type="number" id="price" step="0.01" min="0" required class="w-full border rounded-lg px-3 py-2" placeholder="0.00">
-          </div>
-        </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-1">Описание</label>
-          <textarea id="description" required class="w-full border rounded-lg px-3 py-2" rows="5" placeholder="Опишете подробно…"></textarea>
-          <p class="text-xs text-slate-500 mt-1">Съвет: включете ключови характеристики, състояние, локация и условия.</p>
+          <div>
+            <label for="category" class="block text-sm font-medium mb-1">Категория</label>
+            <select id="category" required
+                    class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="" disabled selected>— изберете —</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="city" class="block text-sm font-medium mb-1">Град / Населено място</label>
+            <input id="city" type="text"
+                   class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                   placeholder="София">
+          </div>
+
+          <div>
+            <label for="price" class="block text-sm font-medium mb-1">Цена (число)</label>
+            <input id="price" type="number" step="0.01" min="0" required
+                   class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                   placeholder="0.00">
+          </div>
+
+          <div class="md:col-span-2">
+            <label for="description" class="block text-sm font-medium mb-1">Описание</label>
+            <textarea id="description" required rows="5"
+                      class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="Опишете подробно…"></textarea>
+            <p class="text-xs text-slate-500 mt-1">Съвет: включете ключови характеристики, състояние, локация и условия.</p>
+          </div>
         </div>
 
         <!-- СНИМКИ -->
         <div>
-          <label class="block text-sm font-medium mb-1">Снимки (до 6 файла, макс. 10MB всяка)</label>
-          <div id="dropzone" class="border-2 border-dashed rounded-xl p-6 text-center text-slate-600 hover:bg-slate-50 cursor-pointer">
-            Плъзнете снимки тук или кликнете за избор
-            <input id="images" type="file" accept="image/*" multiple class="hidden">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-sm font-medium">Снимки</label>
+            <span id="imgCount" class="text-xs text-slate-500">0 / 6</span>
           </div>
-          <div id="previews" class="mt-3 grid grid-cols-3 gap-3"></div>
-          <p class="text-xs text-slate-500 mt-2">Първата снимка е основна. Можете да премахвате и добавяте за смяна на реда.</p>
+          <div id="dropzone"
+               class="border-2 border-dashed rounded-xl p-5 md:p-6 text-center text-slate-600 hover:bg-slate-50 cursor-pointer">
+            Плъзнете снимки тук или кликнете за избор
+            <input id="images" type="file" accept="image/*" multiple class="sr-only">
+          </div>
+          <div id="previews" class="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+          <p class="text-xs text-slate-500 mt-2">До 6 файла, максимално 10MB всяка. Първата е основна.</p>
         </div>
 
-        <!-- ПЛАНОВЕ + ВАЛУТА (WOW версия) -->
+        <!-- ПЛАНОВЕ + ВАЛУТА (WOW версия, мобилно-приятелска) -->
         <div>
-          <div class="flex items-end gap-4">
+          <div class="flex flex-col md:flex-row md:items-end gap-4">
             <div class="flex-1">
               <label class="block text-sm font-medium mb-2">Изберете план</label>
-
-              <!-- Хоризонтален барабан с карти -->
-              <div id="plansBar" class="flex gap-5 overflow-x-auto pb-3 scrollbar-thin snap-x snap-mandatory">
+              <div id="plansBar"
+                   class="flex gap-5 overflow-x-auto pb-3 scrollbar-thin snap-x snap-mandatory">
                 <!-- картите се инжектират от JS -->
               </div>
             </div>
 
-            <!-- Сегментиран превключвател за валута -->
-            <div class="w-44">
+            <!-- Сегментиран превключвател: цяла ширина на мобилни, компактно на десктоп -->
+            <div class="w-full md:w-44">
               <label class="block text-sm font-medium mb-1">Валута</label>
-              <div id="currencySwitch" class="inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
+              <div id="currencySwitch"
+                   class="flex w-full md:inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
                 <button type="button" data-cur="bgn"
-                        class="curBtn px-3 py-2 text-sm font-medium aria-selected:bg-emerald-600 aria-selected:text-white">
+                        class="curBtn flex-1 px-3 py-2 text-sm font-medium aria-selected:bg-emerald-600 aria-selected:text-white">
                   🇧🇬 BGN
                 </button>
                 <button type="button" data-cur="eur"
-                        class="curBtn px-3 py-2 text-sm font-medium text-slate-600">
+                        class="curBtn flex-1 px-3 py-2 text-sm font-medium text-slate-600">
                   🇪🇺 EUR
                 </button>
               </div>
             </div>
           </div>
-
-          <p class="text-xs text-slate-500 mt-2">
-            Планът определя видимост и допълнителни опции. Плащането се прави след изпращане.
-          </p>
+          <p class="text-xs text-slate-500 mt-2">Планът определя видимост и допълнителни опции. Плащането се прави след изпращане.</p>
         </div>
 
-        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">
+        <button type="submit"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">
           Изпрати за одобрение
         </button>
+
+        <p id="msg" class="text-center text-sm" aria-live="polite"></p>
       </form>
 
       <!-- РЕЗУЛТАТ -->
@@ -123,13 +137,12 @@
           <div class="font-semibold">Успешно изпратена!</div>
           <p class="text-sm">Обявата е записана и чака одобрение от администратор.</p>
         </div>
-        <div class="mt-4 flex flex-col md:flex-row gap-3">
-          <a id="payBtn" target="_blank" rel="noopener" class="md:flex-1 text-center px-4 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Премини към плащане</a>
-          <a id="viewBtn" class="md:flex-1 text-center px-4 py-3 rounded-lg border hover:bg-slate-50">Преглед на обявата</a>
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <a id="payBtn" target="_blank" rel="noopener"
+             class="text-center px-4 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Премини към плащане</a>
+          <a id="viewBtn" class="text-center px-4 py-3 rounded-lg border hover:bg-slate-50">Преглед на обявата</a>
         </div>
       </div>
-
-      <p id="msg" class="mt-4 text-center text-sm"></p>
     </div>
   </main>
 
@@ -179,7 +192,11 @@
     ];
 
     const el = (id) => document.getElementById(id);
-    const msg = (text, err=false) => { const m = el('msg'); m.textContent = text; m.className = 'mt-4 text-center text-sm ' + (err?'text-rose-600':'text-slate-600'); };
+    const msg = (text, err=false) => {
+      const m = el('msg');
+      m.textContent = text;
+      m.className = 'text-center text-sm ' + (err ? 'text-rose-600' : 'text-slate-600');
+    };
 
     let currentUser = null;
     let plans = [];           // от БД или fallback
@@ -202,7 +219,9 @@
 
       // 3) load plans table (ако има), иначе fallback
       try {
-        const { data, error } = await sb.from('plans').select('id,name,price,pay_url,features,price_bgn,price_eur');
+        const { data, error } = await sb
+          .from('plans')
+          .select('id,name,price,pay_url,features,price_bgn,price_eur');
         if (!error && data?.length) {
           plans = data.map(p => {
             // поддръжка ако pay_url е json текст
@@ -240,7 +259,6 @@
       document.querySelectorAll('#currencySwitch .curBtn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           currentCurrency = btn.dataset.cur; // 'bgn' | 'eur'
-          // визуално състояние
           document.querySelectorAll('#currencySwitch .curBtn')
             .forEach(b=>{
               const isSel = b === btn;
@@ -263,9 +281,9 @@
       plans.forEach((p) => {
         const price = cur === 'eur' ? Number(p.price_eur) : Number(p.price_bgn);
         const isSelected = selectedPlan?.id === p.id;
+
         const wrap = document.createElement('div');
         wrap.className = 'planWrap snap-start';
-        if (isSelected) wrap.classList.add('is-selected');
 
         const isPro = (p.name||'').toLowerCase() === 'pro';
         const badge = isPro
@@ -275,11 +293,11 @@
         wrap.innerHTML = `
           ${badge}
           <button type="button"
-                  class="relative group min-w-[260px] rounded-2xl border bg-white/70 backdrop-blur-md
+                  class="relative group min-w-[85vw] sm:min-w-[260px] rounded-2xl border bg-white/70 backdrop-blur-md
                          hover:shadow-lg transition-all duration-300 p-5 text-left">
             <div class="flex items-center justify-between">
-              <div class="text-xl font-semibold">${escapeHTML(p.name)}</div>
-              <div class="text-lg font-bold">
+              <div class="text-lg md:text-xl font-semibold">${escapeHTML(p.name)}</div>
+              <div class="text-base md:text-lg font-bold">
                 <span class="bg-gradient-to-r from-emerald-600 to-indigo-600 bg-clip-text text-transparent">
                   ${isFinite(price) ? price.toFixed(2) : '—'} ${cur.toUpperCase()}
                 </span>
@@ -307,6 +325,7 @@
           wrap.classList.add('is-selected');
         });
 
+        if (isSelected) wrap.classList.add('is-selected');
         bar.appendChild(wrap);
       });
 
@@ -332,13 +351,17 @@
 
     function renderPreviews(){
       const box = el('previews'); box.innerHTML = '';
+      el('imgCount').textContent = `${selectedFiles.length} / 6`;
       selectedFiles.forEach((file, idx) => {
         const url = URL.createObjectURL(file);
         const wrap = document.createElement('div');
         wrap.className = 'relative group';
         wrap.innerHTML = `
           <img src="${url}" class="w-full h-28 object-cover rounded-lg border">
-          <button type="button" class="absolute top-1 right-1 bg-white/90 border rounded-md px-2 py-1 text-xs hidden group-hover:block">Премахни</button>
+          <button type="button"
+                  class="absolute top-1 right-1 bg-white/90 border rounded-md px-2 py-1 text-xs hidden group-hover:block">
+            Премахни
+          </button>
         `;
         wrap.querySelector('button').addEventListener('click', ()=>{
           selectedFiles.splice(idx,1);
@@ -373,7 +396,7 @@
       const insertPayload = {
         user_id: currentUser.id,
         title, description, price, city, category,
-        images: image_urls,                     // jsonb
+        images: image_urls,                     // jsonб
         plan_id: selectedPlan.id,
         plan_name: selectedPlan.name,
         plan_price: plan_price,
