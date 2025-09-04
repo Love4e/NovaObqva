@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="bg">
 <head>
   <meta charset="utf-8" />
@@ -11,7 +11,7 @@
   <script src="env.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
-  <!-- HEADER: desktop + mobile drawer -->
+  <!-- HEADER: desktop only (мобилният hamburger + drawer са махнати) -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
       <a href="/" class="flex items-center gap-2">
@@ -27,38 +27,9 @@
 
       <div class="flex-1"></div>
       <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
-
-      <button id="nav-open" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border hover:bg-slate-50" aria-label="Отвори меню">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/>
-        </svg>
-      </button>
+      <!-- Премахнато: <button id="nav-open"> ... -->
     </div>
-
-    <!-- Mobile drawer -->
-    <div id="drawer" class="fixed inset-0 z-50 hidden">
-      <div id="backdrop" class="absolute inset-0 bg-black/40"></div>
-      <div class="absolute right-0 top-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl p-4 flex flex-col">
-        <div class="flex items-center justify-between">
-          <span class="text-lg font-semibold">Меню</span>
-          <button id="nav-close" class="inline-flex w-10 h-10 items-center justify-center rounded-lg border hover:bg-slate-50" aria-label="Затвори">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-
-        <nav class="mt-4 grid gap-2">
-          <a href="index.html"  class="px-3 py-2 rounded-lg hover:bg-slate-100">Обяви</a>
-          <a href="submit.html" class="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Публикувай</a>
-          <a href="plans.html"  class="px-3 py-2 rounded-lg hover:bg-slate-100">Планове</a>
-        </nav>
-
-        <div class="mt-auto pt-4 border-t">
-          <div id="nav-auth-mobile" class="grid gap-2"></div>
-        </div>
-      </div>
-    </div>
+    <!-- Премахнато: целият Mobile drawer (#drawer) -->
   </header>
 
   <!-- HERO -->
@@ -92,7 +63,7 @@
     async function renderAuthAreas() {
       const { data: { user } } = await sb.auth.getUser();
       const d = document.getElementById('nav-auth-desktop');
-      const m = document.getElementById('nav-auth-mobile');
+      const m = document.getElementById('nav-auth-mobile'); // няма мобилен контейнер, безопасно
       const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
 
       let desktopHTML = '', mobileHTML  = '';
@@ -100,12 +71,8 @@
         desktopHTML = `
           <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
           <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
-        mobileHTML = `
-          <a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
-          <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>`;
       } else {
-        desktopHTML = `<a href="\${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
-        mobileHTML  = `<a href="\${loginHref}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a>`;
+        desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
       }
       if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
       if (m) { m.innerHTML = mobileHTML; }
@@ -115,6 +82,7 @@
         .forEach(btn => btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); }));
     }
 
+    // Без drawer: оставяме безвреден guard, ако случайно има елемент в друга версия
     (function initDrawer(){
       const drawer   = document.getElementById('drawer'); if (!drawer) return;
       const openBtn  = document.getElementById('nav-open');
