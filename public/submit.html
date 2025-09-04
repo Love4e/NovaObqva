@@ -12,14 +12,13 @@
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
-    /* градиентна рамка за избраната карта */
-    .planWrap{ position:relative }
+    .planWrap{position:relative}
     .planWrap::before{
-      content:""; position:absolute; inset:-1.5px; border-radius:18px;
+      content:"";position:absolute;inset:-1.5px;border-radius:18px;
       background:linear-gradient(135deg,#6366f1,#a855f7,#10b981);
-      opacity:0; transition:opacity .25s ease;
+      opacity:0;transition:opacity .25s ease
     }
-    .planWrap.is-selected::before,.planWrap:hover::before{ opacity:1 }
+    .planWrap.is-selected::before,.planWrap:hover::before{opacity:1}
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -36,482 +35,306 @@
       <h1 class="text-xl md:text-2xl font-semibold mb-1">Подай нова обява</h1>
       <p class="text-slate-600 mb-6">Попълни полетата, добави снимки, избери план и валута, и изпрати за одобрение.</p>
 
-      <!-- ФОРМА -->
       <form id="adForm" class="space-y-5">
         <div class="grid gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
-            <label for="title" class="block text-sm font-medium mb-1">Заглавие</label>
-            <input id="title" type="text" required
-                   class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                   placeholder="Пример: Двустаен апартамент до метро">
+            <label class="block text-sm font-medium mb-1" for="title">Заглавие</label>
+            <input id="title" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="Пример: Двустаен апартамент до метро">
           </div>
 
           <div>
-            <label for="category" class="block text-sm font-medium mb-1">Категория</label>
-            <select id="category" required
-                    class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <label class="block text-sm font-medium mb-1" for="category">Категория</label>
+            <select id="category" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
               <option value="" disabled selected>— изберете —</option>
             </select>
           </div>
 
           <div>
-            <label for="city" class="block text-sm font-medium mb-1">Град / Населено място</label>
-            <input id="city" type="text"
-                   class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                   placeholder="София">
+            <label class="block text-sm font-medium mb-1" for="city">Град / Населено място</label>
+            <input id="city" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="София">
           </div>
 
           <div>
-            <label for="price" class="block text-sm font-medium mb-1">Цена (число)</label>
-            <input id="price" type="number" step="0.01" min="0" required
-                   class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                   placeholder="0.00">
+            <label class="block text-sm font-medium mb-1" for="price">Цена (число)</label>
+            <input id="price" type="number" step="0.01" min="0" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="0.00">
           </div>
 
           <div class="md:col-span-2">
-            <label for="description" class="block text-sm font-medium mb-1">Описание</label>
-            <textarea id="description" required rows="5"
-                      class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Опишете подробно…"></textarea>
+            <label class="block text-sm font-medium mb-1" for="description">Описание</label>
+            <textarea id="description" rows="5" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="Опишете подробно…"></textarea>
             <p class="text-xs text-slate-500 mt-1">Съвет: включете ключови характеристики, състояние, локация и условия.</p>
           </div>
         </div>
 
-        <!-- СНИМКИ (с избор „Основна“) -->
+        <!-- Снимки с „Основна“ -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium">Снимки</label>
             <span id="imgCount" class="text-xs text-slate-500">0 / 6</span>
           </div>
-          <div id="dropzone"
-               class="border-2 border-dashed rounded-xl p-5 md:p-6 text-center text-slate-600 hover:bg-slate-50 cursor-pointer">
+          <div id="dropzone" class="border-2 border-dashed rounded-xl p-5 md:p-6 text-center text-slate-600 hover:bg-slate-50 cursor-pointer">
             Плъзнете снимки тук или кликнете за избор
             <input id="images" type="file" accept="image/*" multiple class="sr-only">
           </div>
-
           <div id="previews" class="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
-          <p class="text-xs text-slate-500 mt-2">До 6 файла, максимум 10MB всяка. Маркирайте „Основна“ за първа снимка в обявата.</p>
+          <p class="text-xs text-slate-500 mt-2">До 6 файла, максимум 10MB всяка. Маркирайте „Основна“ за първа снимка.</p>
         </div>
 
-        <!-- ПЛАНОВЕ + ВАЛУТА (ГРИД на десктоп, без рязане) -->
+        <!-- Планове (grid) + валута -->
         <div>
           <div class="flex flex-col lg:flex-row lg:items-end gap-4">
             <div class="flex-1">
               <label class="block text-sm font-medium mb-2">Изберете план</label>
-
-              <!-- На мобилни: 1 колона, на sm: 2, на lg: 3 колони -->
-              <div id="plansBar"
-                   class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                <!-- картите се инжектират от JS -->
-              </div>
+              <div id="plansBar" class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"></div>
             </div>
-
             <div class="w-full lg:w-44">
               <label class="block text-sm font-medium mb-1">Валута</label>
-              <div id="currencySwitch"
-                   class="flex w-full lg:inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
-                <button type="button" data-cur="bgn"
-                        class="curBtn flex-1 px-3 py-2 text-sm font-medium aria-selected:bg-emerald-600 aria-selected:text-white">
-                  🇧🇬 BGN
-                </button>
-                <button type="button" data-cur="eur"
-                        class="curBtn flex-1 px-3 py-2 text-sm font-medium text-slate-600">
-                  🇪🇺 EUR
-                </button>
+              <div id="currencySwitch" class="flex w-full lg:inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
+                <button type="button" data-cur="bgn" class="curBtn flex-1 px-3 py-2 text-sm font-medium aria-selected:bg-emerald-600 aria-selected:text-white">🇧🇬 BGN</button>
+                <button type="button" data-cur="eur" class="curBtn flex-1 px-3 py-2 text-sm font-medium text-slate-600">🇪🇺 EUR</button>
               </div>
             </div>
           </div>
           <p class="text-xs text-slate-500 mt-2">Планът определя видимост и допълнителни опции. Плащането се прави след изпращане.</p>
         </div>
 
-        <!-- Основен submit (скрит на мобилни, видим на десктоп) -->
-        <button type="submit"
-                class="hidden md:block w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">
-          Изпрати за одобрение
-        </button>
-
+        <button type="submit" class="hidden md:block w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">Изпрати за одобрение</button>
         <p id="msg" class="text-center text-sm" aria-live="polite"></p>
       </form>
 
-      <!-- РЕЗУЛТАТ -->
+      <!-- Резултат -->
       <div id="result" class="mt-6 hidden">
         <div class="p-4 rounded-xl border bg-emerald-50 text-emerald-800">
           <div class="font-semibold">Успешно изпратена!</div>
           <p class="text-sm">Обявата е записана и чака одобрение от администратор.</p>
         </div>
         <div class="mt-4 grid gap-3 md:grid-cols-2">
-          <a id="payBtn" target="_blank" rel="noopener"
-             class="text-center px-4 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Премини към плащане</a>
+          <a id="payBtn" target="_blank" rel="noopener" class="text-center px-4 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Премини към плащане</a>
           <a id="viewBtn" class="text-center px-4 py-3 rounded-lg border hover:bg-slate-50">Преглед на обявата</a>
         </div>
       </div>
     </div>
   </main>
 
-  <!-- Sticky action bar — мобилни -->
+  <!-- Sticky submit за мобилни -->
   <div id="stickyBar" class="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t p-3">
     <div class="max-w-5xl mx-auto px-2">
-      <button id="stickySubmit"
-              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">
-        Изпрати за одобрение
-      </button>
+      <button id="stickySubmit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">Изпрати за одобрение</button>
     </div>
   </div>
 
   <script>
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    const CATEGORIES = [
-      'Недвижими имоти','Автомобили','Работа','Услуги','Техника',
-      'Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'
-    ];
+    const CATEGORIES = ['Недвижими имоти','Автомобили','Работа','Услуги','Техника','Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'];
 
-    // Fallback планове с BGN/EUR линкове
     const FALLBACK_PLANS = [
-      {
-        id: 'starter',
-        name: 'Starter',
-        price_bgn: 9.99,
-        price_eur: 5.10,
-        pay_url: {
-          bgn: 'https://checkout.revolut.com/payment-link/b9d03509-71b2-4c35-8d3a-43357e663650',
-          eur: 'https://checkout.revolut.com/payment-link/f776550f-0424-4656-aacb-3c1f06c6014b'
-        },
-        features: ['Публикуване 30 дни','Стандартна видимост']
-      },
-      {
-        id: 'pro',
-        name: 'Pro',
-        price_bgn: 19.99,
-        price_eur: 10.22,
-        pay_url: {
-          bgn: 'https://checkout.revolut.com/payment-link/b0cc7f69-9a29-4559-8eed-a06ffc1b2604',
-          eur: 'https://checkout.revolut.com/payment-link/62ddc3ea-6192-4b5d-875b-a90d80235edf'
-        },
-        features: ['Публикуване 60 дни','Повишена видимост','Топ']
-      },
-      {
-        id: 'max',
-        name: 'Max',
-        price_bgn: 39.99,
-        price_eur: 20.45,
-        pay_url: {
-          bgn: 'https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10',
-          eur: 'https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527'
-        },
-        features: ['Публикуване 90 дни','Макс. видимост','Закрепване']
-      }
+      { id:'starter', name:'Starter', price_bgn:9.99, price_eur:5.10,
+        pay_url:{ bgn:'https://checkout.revolut.com/payment-link/b9d03509-71b2-4c35-8d3a-43357e663650',
+                  eur:'https://checkout.revolut.com/payment-link/f776550f-0424-4656-aacb-3c1f06c6014b' },
+        features:['Публикуване 30 дни','Стандартна видимост'] },
+      { id:'pro', name:'Pro', price_bgn:19.99, price_eur:10.22,
+        pay_url:{ bgn:'https://checkout.revolut.com/payment-link/b0cc7f69-9a29-4559-8eed-a06ffc1b2604',
+                  eur:'https://checkout.revolut.com/payment-link/62ddc3ea-6192-4b5d-875b-a90d80235edf' },
+        features:['Публикуване 60 дни','Повишена видимост','Топ'] },
+      { id:'max', name:'Max', price_bgn:39.99, price_eur:20.45,
+        pay_url:{ bgn:'https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10',
+                  eur:'https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527' },
+        features:['Публикуване 90 дни','Макс. видимост','Закрепване'] }
     ];
 
-    const el = (id) => document.getElementById(id);
-    const msg = (text, err=false) => {
-      const m = el('msg');
-      m.textContent = text;
-      m.className = 'text-center text-sm ' + (err ? 'text-rose-600' : 'text-slate-600');
-    };
+    const el = (id)=>document.getElementById(id);
+    const msg = (t,err=false)=>{ const m=el('msg'); m.textContent=t; m.className='text-center text-sm '+(err?'text-rose-600':'text-slate-600'); };
 
-    let currentUser = null;
-    let plans = [];           // от БД или fallback
-    let selectedPlan = null;  // текущо избран план
-    let selectedFiles = [];   // File[]
-    let currentCurrency = 'bgn'; // 'bgn' | 'eur'
-    let selectedCoverIndex = 0;  // индекс на „основна снимка“
+    let currentUser=null, plans=[], selectedPlan=null, selectedFiles=[], currentCurrency='bgn', selectedCoverIndex=0;
 
-    (async () => {
-      // 1) require login
-      const { data: { user } } = await sb.auth.getUser();
+    (async ()=>{
+      const { data:{ user } } = await sb.auth.getUser();
       if (!user) { location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href); return; }
-      currentUser = user;
+      currentUser=user;
 
-      // 2) categories
-      const catSel = el('category');
-      CATEGORIES.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c; opt.textContent = c; catSel.appendChild(opt);
-      });
+      const catSel=el('category'); CATEGORIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
 
-      // 3) load plans (ако имаш таблица), иначе fallback
-      try {
-        const { data, error } = await sb
-          .from('plans')
-          .select('id,name,price,pay_url,features,price_bgn,price_eur');
-        if (!error && data?.length) {
-          plans = data.map(p => {
-            let pay = p.pay_url;
-            if (typeof pay === 'string' && pay.trim().startsWith('{')) {
-              try { pay = JSON.parse(pay); } catch { pay = { bgn: pay, eur: pay }; }
-            }
-            if (typeof pay !== 'object') pay = { bgn: pay, eur: pay };
-            return {
-              id: p.id, name: p.name,
-              price_bgn: Number(p.price_bgn ?? p.price),
-              price_eur: Number(p.price_eur ?? p.price),
-              pay_url: pay,
-              features: p.features || []
-            };
+      try{
+        const { data, error } = await sb.from('plans').select('id,name,price_bgn,price_eur,pay_url,features,is_active,position').order('position');
+        if (!error && data?.length){
+          plans=data.map(p=>{
+            let pay=p.pay_url;
+            if (typeof pay==='string' && pay.trim().startsWith('{')){ try{ pay=JSON.parse(pay); }catch{ pay={bgn:pay,eur:pay}; } }
+            if (typeof pay!=='object') pay={bgn:pay,eur:pay};
+            return { id:p.id, name:p.name, price_bgn:Number(p.price_bgn), price_eur:Number(p.price_eur), pay_url:pay, features:p.features||[] };
           });
         }
-      } catch(_) {}
-      if (!plans.length) plans = FALLBACK_PLANS;
+      }catch(_){}
+      if (!plans.length) plans=FALLBACK_PLANS;
 
       renderPlans();
 
-      // 4) images handling
-      const drop = el('dropzone'); const input = el('images');
-      drop.addEventListener('click', ()=> input.click());
-      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('bg-slate-50'); });
-      drop.addEventListener('dragleave', ()=> drop.classList.remove('bg-slate-50'));
-      drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('bg-slate-50'); addFiles([...e.dataTransfer.files]); });
-      input.addEventListener('change', e => addFiles([...e.target.files]));
+      const drop=el('dropzone'), input=el('images');
+      drop.addEventListener('click', ()=>input.click());
+      drop.addEventListener('dragover', e=>{e.preventDefault(); drop.classList.add('bg-slate-50');});
+      drop.addEventListener('dragleave', ()=>drop.classList.remove('bg-slate-50'));
+      drop.addEventListener('drop', e=>{e.preventDefault(); drop.classList.remove('bg-slate-50'); addFiles([...e.dataTransfer.files]);});
+      input.addEventListener('change', e=>addFiles([...e.target.files]));
 
-      // 5) submit
       el('adForm').addEventListener('submit', onSubmit);
-      el('stickySubmit').addEventListener('click', ()=> el('adForm').requestSubmit());
+      el('stickySubmit').addEventListener('click', ()=>el('adForm').requestSubmit());
 
-      // 6) currency switch (BGN/EUR)
       document.querySelectorAll('#currencySwitch .curBtn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
-          currentCurrency = btn.dataset.cur; // 'bgn' | 'eur'
-          document.querySelectorAll('#currencySwitch .curBtn')
-            .forEach(b=>{
-              const isSel = b === btn;
-              b.setAttribute('aria-selected', isSel ? 'true' : 'false');
-              b.classList.toggle('text-slate-600', !isSel);
-              b.classList.toggle('text-white', isSel);
-              b.classList.toggle('bg-emerald-600', isSel);
-            });
+          currentCurrency=btn.dataset.cur;
+          document.querySelectorAll('#currencySwitch .curBtn').forEach(b=>{
+            const on=b===btn; b.setAttribute('aria-selected', on?'true':'false');
+            b.classList.toggle('text-slate-600',!on); b.classList.toggle('text-white',on); b.classList.toggle('bg-emerald-600',on);
+          });
           renderPlans();
         });
       });
-      document.querySelector('#currencySwitch [data-cur="bgn"]').click(); // default
+      document.querySelector('#currencySwitch [data-cur="bgn"]').click();
     })();
 
     function renderPlans(){
-      const bar = el('plansBar'); bar.innerHTML = '';
-      const cur = currentCurrency;
-
-      plans.forEach((p) => {
-        const price = cur === 'eur' ? Number(p.price_eur) : Number(p.price_bgn);
-        const isSelected = selectedPlan?.id === p.id;
-
-        const wrap = document.createElement('div');
-        wrap.className = 'planWrap';
-
-        const isPro = (p.name||'').toLowerCase() === 'pro';
-        const badge = isPro
-          ? `<span class="absolute -top-3 left-4 z-10 text-[11px] px-2 py-1 rounded-full bg-indigo-600 text-white shadow">Най-популярен</span>`
-          : '';
-
-        wrap.innerHTML = `
+      const bar=el('plansBar'); bar.innerHTML='';
+      const cur=currentCurrency;
+      plans.forEach(p=>{
+        const price=cur==='eur'?Number(p.price_eur):Number(p.price_bgn);
+        const wrap=document.createElement('div'); wrap.className='planWrap';
+        const isPro=(p.name||'').toLowerCase()==='pro';
+        const badge=isPro?`<span class="absolute -top-3 left-4 z-10 text-[11px] px-2 py-1 rounded-full bg-indigo-600 text-white shadow">Най-популярен</span>`:'';
+        wrap.innerHTML=`
           ${badge}
-          <button type="button"
-                  class="relative group w-full rounded-2xl border bg-white/70 backdrop-blur-md
-                         hover:shadow-lg transition-all duration-300 p-5 text-left">
+          <button type="button" class="relative group w-full rounded-2xl border bg-white/70 backdrop-blur-md hover:shadow-lg transition-all duration-300 p-5 text-left">
             <div class="flex items-center justify-between">
               <div class="text-lg md:text-xl font-semibold">${escapeHTML(p.name)}</div>
               <div class="text-base md:text-lg font-bold">
-                <span class="bg-gradient-to-r from-emerald-600 to-indigo-600 bg-clip-text text-transparent">
-                  ${isFinite(price) ? price.toFixed(2) : '—'} ${cur.toUpperCase()}
-                </span>
+                <span class="bg-gradient-to-r from-emerald-600 to-indigo-600 bg-clip-text text-transparent">${isFinite(price)?price.toFixed(2):'—'} ${cur.toUpperCase()}</span>
               </div>
             </div>
-            <ul class="mt-3 text-sm text-slate-600 space-y-1">
-              ${(p.features||[]).map(f=>`<li class="flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" class="shrink-0 text-emerald-600">
-                    <path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>
-                  </svg>${escapeHTML(String(f))}
-                </li>`).join('') || '<li class="text-slate-400">Без описани екстри</li>'}
-            </ul>
-            <div class="mt-4">
-              <span class="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-lg
-                           bg-slate-100 text-slate-700 group-hover:bg-slate-200 transition">
-                избери
-              </span>
-            </div>
-          </button>
-        `;
-
+            <ul class="mt-3 text-sm text-slate-600 space-y-1">${
+              (p.features||[]).map(f=>`<li class="flex items-center gap-2">
+                 <svg width="16" height="16" viewBox="0 0 24 24" class="shrink-0 text-emerald-600"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>${escapeHTML(String(f))}
+              </li>`).join('') || '<li class="text-slate-400">Без описани екстри</li>'
+            }</ul>
+            <div class="mt-4"><span class="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-lg bg-slate-100 text-slate-700 group-hover:bg-slate-200 transition">избери</span></div>
+          </button>`;
         wrap.querySelector('button').addEventListener('click', ()=>{
-          selectedPlan = p;
+          selectedPlan=p;
           [...bar.children].forEach(c=>c.classList.remove('is-selected'));
           wrap.classList.add('is-selected');
         });
-
-        if (isSelected) wrap.classList.add('is-selected');
         bar.appendChild(wrap);
       });
-
-      if (!selectedPlan && bar.children.length) {
-        bar.children[0].classList.add('is-selected');
-        selectedPlan = plans[0];
-      }
+      if (!selectedPlan && bar.children.length){ bar.children[0].classList.add('is-selected'); selectedPlan=plans[0]; }
     }
 
     function addFiles(files){
-      const MAX = 6;
-      const filtered = [];
-      for (const file of files) {
-        if (!file.type.startsWith('image/')) continue;
-        if (file.size > 10*1024*1024) { msg(`Файлът ${file.name} е над 10MB и беше пропуснат.`, true); continue; }
-        filtered.push(file);
+      const MAX=6; const filtered=[];
+      for (const f of files){
+        if (!f.type.startsWith('image/')) continue;
+        if (f.size>10*1024*1024){ msg(`Файлът ${f.name} е над 10MB и беше пропуснат.`, true); continue; }
+        filtered.push(f);
       }
-      const remain = Math.max(0, MAX - selectedFiles.length);
-      if (remain <= 0) { msg('Достигнат е лимитът от 6 снимки.', true); return; }
-      selectedFiles = selectedFiles.concat(filtered.slice(0, remain));
-
-      if (selectedFiles.length && (selectedCoverIndex == null || selectedCoverIndex >= selectedFiles.length)) {
-        selectedCoverIndex = 0; // по подразбиране първата е основна
-      }
+      const remain=Math.max(0, MAX-selectedFiles.length);
+      if (remain<=0){ msg('Достигнат е лимитът от 6 снимки.', true); return; }
+      selectedFiles=selectedFiles.concat(filtered.slice(0, remain));
+      if (selectedFiles.length && (selectedCoverIndex==null || selectedCoverIndex>=selectedFiles.length)) selectedCoverIndex=0;
       renderPreviews();
     }
 
     function renderPreviews(){
-      const box = el('previews'); box.innerHTML = '';
-      el('imgCount').textContent = `${selectedFiles.length} / 6`;
-
-      selectedFiles.forEach((file, idx) => {
-        const url = URL.createObjectURL(file);
-        const isCover = idx === selectedCoverIndex;
-
-        const wrap = document.createElement('div');
-        wrap.className = 'relative group';
-
-        wrap.innerHTML = `
-          <!-- „радио“ за избор на основна -->
-          <button type="button" data-cover="${idx}"
-                  class="absolute top-1 left-1 z-10 rounded-full border bg-white/90 px-2 py-1 text-[11px] ${isCover?'border-indigo-500 text-indigo-600':'text-slate-700'}">
-            ${isCover ? 'Основна' : 'Направи осн.'}
-          </button>
-
-          <img src="${url}"
-               class="w-full h-28 object-cover rounded-lg border ${isCover ? 'ring-2 ring-indigo-500' : ''}"
-               alt="Снимка ${idx+1}" />
-
-          <button type="button"
-                  class="absolute top-1 right-1 bg-white/90 border rounded-md px-2 py-1 text-xs">
-            Премахни
-          </button>
-        `;
-
-        // премахване
-        wrap.querySelector('.absolute.top-1.right-1')?.addEventListener('click', ()=>{
+      const box=el('previews'); box.innerHTML='';
+      el('imgCount').textContent=`${selectedFiles.length} / 6`;
+      selectedFiles.forEach((file, idx)=>{
+        const url=URL.createObjectURL(file);
+        const isCover=idx===selectedCoverIndex;
+        const wrap=document.createElement('div'); wrap.className='relative group';
+        wrap.innerHTML=`
+          <button type="button" data-cover="${idx}" class="absolute top-1 left-1 z-10 rounded-full border bg-white/90 px-2 py-1 text-[11px] ${isCover?'border-indigo-500 text-indigo-600':'text-slate-700'}">${isCover?'Основна':'Направи осн.'}</button>
+          <img src="${url}" class="w-full h-28 object-cover rounded-lg border ${isCover?'ring-2 ring-indigo-500':''}" alt="Снимка ${idx+1}">
+          <button type="button" class="absolute top-1 right-1 bg-white/90 border rounded-md px-2 py-1 text-xs">Премахни</button>`;
+        wrap.querySelector('.absolute.top-1.right-1').addEventListener('click', ()=>{
           selectedFiles.splice(idx,1);
-          if (selectedFiles.length === 0) {
-            selectedCoverIndex = 0;
-          } else if (idx < selectedCoverIndex) {
-            selectedCoverIndex -= 1;
-          } else if (idx === selectedCoverIndex) {
-            selectedCoverIndex = 0;
-          }
+          if (selectedFiles.length===0) selectedCoverIndex=0;
+          else if (idx<selectedCoverIndex) selectedCoverIndex-=1;
+          else if (idx===selectedCoverIndex) selectedCoverIndex=0;
           renderPreviews();
         });
-
-        // направи основна
-        wrap.querySelector(`[data-cover="${idx}"]`)?.addEventListener('click', ()=>{
-          selectedCoverIndex = idx;
-          renderPreviews();
-        });
-
-        // клик по картинката също прави основна
-        wrap.querySelector('img')?.addEventListener('click', ()=>{
-          selectedCoverIndex = idx;
-          renderPreviews();
-        });
-
+        wrap.querySelector(`[data-cover="${idx}"]`).addEventListener('click', ()=>{ selectedCoverIndex=idx; renderPreviews(); });
+        wrap.querySelector('img').addEventListener('click', ()=>{ selectedCoverIndex=idx; renderPreviews(); });
         box.appendChild(wrap);
       });
     }
 
     async function onSubmit(e){
       e.preventDefault(); msg('');
-      const title = el('title').value.trim();
-      const description = el('description').value.trim();
-      const category = el('category').value;
-      const city = el('city').value.trim();
-      const price = parseFloat(el('price').value);
-      const currency = currentCurrency; // 'bgn' | 'eur'
+      const title=el('title').value.trim();
+      const description=el('description').value.trim();
+      const category=el('category').value;
+      const city=el('city').value.trim();
+      const price=parseFloat(el('price').value);
+      const currency=currentCurrency;
 
       if (!title || !description || !category || isNaN(price)) { msg('Попълнете всички задължителни полета.', true); return; }
       if (!selectedPlan) { msg('Моля, изберете план.', true); return; }
 
-      // 1) качи снимките
-      let image_urls = [];
+      let image_urls=[];
       if (selectedFiles.length){
-        const uploaded = await uploadImages(selectedFiles);
-        if (uploaded.error) { msg(uploaded.error, true); return; }
-        image_urls = uploaded.urls;
+        const uploaded=await uploadImages(selectedFiles);
+        if (uploaded.error){
+          // Ако bucket липсва, продължи без снимки (по желание махни този блок)
+          if (uploaded.error.includes('Bucket not found')) { msg('Внимание: липсва bucket ad-images — продължавам без снимки.', false); }
+          else { msg(uploaded.error, true); return; }
+        } else {
+          image_urls=uploaded.urls;
+        }
       }
 
-      const cover_index = Math.min(Math.max(selectedCoverIndex || 0, 0), Math.max(image_urls.length - 1, 0));
-      const cover_image = image_urls[cover_index] || null;
+      const cover_index=Math.min(Math.max(selectedCoverIndex||0,0), Math.max(image_urls.length-1,0));
+      const cover_image=image_urls[cover_index] || null;
 
-      // 2) запис в ads (pending)
-      const plan_price = currency === 'eur' ? Number(selectedPlan.price_eur) : Number(selectedPlan.price_bgn);
+      const plan_price = currency==='eur'?Number(selectedPlan.price_eur):Number(selectedPlan.price_bgn);
       const insertPayload = {
         user_id: currentUser.id,
         title, description, price, city, category,
-        images: image_urls,                     // jsonb
-        cover_image, cover_index,               // нови полета
-        plan_id: selectedPlan.id,
-        plan_name: selectedPlan.name,
-        plan_price: plan_price,
-        plan_currency: currency.toUpperCase(),  // BGN/EUR
+        images: image_urls, cover_image, cover_index,
+        plan_id: selectedPlan.id, plan_name: selectedPlan.name,
+        plan_price: plan_price, plan_currency: currency.toUpperCase(),
         ad_status: 'pending'
       };
 
       const { data, error } = await sb.from('ads').insert([insertPayload]).select('id').single();
-      if (error) { console.error(error); msg('Грешка при запис. Проверете правата (RLS) и полетата в таблицата.', true); return; }
+      if (error){ console.error(error); msg('Грешка при запис. Проверете правата (RLS) и полетата в таблицата.', true); return; }
 
-      // 3) резултат + бутон за плащане
-      el('adForm').classList.add('hidden');
-      el('stickyBar').classList.add('hidden');
-      const res = el('result'); res.classList.remove('hidden');
-      el('viewBtn').href = 'ad.html?id=' + encodeURIComponent(data.id);
+      el('adForm').classList.add('hidden'); el('stickyBar').classList.add('hidden');
+      el('result').classList.remove('hidden');
+      el('viewBtn').href='ad.html?id='+encodeURIComponent(data.id);
 
-      const payBtn = el('payBtn');
-      const payUrl = selectedPlan?.pay_url?.[currency];
-      if (payUrl) {
-        payBtn.href = payUrl;
-        payBtn.textContent = 'Премини към плащане (' + currency.toUpperCase() + ')';
-      } else {
-        payBtn.href = '#';
-        payBtn.classList.add('pointer-events-none','opacity-60');
-        payBtn.textContent = 'Няма настроен платежен линк';
-      }
+      const payBtn=el('payBtn'), payUrl=selectedPlan?.pay_url?.[currency];
+      if (payUrl){ payBtn.href=payUrl; payBtn.textContent='Премини към плащане ('+currency.toUpperCase()+')'; }
+      else { payBtn.href='#'; payBtn.classList.add('pointer-events-none','opacity-60'); payBtn.textContent='Няма настроен платежен линк'; }
 
-      msg('');
-      window.scrollTo({top:0, behavior:'smooth'});
+      msg(''); window.scrollTo({top:0,behavior:'smooth'});
     }
 
     async function uploadImages(files){
       try{
-        const urls = [];
+        const urls=[];
         for (const f of files){
-          const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-          const path = `${currentUser.id}/${crypto.randomUUID()}.${ext}`;
-          const { error: upErr } = await sb.storage.from('ad-images').upload(path, f, { upsert: false, contentType: f.type });
-          if (upErr) return { error: 'Качването прекъсна: ' + upErr.message };
+          const ext=(f.name.split('.').pop()||'jpg').toLowerCase();
+          const path=`${currentUser.id}/${crypto.randomUUID()}.${ext}`;
+          const { error: upErr } = await sb.storage.from('ad-images').upload(path, f, { upsert:false, contentType:f.type });
+          if (upErr) return { error:'Качването прекъсна: ' + upErr.message };
           const { data: pub } = sb.storage.from('ad-images').getPublicUrl(path);
           urls.push(pub.publicUrl);
         }
         return { urls };
-      }catch(err){
-        console.error(err);
-        return { error: 'Неуспешно качване на снимки.' };
-      }
+      }catch(err){ console.error(err); return { error:'Неуспешно качване на снимки.' }; }
     }
 
-    function escapeHTML(s){
-      return String(s)
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'",'&#39;');
-    }
+    function escapeHTML(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
   </script>
 
-  <!-- По избор: добави в БД тези колони, ако ги няма:
+  <!-- Ако липсват тези колони:
   alter table public.ads
     add column if not exists cover_image text,
     add column if not exists cover_index int;
