@@ -31,7 +31,6 @@
       </nav>
 
       <div class="flex-1"></div>
-
       <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
 
       <button id="nav-open" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border hover:bg-slate-50" aria-label="Отвори меню">
@@ -110,9 +109,8 @@
 
   <script>
     // SB
-    const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
-
-    // Хедър: вход/изход
+    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    // Хедър auth (ще бъде подсилен и от shell-mobile.js)
     async function renderAuthAreas() {
       const { data: { user } } = await sb.auth.getUser();
       const d = document.getElementById('nav-auth-desktop');
@@ -120,9 +118,11 @@
       const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
       let desktopHTML = '', mobileHTML  = '';
       if (user) {
-        desktopHTML = `<a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
+        desktopHTML = `<a href="chat.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Съобщения</a>
+                       <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
                        <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
-        mobileHTML = `<a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
+        mobileHTML = `<a href="chat.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Съобщения</a>
+                      <a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
                       <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>`;
       } else {
         desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
@@ -162,7 +162,6 @@
     const pmaxEl= document.getElementById('pmax');
     const sortEl= document.getElementById('sort');
 
-    // пагинация
     const PAGE = 24;
     let page = 0, lastBatch = 0;
 
@@ -222,13 +221,11 @@
     }
 
     async function fetchPage(){
-      // базов select
       let query = sb
         .from('ads')
-        .select('id,title,price,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency')
+        .select('id,title,price,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency,user_id')
         .eq('ad_status','approved');
 
-      // филтри
       const q = qEl.value.trim();
       const cat = catEl.value;
       const city = cityEl.value.trim();
@@ -241,13 +238,11 @@
       if (!isNaN(pmax)) query = query.lte('price', pmax);
       if (q) query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
 
-      // сортиране
       const sort = sortEl.value;
       if (sort === 'plh') query = query.order('price',{ascending:true});
       else if (sort === 'phl') query = query.order('price',{ascending:false});
       else query = query.order('approved_at',{ascending:false});
 
-      // пагинация – range
       const from = page * PAGE;
       const to   = from + PAGE - 1;
       query = query.range(from, to);
@@ -264,17 +259,13 @@
       await fetchPage();
     }
 
-    // UI hook
     document.getElementById('searchBtn').addEventListener('click', ()=>search(true));
     document.getElementById('clearBtn').addEventListener('click', ()=>{
       qEl.value=''; catEl.value=''; cityEl.value=''; pminEl.value=''; pmaxEl.value=''; sortEl.value='new';
       search(true);
     });
-    moreBtn.addEventListener('click', async ()=>{
-      page += 1; await fetchPage();
-    });
+    moreBtn.addEventListener('click', async ()=>{ page += 1; await fetchPage(); });
 
-    // Drawer
     (function initDrawer(){
       const drawer = document.getElementById('drawer'); if (!drawer) return;
       const openBtn  = document.getElementById('nav-open');
@@ -298,7 +289,6 @@
     modalEl?.addEventListener('click', (e)=>{ if (e.target.matches('[data-close]')) closeModal(); });
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && !modalEl.classList.contains('hidden')) closeModal(); });
 
-    // делегация: клик по карта → popup (Ctrl/⌘-клик отваря в нов таб)
     document.addEventListener('click', async (e)=>{
       const link = e.target.closest('a.open-ad[data-ad-id]');
       if (!link) return;
@@ -308,23 +298,40 @@
       await openAdPopup(id);
     });
 
+    async function startChat(adId, ownerId){
+      const { data:{ user } } = await sb.auth.getUser();
+      if (!user) {
+        const redirect = `chat.html?ad=${encodeURIComponent(adId)}&to=${encodeURIComponent(ownerId)}`;
+        location.href = `auth.html?redirectTo=${encodeURIComponent(redirect)}`;
+        return;
+      }
+      try{
+        const { data, error } = await sb.rpc('ensure_conversation', { p_ad_id: adId, p_other_user: ownerId });
+        if (error) throw error;
+        if (data) location.href = 'chat.html?id=' + encodeURIComponent(data);
+      }catch(err){
+        console.error(err);
+        alert('Неуспешно отваряне на чата.');
+      }
+    }
+
     async function openAdPopup(id){
       const { data, error } = await sb.from('ads')
-        .select('id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
-        .eq('id', id)
-        .maybeSingle();
+        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
+        .eq('id', id).maybeSingle();
 
       if (error || !data){
         modalBody.innerHTML = `<div class="p-8 text-center text-slate-600">Обявата не е налична.</div>`;
         openModal(); return;
       }
 
-      const imgs = Array.from(new Set([data.cover_image, ...(Array.isArray(data.images)?data.images:[])]
-                    .filter(Boolean)));
+      const imgs = Array.from(new Set([data.cover_image, ...(Array.isArray(data.images)?data.images:[])].filter(Boolean)));
       const big = imgs[0] || 'https://placehold.co/800x500?text=NovaObqva';
-      const badge = planBadge(data.plan_name);
+      const badge = (()=>{ const n=String(data.plan_name||'').toLowerCase(); let cls='bg-slate-100 text-slate-700 ring-1 ring-slate-200'; let label=data.plan_name||'Starter'; if(n==='pro'){cls='bg-violet-50 text-violet-800 ring-1 ring-violet-200';} if(n==='max'||n==='gold'){cls='bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label=(data.plan_name||'MAX').toUpperCase();} return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}"><svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${label}</span>`; })();
       const cur = String(data.plan_currency || 'BGN').toUpperCase();
       const price = isFinite(+data.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+data.price) : '';
+
+      const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
       modalBody.innerHTML = `
         <div class="relative">
@@ -337,8 +344,7 @@
               ${imgs.map((u,i)=>`<button class="thumb ${i===0?'ring-2 ring-indigo-500':''} border rounded-lg overflow-hidden">
                   <img src="${u}" class="w-24 h-16 object-cover" alt="thumb ${i+1}">
                 </button>`).join('')}
-            </div>
-          `:''}
+            </div>`:''}
         </div>
 
         <div class="p-4 md:p-6 pt-2">
@@ -353,8 +359,9 @@
           </div>
           <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${esc(data.description||'')}</div>
 
-          <div class="mt-6 flex justify-end">
-            <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-lg border hover:bg-slate-50">Отвори отделна страница</a>
+          <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
+            <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
+            <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-lg border hover:bg-slate-50 text-center">Отвори отделна страница</a>
           </div>
         </div>
       `;
@@ -369,6 +376,7 @@
           });
         });
       }
+      modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> startChat(data.id, data.user_id));
 
       openModal();
     }
@@ -377,5 +385,8 @@
     loadCategories();
     search(true);
   </script>
+
+  <!-- ЕДИНЕН SHELL (мобилен док, чат бейдж/нотификации) -->
+  <script src="shell-mobile.js"></script>
 </body>
 </html>
