@@ -9,32 +9,23 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
 </head>
-<body class="min-h-screen bg-slate-50">
-  <header class="sticky top-0 bg-white/80 backdrop-blur border-b">
-    <div class="max-w-xl mx-auto p-4 flex items-center gap-3">
-      <a href="/" class="text-2xl font-bold">NovaObqva</a>
-      <div class="flex-1"></div>
-      <a href="/" class="text-sm text-slate-600 hover:text-slate-900">Начало</a>
-    </div>
-  </header>
+<body class="min-h-screen bg-slate-50 flex items-center justify-center">
+  <main class="bg-white rounded-2xl border shadow-sm p-8 w-full max-w-md">
+    <h1 class="text-2xl font-semibold mb-2 text-center">Вход в NovaObqva</h1>
+    <p class="text-slate-600 mb-6 text-center">Използвай Google, за да продължиш</p>
 
-  <main class="max-w-xl mx-auto p-6">
-    <div class="bg-white rounded-2xl border shadow-sm p-6">
-      <h1 class="text-xl font-semibold mb-2">Вход</h1>
-      <p class="text-slate-600 mb-6">Влез с Google, за да продължиш.</p>
+    <button id="googleBtn" class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white border hover:bg-slate-50">
+      <img alt="Google" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
+      <span class="font-medium">Вход с Google</span>
+    </button>
 
-      <button id="googleBtn" class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white border hover:bg-slate-50">
-        <img alt="" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
-        <span class="font-medium">Вход с Google</span>
-      </button>
-
-      <p id="err" class="text-rose-600 text-sm mt-4 hidden"></p>
-    </div>
+    <p id="err" class="text-rose-600 text-sm mt-4 hidden text-center"></p>
   </main>
 
   <script>
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
-    const redirectTo = new URL(location.href).searchParams.get('redirectTo') || (location.origin + '/account.html');
+    const redirectTo = new URL(location.href).searchParams.get('redirectTo') 
+      || (location.origin + '/nova_admin.html'); // след вход → админ панел
 
     document.getElementById('googleBtn').addEventListener('click', async () => {
       const { error } = await sb.auth.signInWithOAuth({
