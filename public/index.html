@@ -493,24 +493,27 @@
             </div>
           `:''}
         </div>
+        
+    <div class="p-4 md:p-6 pt-2 text-slate-900">
+    <div class="flex items-start justify-between gap-3">
+      <h2 class="text-xl md:text-2xl font-semibold">${escapeHTML(data.title||'—')}</h2>
+      <div class="text-emerald-700 font-bold text-lg md:text-xl whitespace-nowrap">${price}</div>
+    </div>
+    <div class="text-sm text-slate-600 mt-1">
+      Публикувана: ${new Date(data.approved_at).toLocaleString('bg-BG')}
+      ${data.city?` · ${escapeHTML(data.city)}`:''}
+      ${data.category?` · ${escapeHTML(data.category)}`:''}
+    </div>
+    <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${escapeHTML(data.description||'')}</div>
 
-        <div class="p-4 md:p-6 pt-2">
-          <div class="flex items-start justify-between gap-3">
-            <h2 class="text-xl md:text-2xl font-semibold">${escapeHTML(data.title||'—')}</h2>
-            <div class="text-emerald-700 font-bold text-lg md:text-xl whitespace-nowrap">${price}</div>
-          </div>
-          <div class="text-sm text-slate-600 mt-1">
-            Публикувана: ${new Date(data.approved_at).toLocaleString('bg-BG')}
-            ${data.city?` · ${escapeHTML(data.city)}`:''}
-            ${data.category?` · ${escapeHTML(data.category)}`:''}
-          </div>
-          <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${escapeHTML(data.description||'')}</div>
-
-          <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
-            <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
-            <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-lg border hover:bg-slate-50 text-center">Отвори отделна страница</a>
-          </div>
-        </div>
+    <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
+      <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
+      <a href="ad.html?id=${data.id}"
+         class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-center">
+        Отвори отделна страница
+      </a>
+    </div>
+  </div>
       `;
 
       if (imgs.length>1){
