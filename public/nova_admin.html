@@ -3,193 +3,286 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NovaObqva — Админ</title>
+  <title>NovaObqva — Admin</title>
   <link rel="icon" type="image/png" href="favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
-  <header class="border-b bg-white">
-    <div class="max-w-6xl mx-auto p-3 flex items-center justify-between">
-      <div class="font-semibold">NovaObqva — Админ панел</div>
-      <div id="userBox" class="text-sm text-slate-600"></div>
+  <header class="sticky top-0 bg-white/80 backdrop-blur border-b z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
+      <a href="/" class="flex items-center gap-2 text-2xl font-bold">
+        <img src="/favicon.png" class="w-6 h-6 rounded" alt=""> NovaObqva
+      </a>
+      <div class="flex-1"></div>
+      <a href="/account.html" class="px-4 py-2 rounded-xl border hover:bg-slate-50">Моят профил</a>
+      <button id="logoutBtn" class="px-4 py-2 rounded-xl bg-slate-800 text-white hover:bg-slate-900">Изход</button>
     </div>
   </header>
 
-  <main id="app" class="max-w-6xl mx-auto p-4">
+  <main class="max-w-6xl mx-auto p-4 md:p-6">
+    <h1 class="text-2xl font-bold mb-4">Админ панел</h1>
     <div class="grid md:grid-cols-2 gap-6">
       <section class="bg-white rounded-2xl border p-4">
-        <h2 class="font-semibold mb-3">Чакащи обяви</h2>
-        <div id="adsPending" class="space-y-3">
-          <div class="animate-pulse h-20 bg-slate-100 rounded-xl"></div>
-          <div class="animate-pulse h-20 bg-slate-100 rounded-xl"></div>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold">Чакащи обяви</h2>
+          <input id="searchEmail" placeholder="търси по имейл…" class="border rounded-lg px-3 py-1.5 text-sm">
         </div>
+        <div id="adsPending" class="space-y-3"></div>
       </section>
 
       <section class="bg-white rounded-2xl border p-4">
         <h2 class="font-semibold mb-3">Последно одобрени</h2>
-        <div id="adsApproved" class="space-y-3">
-          <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
-          <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
-        </div>
+        <div id="adsApproved" class="space-y-3"></div>
       </section>
     </div>
   </main>
 
+  <!-- Preview modal -->
+  <div id="modal" class="fixed inset-0 hidden items-center justify-center z-50">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white max-w-3xl w-[90%] rounded-2xl border shadow-lg overflow-hidden">
+      <div class="flex items-center justify-between p-4 border-b">
+        <div class="font-semibold" id="mTitle">Преглед</div>
+        <button id="mClose" class="p-2 rounded-md hover:bg-slate-100">✕</button>
+      </div>
+      <div class="p-4 grid md:grid-cols-3 gap-4">
+        <div class="md:col-span-2 space-y-3">
+          <div class="text-xl font-semibold" id="mAdTitle"></div>
+          <div class="text-slate-600 text-sm" id="mMeta"></div>
+          <div class="text-slate-700 whitespace-pre-wrap" id="mDesc"></div>
+          <div id="mImages" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+        </div>
+        <aside class="space-y-3">
+          <div class="rounded-xl border p-3">
+            <div class="text-sm text-slate-500 mb-2">План & плащане</div>
+            <div id="mPlan" class="font-medium"></div>
+            <div class="text-slate-600" id="mPrice"></div>
+            <div class="mt-2">
+              <span id="mPayStatus" class="inline-block text-xs px-2 py-1 rounded bg-slate-100"></span>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button id="btnMarkPaid" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Маркирай „платено“</button>
+              <a id="btnPayLink" target="_blank" class="px-3 py-2 rounded-lg border hover:bg-slate-50">Към плащане</a>
+            </div>
+          </div>
+
+          <div class="rounded-xl border p-3">
+            <div class="text-sm text-slate-500 mb-2">Контакти</div>
+            <div id="mContact" class="space-y-1 text-slate-700"></div>
+          </div>
+
+          <div class="rounded-xl border p-3">
+            <div class="text-sm text-slate-500 mb-2">Действия</div>
+            <div class="flex gap-2">
+              <button id="mApprove" class="px-3 py-2 bg-emerald-600 text-white rounded-lg">Одобри</button>
+              <button id="mReject" class="px-3 py-2 bg-rose-600 text-white rounded-lg">Откажи</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // ===================== CONFIG =====================
+    const ADMIN_EMAIL = 'uzunov.ange@gmail.com';
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // Постави тук своя реален ADMIN UID
-    const ADMIN_UID = 'b4851997-679f-489d-8b1e-ad669b2148a8';
+    const FALLBACK_PLANS = [
+      { id:'starter', name:'Starter', price_bgn:9.99, price_eur:5.10,
+        pay_url:{ bgn:'https://checkout.revolut.com/payment-link/b9d03509-71b2-4c35-8d3a-43357e663650',
+                  eur:'https://checkout.revolut.com/payment-link/f776550f-0424-4656-aacb-3c1f06c6014b' } },
+      { id:'pro', name:'Pro', price_bgn:19.99, price_eur:10.22,
+        pay_url:{ bgn:'https://checkout.revolut.com/payment-link/b0cc7f69-9a29-4559-8eed-a06ffc1b2604',
+                  eur:'https://checkout.revolut.com/payment-link/62ddc3ea-6192-4b5d-875b-a90d80235edf' } },
+      { id:'max', name:'Max', price_bgn:39.99, price_eur:20.45,
+        pay_url:{ bgn:'https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10',
+                  eur:'https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527' } }
+    ];
+    let PLAN_MAP = {};
 
     (async () => {
-      const { data: { user } } = await sb.auth.getUser();
-      if (!user) {
-        location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href);
-        return;
-      }
+      // guard
+      const { data:{ user } } = await sb.auth.getUser();
+      if (!user) { location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href); return; }
+      if ((user.email||'').toLowerCase() !== ADMIN_EMAIL) { location.href = '/'; return; }
 
-      if (user.id !== ADMIN_UID) {
-        location.href = '/';
-        return;
-      }
+      document.getElementById('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.href='/'; };
 
-      const userBox = document.getElementById('userBox');
-      userBox.innerHTML = `
-        <div class="flex items-center gap-2">
-          <span class="hidden sm:inline">Вписан като:</span>
-          <span class="font-medium">${user.email || '—'}</span>
-          <button id="logoutBtn" class="ml-2 px-3 py-1.5 rounded-lg border hover:bg-slate-50">Изход</button>
-        </div>
-      `;
-      document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-        await sb.auth.signOut();
-        location.href = '/';
-      });
-
-      // ===================== RENDER =====================
-      async function loadPending(){
-        const { data, error } = await sb
-          .from('ads')
-          .select('id,title,price,created_at')
-          .eq('ad_status','pending')
-          .order('created_at',{ascending:true});
-        if (error) {
-          console.error(error);
-          document.getElementById('adsPending').innerHTML =
-            '<p class="text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">Грешка при зареждане (или липсват права).</p>';
-          return;
+      // load plans map (for pay links)
+      try {
+        const { data, error } = await sb.from('plans').select('id,name,pay_url,price_bgn,price_eur');
+        if (!error && data?.length) {
+          for (const p of data) {
+            PLAN_MAP[p.id] = typeof p.pay_url === 'object' ? p : { ...p, pay_url: JSON.parse(p.pay_url||'{}') };
+            PLAN_MAP[p.name?.toLowerCase?.()] = PLAN_MAP[p.id];
+          }
         }
-        const html = (data||[]).map(r => renderPendingCard(r)).join('');
-        document.getElementById('adsPending').innerHTML = html || '<p class="text-slate-500">Няма чакащи.</p>';
-      }
-
-      async function loadApproved(){
-        const { data, error } = await sb
-          .from('ads')
-          .select('id,title,price,approved_at')
-          .eq('ad_status','approved')
-          .order('approved_at',{ascending:false})
-          .limit(12);
-        if (error) { console.error(error); }
-        const html = (data||[]).map(r => `
-          <div class="border rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <div class="font-medium">${escapeHTML(r.title||'')}</div>
-              <div class="text-sm text-slate-500">Одобрена: ${r.approved_at ? new Date(r.approved_at).toLocaleString('bg-BG') : '—'}</div>
-            </div>
-            <a class="text-emerald-700 hover:underline" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Отвори</a>
-          </div>
-        `).join('');
-        document.getElementById('adsApproved').innerHTML = html || '<p class="text-slate-500">Още няма.</p>';
-      }
-
-      function renderPendingCard(r){
-        const title = escapeHTML(r.title||'');
-        const price = isFinite(Number(r.price)) ? Number(r.price).toFixed(2) : '—';
-        const created = r.created_at ? new Date(r.created_at).toLocaleString('bg-BG') : '—';
-        return `
-          <div class="border rounded-xl p-3">
-            <div class="flex items-center justify-between">
-              <div class="font-medium">${title}</div>
-              <div class="text-emerald-700 font-bold">${price} лв</div>
-            </div>
-            <div class="text-sm text-slate-500">Създадена: ${created}</div>
-            <div class="mt-3 flex gap-2">
-              <button class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl" data-approve="${r.id}">Одобри</button>
-              <button class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl" data-reject="${r.id}">Откажи</button>
-              <a class="px-3 py-2 rounded-xl border hover:bg-slate-50" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Виж</a>
-            </div>
-          </div>
-        `;
-      }
-
-      document.addEventListener('click', async (e) => {
-        const approveBtn = e.target.closest('[data-approve]');
-        const rejectBtn = e.target.closest('[data-reject]');
-        if (approveBtn) {
-          const id = approveBtn.getAttribute('data-approve');
-          await approve(id);
-        } else if (rejectBtn) {
-          const id = rejectBtn.getAttribute('data-reject');
-          await rejectAd(id);
+      } catch(_) {}
+      if (Object.keys(PLAN_MAP).length === 0) {
+        for (const p of FALLBACK_PLANS) {
+          PLAN_MAP[p.id] = p;
+          PLAN_MAP[p.name.toLowerCase()] = p;
         }
-      });
-
-      async function approve(id){
-        const { error } = await sb
-          .from('ads')
-          .update({ ad_status:'approved', approved_at: new Date().toISOString() })
-          .eq('id', id);
-        if (error) {
-          console.error(error);
-          alert('Отказано от сървъра. Нямаш права или грешка.');
-          return;
-        }
-        await loadPending(); await loadApproved();
       }
 
-      async function rejectAd(id){
-        const { error } = await sb
-          .from('ads')
-          .update({ ad_status:'hidden' })
-          .eq('id', id);
-        if (error) {
-          console.error(error);
-          alert('Отказано от сървъра. Нямаш права или грешка.');
-          return;
-        }
-        await loadPending();
-      }
-
-      function escapeHTML(s){
-        return String(s)
-          .replaceAll('&','&amp;')
-          .replaceAll('<','&lt;')
-          .replaceAll('>','&gt;')
-          .replaceAll('"','&quot;')
-          .replaceAll("'",'&#39;');
-      }
-
-      // Realtime
-      const channel = sb.channel('realtime-ads')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ads' }, async () => {
-          await loadPending();
-          await loadApproved();
-        })
-        .subscribe();
-
+      // load data
       await loadPending();
       await loadApproved();
 
-      sb.auth.onAuthStateChange((_event, session) => {
-        if (!session?.user || session.user.id !== ADMIN_UID) {
-          location.href = '/';
-        }
-      });
+      // search by email
+      document.getElementById('searchEmail').addEventListener('input', () => loadPending());
     })();
+
+    async function loadPending(){
+      const qEmail = document.getElementById('searchEmail').value.trim().toLowerCase();
+      let query = sb.from('ads').select(`
+          id,title,price,city,category,created_at,
+          contact_name,contact_phone,contact_email,posted_by_email,
+          plan_name,plan_currency,plan_price,payment_status
+        `).eq('ad_status','pending').order('created_at',{ascending:true});
+      if (qEmail) query = query.ilike('posted_by_email','%' + qEmail + '%');
+      const { data, error } = await query;
+      if (error) { console.error(error); alert('Грешка при зареждане на чакащи.'); return; }
+
+      const wrap = document.getElementById('adsPending');
+      wrap.innerHTML = (data||[]).map(r => card(r,true)).join('') || '<p class="text-slate-500">Няма чакащи.</p>';
+    }
+
+    async function loadApproved(){
+      const { data, error } = await sb
+        .from('ads')
+        .select('id,title,price,approved_at,plan_currency,contact_email')
+        .eq('ad_status','approved')
+        .order('approved_at',{ascending:false})
+        .limit(10);
+      if (error) return;
+
+      const wrap = document.getElementById('adsApproved');
+      wrap.innerHTML = (data||[]).map(r => `
+        <div class="border rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="font-medium">${esc(r.title)}</div>
+            <div class="text-sm text-slate-500">Одобрена: ${r.approved_at ? new Date(r.approved_at).toLocaleString('bg-BG') : '—'} · ${esc(r.contact_email||'')}</div>
+          </div>
+          <a class="text-emerald-700" href="ad.html?id=${r.id}" target="_blank">Отвори</a>
+        </div>
+      `).join('') || '<p class="text-slate-500">Още няма.</p>';
+    }
+
+    function card(r, showActions){
+      const currency = (r.plan_currency||'BGN').toUpperCase();
+      const paid = r.payment_status === 'paid' || r.payment_status === 'manual';
+      const pill = paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+      return `
+        <div class="border rounded-xl p-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold text-lg mb-0.5">${esc(r.title)}</div>
+              <div class="text-sm text-slate-500">Създадена: ${new Date(r.created_at).toLocaleString('bg-BG')}</div>
+              <div class="text-sm text-slate-500">Потребител: ${esc(r.contact_name||'—')} · ${esc(r.contact_email||r.posted_by_email||'—')} · ${esc(r.contact_phone||'—')}</div>
+              <div class="text-sm text-slate-500">Категория: ${esc(r.category||'—')} · Град: ${esc(r.city||'—')}</div>
+              <div class="mt-1"><span class="text-emerald-700 font-bold">${Number(r.price).toFixed(2)} лв</span> · План: ${esc(r.plan_name||'—')} ·
+                <span class="text-slate-700">${Number(r.plan_price||0).toFixed(2)} ${currency}</span>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded ${pill}">${esc(r.payment_status||'unpaid')}</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              ${showActions ? `
+              <div class="flex gap-2">
+                <button class="px-4 py-2 bg-emerald-600 text-white rounded-xl" onclick="approve('${r.id}', '${r.payment_status}')">Одобри</button>
+                <button class="px-4 py-2 bg-rose-600 text-white rounded-xl" onclick="rejectAd('${r.id}')">Откажи</button>
+                <button class="px-4 py-2 rounded-xl border" onclick="preview('${r.id}')">Виж</button>
+              </div>
+              ` : `<a class="px-3 py-2 rounded-xl border" href="ad.html?id=${r.id}" target="_blank">Виж</a>`}
+              <div class="text-emerald-700 font-bold">${Number(r.price).toFixed(2)} лв</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // Actions
+    async function approve(id, payStatus){
+      if (payStatus !== 'paid' && !confirm('Тази обява не е маркирана като платена. Да продължа с одобрение?')) return;
+      const { error } = await sb.from('ads').update({ ad_status:'approved', approved_at: new Date().toISOString() }).eq('id', id);
+      if (error) { alert('Отказано от сървъра. Нямаш права или грешка.'); console.error(error); return; }
+      await loadPending(); await loadApproved();
+    }
+    async function rejectAd(id){
+      if (!confirm('Сигурни ли сте, че отказвате обявата?')) return;
+      const { error } = await sb.from('ads').update({ ad_status:'hidden' }).eq('id', id);
+      if (error) { alert('Отказано от сървъра. Нямаш права или грешка.'); console.error(error); return; }
+      await loadPending();
+    }
+    window.approve = approve; window.rejectAd = rejectAd;
+
+    // Preview modal
+    async function preview(id){
+      const { data, error } = await sb.from('ads').select(`
+        id,title,description,price,city,category,created_at,
+        images,cover_image,
+        plan_name,plan_price,plan_currency,plan_id,
+        contact_name,contact_phone,contact_email,posted_by_email,
+        payment_status,payment_checked_at
+      `).eq('id', id).single();
+      if (error) { alert('Грешка при зареждане на обявата.'); return; }
+
+      document.getElementById('mAdTitle').textContent = data.title || '';
+      document.getElementById('mMeta').textContent = `${data.city||'—'} · ${data.category||'—'} · ${new Date(data.created_at).toLocaleString('bg-BG')}`;
+      document.getElementById('mDesc').textContent = data.description || '';
+      const imgs = Array.isArray(data.images) ? data.images : [];
+      const mImgs = document.getElementById('mImages'); mImgs.innerHTML = imgs.map(u => `
+        <a href="${u}" target="_blank" class="block">
+          <img src="${u}" class="w-full h-28 object-cover rounded-lg border">
+        </a>`).join('') || '<div class="text-slate-500 text-sm">Няма снимки</div>';
+
+      const currency = (data.plan_currency||'BGN').toUpperCase();
+      document.getElementById('mPlan').textContent = data.plan_name || '—';
+      document.getElementById('mPrice').textContent = `${Number(data.plan_price||0).toFixed(2)} ${currency}`;
+      const paid = data.payment_status === 'paid' || data.payment_status === 'manual';
+      const pill = document.getElementById('mPayStatus');
+      pill.textContent = data.payment_status || 'unpaid';
+      pill.className = 'inline-block text-xs px-2 py-1 rounded ' + (paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800');
+
+      const contactHTML = `
+        <div><span class="text-slate-500 text-sm">Име:</span> ${esc(data.contact_name||'—')}</div>
+        <div><span class="text-slate-500 text-sm">Тел.:</span> ${esc(data.contact_phone||'—')}</div>
+        <div><span class="text-slate-500 text-sm">Email:</span> ${esc(data.contact_email||data.posted_by_email||'—')}</div>
+      `;
+      document.getElementById('mContact').innerHTML = contactHTML;
+
+      // бутони в модала
+      document.getElementById('btnMarkPaid').onclick = async () => {
+        const { error } = await sb.from('ads').update({
+          payment_status:'paid', payment_checked_at: new Date().toISOString()
+        }).eq('id', data.id);
+        if (error) { alert('Неуспешно маркиране.'); return; }
+        preview(data.id); // презареди данните
+        loadPending();
+      };
+
+      // pay link по план + валута (прочети от PLANS, иначе fallback)
+      let p = PLAN_MAP[data.plan_id] || PLAN_MAP[(data.plan_name||'').toLowerCase()] || null;
+      const payUrl = p?.pay_url?.[currency.toLowerCase()] || '#';
+      const btnPay = document.getElementById('btnPayLink');
+      btnPay.href = payUrl;
+      btnPay.classList.toggle('pointer-events-none', !payUrl || payUrl === '#');
+      btnPay.classList.toggle('opacity-60', !payUrl || payUrl === '#');
+
+      // approve / reject от модал
+      document.getElementById('mApprove').onclick = () => approve(data.id, data.payment_status);
+      document.getElementById('mReject').onclick  = () => rejectAd(data.id);
+
+      // show modal
+      const m = document.getElementById('modal');
+      m.classList.remove('hidden'); m.classList.add('flex');
+      document.getElementById('mClose').onclick = () => { m.classList.add('hidden'); m.classList.remove('flex'); };
+      m.querySelector('.absolute.inset-0').onclick = () => { m.classList.add('hidden'); m.classList.remove('flex'); };
+    }
+    window.preview = preview;
+
+    function esc(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
   </script>
 </body>
 </html>
