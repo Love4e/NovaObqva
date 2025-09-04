@@ -39,31 +39,23 @@
 
   <script>
     // ===================== CONFIG =====================
-    if (!window.ENV?.SUPABASE_URL || !window.ENV?.SUPABASE_ANON_KEY) {
-      document.getElementById('app').innerHTML =
-        '<div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">Липсва env.js или SUPABASE_URL/ANON_KEY.</div>';
-      throw new Error('Missing ENV');
-    }
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // Постави тук своя реален UID на админа от Supabase → Authentication → Users
+    // Постави тук своя реален ADMIN UID
     const ADMIN_UID = 'b4851997-679f-489d-8b1e-ad669b2148a8';
 
     (async () => {
-      // 1) Изисква вход (Google OAuth през auth.html)
       const { data: { user } } = await sb.auth.getUser();
       if (!user) {
         location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href);
         return;
       }
 
-      // 2) Само админът влиза
       if (user.id !== ADMIN_UID) {
         location.href = '/';
         return;
       }
 
-      // UI: текущ потребител + изход
       const userBox = document.getElementById('userBox');
       userBox.innerHTML = `
         <div class="flex items-center gap-2">
@@ -82,7 +74,7 @@
         const { data, error } = await sb
           .from('ads')
           .select('id,title,price,created_at')
-          .eq('status','pending')
+          .eq('ad_status','pending')
           .order('created_at',{ascending:true});
         if (error) {
           console.error(error);
@@ -98,7 +90,7 @@
         const { data, error } = await sb
           .from('ads')
           .select('id,title,price,approved_at')
-          .eq('status','approved')
+          .eq('ad_status','approved')
           .order('approved_at',{ascending:false})
           .limit(12);
         if (error) { console.error(error); }
@@ -134,7 +126,6 @@
         `;
       }
 
-      // Делегиране вместо inline onclick
       document.addEventListener('click', async (e) => {
         const approveBtn = e.target.closest('[data-approve]');
         const rejectBtn = e.target.closest('[data-reject]');
@@ -150,7 +141,7 @@
       async function approve(id){
         const { error } = await sb
           .from('ads')
-          .update({ status:'approved', approved_at: new Date().toISOString() })
+          .update({ ad_status:'approved', approved_at: new Date().toISOString() })
           .eq('id', id);
         if (error) {
           console.error(error);
@@ -163,7 +154,7 @@
       async function rejectAd(id){
         const { error } = await sb
           .from('ads')
-          .update({ status:'hidden' })
+          .update({ ad_status:'hidden' })
           .eq('id', id);
         if (error) {
           console.error(error);
@@ -182,7 +173,7 @@
           .replaceAll("'",'&#39;');
       }
 
-      // Реално време: авто-рефреш при промяна в ads
+      // Realtime
       const channel = sb.channel('realtime-ads')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ads' }, async () => {
           await loadPending();
@@ -190,11 +181,9 @@
         })
         .subscribe();
 
-      // Първоначално зареждане
       await loadPending();
       await loadApproved();
 
-      // Guard при промяна на сесията
       sb.auth.onAuthStateChange((_event, session) => {
         if (!session?.user || session.user.id !== ADMIN_UID) {
           location.href = '/';
