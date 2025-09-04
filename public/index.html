@@ -85,14 +85,6 @@
     <p id="empty" class="text-center text-slate-500 hidden">Няма резултати.</p>
   </main>
 
-  <!-- Floating Chat Button -->
-  <button id="floatingChat"
-          class="fixed bottom-4 right-4 z-40 rounded-full shadow-lg border bg-white px-4 py-3 flex items-center gap-2 hover:bg-slate-50">
-    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M2 21l1.5-5A8 8 0 1 1 9 21H2zm7-3a6 6 0 1 0-5.65-3.9L3.6 18.4L9 18z"/></svg>
-    <span class="font-medium">Съобщения</span>
-    <span id="fabBadge" class="hidden ml-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
-  </button>
-
   <!-- Modal: детайли за обява -->
   <div id="adModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
     <div class="absolute inset-0 bg-black/50" data-close></div>
@@ -113,26 +105,24 @@
 
     // -------- Навигация: Вход/Профил/Чат + мобилен drawer --------
     async function renderAuthAreas() {
-      const { data: { user} } = await sb.auth.getUser();
+      const { data: { user } } = await sb.auth.getUser();
       const d = document.getElementById('nav-auth-desktop');
       const m = document.getElementById('nav-auth-mobile');
-      const loginHref = `auth.html?redirectTo=${encodeURIComponent('chat.html')}`;
 
-      // Chat link (desktop)
+      // Chat link (само ако е логнат)
       const chatDesktop = user
         ? `<a href="chat.html" class="relative px-3 py-1.5 rounded-lg hover:bg-slate-100">
              Съобщения
              <span id="unreadBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
            </a>`
-        : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Съобщения</a>`;
+        : '';
 
-      // Chat link (mobile)
       const chatMobile = user
         ? `<a href="chat.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50 relative">
              Съобщения
              <span id="unreadBadgeM" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
            </a>`
-        : `<a href="${loginHref}" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Съобщения</a>`;
+        : '';
 
       let desktopHTML = '', mobileHTML  = '';
       if (user) {
@@ -145,8 +135,10 @@
           <a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
           <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>`;
       } else {
-        desktopHTML = `<a href="auth.html?redirectTo=${encodeURIComponent(location.href)}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a> ${chatDesktop}`;
-        mobileHTML  = `<a href="auth.html?redirectTo=${encodeURIComponent(location.href)}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a> ${chatMobile}`;
+        const loginBtnD = `<a href="auth.html?redirectTo=${encodeURIComponent(location.href)}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
+        const loginBtnM = `<a href="auth.html?redirectTo=${encodeURIComponent(location.href)}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a>`;
+        desktopHTML = `${loginBtnD}`;
+        mobileHTML  = `${loginBtnM}`;
       }
 
       if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
@@ -155,17 +147,6 @@
       // logout
       [document.getElementById('nav-logout'), document.getElementById('nav-logout-m')].filter(Boolean).forEach(btn => {
         btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
-      });
-
-      // wire floating button
-      const fab = document.getElementById('floatingChat');
-      fab.addEventListener('click', async ()=>{
-        const { data:{ user } } = await sb.auth.getUser();
-        if (!user) {
-          location.href = `auth.html?redirectTo=${encodeURIComponent('chat.html')}`;
-        } else {
-          location.href = 'chat.html';
-        }
       });
 
       // unread badges (optional RPC)
@@ -178,8 +159,7 @@
               const n = data;
               const elD = document.getElementById('unreadBadge');
               const elM = document.getElementById('unreadBadgeM');
-              const fabB= document.getElementById('fabBadge');
-              [elD,elM,fabB].forEach(el=>{
+              [elD, elM].forEach(el=>{
                 if (!el) return;
                 if (n>0){ el.textContent = n>99 ? '99+' : n; el.classList.remove('hidden'); }
                 else { el.classList.add('hidden'); }
@@ -188,7 +168,6 @@
           }catch(_){}
         }
         updateUnread();
-        // периодична проверка
         setInterval(updateUnread, 20000);
       }
     }
@@ -263,12 +242,11 @@
       const thumb = ad.cover_image || imgArr[0] || 'https://placehold.co/600x340?text=NovaObqva';
       const city  = ad.city ? `<span class="text-slate-500"> · ${escapeHTML(ad.city)}</span>` : '';
       const cat   = ad.category ? `<span class="text-slate-500"> · ${escapeHTML(ad.category)}</span>` : '';
-      const badge = planBadge(ad.plan_name);
       return `
         <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}"
            class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative">
           <div class="aspect-video bg-slate-100 relative">
-            ${badge}
+            ${planBadge(ad.plan_name)}
             <img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy">
           </div>
           <div class="p-4">
