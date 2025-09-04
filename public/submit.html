@@ -3,182 +3,98 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NovaObqva — Публикувай</title>
+  <title>NovaObqva — Подай обява</title>
   <link rel="icon" type="image/png" href="favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
-  <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
-    <div class="max-w-3xl mx-auto p-4 flex items-center gap-4">
+  <header class="sticky top-0 bg-white/80 backdrop-blur border-b">
+    <div class="max-w-xl mx-auto p-4 flex items-center gap-3">
       <a href="/" class="text-2xl font-bold">NovaObqva</a>
       <div class="flex-1"></div>
-      <a href="plans.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Планове</a>
+      <a href="/" class="text-sm text-slate-600 hover:text-slate-900">Начало</a>
     </div>
   </header>
 
-  <main class="max-w-3xl mx-auto p-4" id="root"></main>
+  <main class="max-w-xl mx-auto p-6">
+    <div class="bg-white rounded-2xl border shadow-sm p-6">
+      <h1 class="text-xl font-semibold mb-4">Подай нова обява</h1>
+
+      <form id="adForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Заглавие</label>
+          <input type="text" id="title" required class="w-full border rounded-lg px-3 py-2" placeholder="Пример: Двустаен апартамент">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Описание</label>
+          <textarea id="description" required class="w-full border rounded-lg px-3 py-2" rows="4" placeholder="Опишете обявата..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Цена (лв)</label>
+          <input type="number" id="price" step="0.01" min="0" required class="w-full border rounded-lg px-3 py-2" placeholder="0.00">
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium">
+          Изпрати за одобрение
+        </button>
+      </form>
+
+      <p id="msg" class="mt-4 text-center text-sm"></p>
+    </div>
+  </main>
 
   <script>
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    const renderPlans = (plans, userId) => {
-      document.getElementById('root').innerHTML = `
-        <div class="bg-white rounded-2xl border p-6">
-          <h1 class="text-xl font-semibold mb-2">Избери абонамент</h1>
-          <p class="text-slate-600 mb-4">Необходим е активен план, за да публикуваш обява.</p>
-          <div class="grid sm:grid-cols-2 gap-4">
-            ${plans.map(p=>`
-              <div class="border rounded-2xl p-4">
-                <div class="text-lg font-semibold">${p.name}</div>
-                <div class="text-sm text-slate-600">${p.description||''}</div>
-                <div class="mt-2 text-emerald-700 font-bold">${p.price_bgn.toFixed(2)} лв / ${p.price_eur.toFixed(2)} €</div>
-                <div class="text-sm">Срок: ${p.days_total} дни</div>
-                ${p.vip_days ? `<div class="text-sm text-violet-700">VIP: ${p.vip_days} дни</div>`:''}
-                ${p.brand ? `<div class="text-xs mt-1 px-2 py-0.5 inline-block rounded bg-amber-100 text-amber-700">Brand</div>`:''}
-                ${p.gold ? `<div class="text-xs mt-1 px-2 py-0.5 inline-block rounded bg-yellow-100 text-yellow-700 ml-2">Gold позиция</div>`:''}
-                <button class="mt-4 px-4 py-2 rounded-xl bg-slate-800 text-white" data-code="${p.code}">Активирай</button>
-              </div>
-            `).join('')}
-          </div>
-        </div>`;
-
-      document.querySelectorAll('button[data-code]').forEach(btn=>{
-        btn.addEventListener('click', async ()=>{
-          const code = btn.getAttribute('data-code');
-          const plan = plans.find(x=>x.code===code);
-          if(!plan) return;
-
-          // изчисляваме сроковете на клиента (MVP)
-          const now = new Date();
-          const plan_expires_at = new Date(now.getTime() + plan.days_total*24*3600*1000).toISOString();
-          const brand_until = plan.brand ? plan_expires_at : null;
-          const priority_until = (plan.vip_days||plan.gold)
-            ? new Date(now.getTime() + (plan.vip_days||plan.days_total)*24*3600*1000).toISOString()
-            : null;
-
-          const { error } = await sb.from('profiles').update({
-            plan: plan.code,
-            plan_expires_at,
-            brand_until,
-            priority_until,
-            updated_at: new Date().toISOString()
-          }).eq('user_id', userId);
-
-          if (error) { alert('Грешка при активиране'); console.error(error); return; }
-          alert('Планът е активиран. Можеш да публикуваш.');
-          renderForm(userId); // показваме формата
-        });
-      });
-    };
-
-    const renderForm = async (userId) => {
-      document.getElementById('root').innerHTML = `
-        <h1 class="text-xl font-semibold mb-4">Публикувай нова обява</h1>
-        <form id="form" class="space-y-4 bg-white p-4 rounded-2xl border">
-          <div>
-            <label class="block mb-1 font-medium">Заглавие</label>
-            <input name="title" required class="w-full px-4 py-2 rounded-xl border" />
-          </div>
-          <div>
-            <label class="block mb-1 font-medium">Описание</label>
-            <textarea name="description" required rows="5" class="w-full px-4 py-2 rounded-xl border"></textarea>
-          </div>
-          <div class="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block mb-1 font-medium">Цена (лв.)</label>
-              <input name="price" type="number" min="0" step="0.01" required class="w-full px-4 py-2 rounded-xl border" />
-            </div>
-            <div>
-              <label class="block mb-1 font-medium">Категория</label>
-              <select name="category_id" id="cat" class="w-full px-4 py-2 rounded-xl border"><option value="" selected>— без категория —</option></select>
-            </div>
-            <div>
-              <label class="block mb-1 font-medium">Местоположение</label>
-              <input name="location" class="w-full px-4 py-2 rounded-xl border" />
-            </div>
-          </div>
-          <div class="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block mb-1 font-medium">Име за контакт</label>
-              <input name="contact_name" class="w-full px-4 py-2 rounded-xl border" />
-            </div>
-            <div>
-              <label class="block mb-1 font-medium">Телефон</label>
-              <input name="contact_phone" class="w-full px-4 py-2 rounded-xl border" />
-            </div>
-            <div>
-              <label class="block mb-1 font-medium">Имейл</label>
-              <input name="contact_email" type="email" class="w-full px-4 py-2 rounded-xl border" />
-            </div>
-          </div>
-          <div>
-            <label class="block mb-1 font-medium">Снимки (до 6)</label>
-            <input id="photos" type="file" accept="image/*" multiple class="w-full" />
-            <p class="text-xs text-slate-500 mt-1">Първата снимка ще е корица.</p>
-          </div>
-          <div class="flex justify-end gap-3">
-            <a href="/" class="px-4 py-2 rounded-xl border">Отказ</a>
-            <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white">Изпрати за одобрение</button>
-          </div>
-        </form>`;
-
-      // категории
-      const { data: cats } = await sb.from('categories').select('id,name').order('name');
-      const catEl = document.getElementById('cat');
-      if (cats?.length) {
-        catEl.innerHTML = '<option value="" selected>— без категория —</option>' + cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-      }
-
-      // submit
-      document.getElementById('form').addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        const rec = Object.fromEntries(fd.entries());
-        rec.price = Number(rec.price||0);
-        rec.status = 'pending';
-        rec.created_by = userId;
-
-        const { data: ad, error } = await sb.from('ads').insert(rec).select('id').single();
-        if(error){ alert('Грешка при запис'); console.error(error); return; }
-
-        // снимки
-        const files = document.getElementById('photos').files;
-        const toUpload = Array.from(files).slice(0, 6);
-        for (const [i,f] of toUpload.entries()){
-          const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-          const path = `${ad.id}/${crypto.randomUUID()}.${ext}`;
-          const { error: upErr } = await sb.storage.from('ad-images').upload(path, f, { upsert:false });
-          if(!upErr){
-            const { data:pub } = sb.storage.from('ad-images').getPublicUrl(path);
-            await sb.from('ad_images').insert({ ad_id: ad.id, url: pub.publicUrl, position: i });
-          }
-        }
-
-        alert('Обявата е изпратена за одобрение!');
-        location.href = 'account.html';
-      });
+    const msg = (text, isError=false) => {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = "mt-4 text-center text-sm " + (isError ? "text-rose-600" : "text-emerald-700");
     };
 
     (async () => {
-      // изисква вход
+      // 1) Увери се, че има логнат потребител
       const { data: { user } } = await sb.auth.getUser();
-      if (!user) { location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href); return; }
-
-      // профил (авто-upsert)
-      await sb.from('profiles').upsert({ user_id: user.id, email: user.email || null }, { onConflict: 'user_id' });
-
-      // проверка на активен план
-      const { data: profile } = await sb.from('profiles').select('plan, plan_expires_at').eq('user_id', user.id).single();
-      const active = profile?.plan && profile?.plan !== 'none' && profile?.plan_expires_at && new Date(profile.plan_expires_at) > new Date();
-
-      if (!active) {
-        const { data: plans } = await sb.from('subscription_plans').select('*').order('sort');
-        renderPlans(plans || [], user.id);
-      } else {
-        renderForm(user.id);
+      if (!user) {
+        location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href);
+        return;
       }
+
+      // 2) При изпращане на формата → запис в ads
+      document.getElementById("adForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        msg("");
+
+        const title = document.getElementById("title").value.trim();
+        const description = document.getElementById("description").value.trim();
+        const price = parseFloat(document.getElementById("price").value);
+
+        if (!title || !description || isNaN(price)) {
+          msg("Попълнете всички полета.", true);
+          return;
+        }
+
+        const { error } = await sb.from("ads").insert([{
+          user_id: user.id,
+          title,
+          description,
+          price,
+          ad_status: "pending"
+        }]);
+
+        if (error) {
+          console.error(error);
+          msg("Грешка при изпращане. Опитайте отново.", true);
+          return;
+        }
+
+        msg("Обявата е изпратена за одобрение!");
+        e.target.reset();
+      });
     })();
   </script>
 </body>
