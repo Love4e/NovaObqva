@@ -14,6 +14,60 @@
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+
+    /* === HERO (gold) добавки === */
+    .hero-gold{
+      position:relative; isolation:isolate;
+      background:#0f172a; color:#fff;
+      padding:56px 0 72px;
+      overflow:hidden;
+    }
+    .hero-gold .glow{
+      position:absolute; inset:-20%; z-index:-1; filter:blur(32px); opacity:.6;
+      background:
+        radial-gradient(60% 50% at 20% 20%, rgba(250,204,21,.25), transparent 60%),
+        radial-gradient(60% 50% at 80% 70%, rgba(251,191,36,.18), transparent 60%),
+        radial-gradient(40% 40% at 60% 30%, rgba(245,158,11,.18), transparent 60%);
+    }
+    .hero-gold .title{
+      font-weight:900; letter-spacing:-.02em;
+      font-size:clamp(28px,4.5vw,48px); line-height:1.05;
+      background:linear-gradient(90deg,#facc15,#fbbf24,#f59e0b);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .hero-gold .subtitle{color:#fef9c3}
+    .hero-gold .cta{
+      display:inline-flex; align-items:center; gap:.5rem;
+      padding:.9rem 1.25rem; border-radius:14px;
+      background:linear-gradient(90deg,#facc15,#fbbf24);
+      color:#111827; font-weight:800; text-decoration:none;
+      border:1px solid rgba(255,255,255,.15); position:relative;
+      box-shadow:0 8px 30px rgba(250,204,21,.25);
+      animation:ctaPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes ctaPulse {
+      0%,100% { box-shadow:0 8px 30px rgba(250,204,21,.25) }
+      50%     { box-shadow:0 8px 46px rgba(250,204,21,.38) }
+    }
+    /* Плавна преливка към основния светъл фон (bg-slate-50) */
+    .gold-bridge{height:64px; background:linear-gradient(#0f172a, #f8fafc);}
+
+    /* Мека мигаща подцветка за НОВИ обяви (последни 48ч) */
+    .ad-new{
+      position:relative;
+      box-shadow:0 0 0 0 rgba(250,204,21,.0);
+      animation:newGlow 2.2s ease-in-out infinite;
+    }
+    .ad-new::after{
+      content:"НОВА"; position:absolute; top:10px; left:10px; z-index:10;
+      font-size:11px; font-weight:800; letter-spacing:.02em;
+      color:#78350f; background:#fde68a; border:1px solid #f59e0b;
+      padding:2px 8px; border-radius:999px;
+    }
+    @keyframes newGlow{
+      0%,100% { box-shadow:0 0 0 0 rgba(250,204,21,.0) }
+      50%     { box-shadow:0 0 22px 2px rgba(250,204,21,.35) }
+    }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -40,6 +94,38 @@
       <!-- Премахнато: Mobile hamburger и drawer -->
     </div>
   </header>
+
+  <!-- HERO (вграден, с преливка към списъка) -->
+  <section class="hero-gold">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-6 items-center">
+        <div>
+          <h1 class="title">Публикувай и изпъкни с VIP и GOLD</h1>
+          <p class="subtitle mt-2">NovaObqva — бързи продажби, ясни планове и видимост отпред.</p>
+          <a href="submit.html" class="cta mt-4">🚀 Публикувай обява</a>
+        </div>
+        <div class="hidden md:block justify-self-end">
+          <!-- мини визуализация на плановете -->
+          <div class="grid grid-cols-3 gap-3">
+            <div class="rounded-2xl border border-yellow-200/30 bg-white/5 p-4 text-center">
+              <div class="text-xs text-yellow-200/80 mb-1">Starter</div>
+              <div class="text-yellow-300 font-extrabold text-xl">9.99 BGN</div>
+            </div>
+            <div class="rounded-2xl border border-purple-200/30 bg-white/5 p-4 text-center">
+              <div class="text-xs text-purple-200/80 mb-1">VIP</div>
+              <div class="text-white font-extrabold text-xl">19.99 BGN</div>
+            </div>
+            <div class="rounded-2xl border border-amber-200/40 bg-white/5 p-4 text-center shadow-[0_0_30px_rgba(250,204,21,.25)]">
+              <div class="text-xs text-amber-200/80 mb-1">GOLD</div>
+              <div class="text-amber-300 font-extrabold text-xl">39.99 BGN</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="gold-bridge"></div>
 
   <!-- MAIN -->
   <main class="max-w-6xl mx-auto p-4">
@@ -122,7 +208,7 @@
                 else { el.classList.add('hidden'); }
               });
             }
-          }catch(_){}}
+          }catch(_){ }}
         updateUnread();
         setInterval(updateUnread, 20000);
       }
@@ -162,6 +248,16 @@
       catEl.innerHTML = `<option value="">Всички категории</option>` + CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
     }
 
+    // "Нова" обява = одобрена през последните 48 часа
+    function isNewAd(approvedAt){
+      try{
+        const t = new Date(approvedAt || Date.now()).getTime();
+        const now = Date.now();
+        const HOURS48 = 48 * 60 * 60 * 1000;
+        return now - t <= HOURS48;
+      }catch(_){ return false; }
+    }
+
     async function search(){
       const q = qEl.value.trim();
       const cat = catEl.value;
@@ -199,9 +295,10 @@
       const thumb = ad.cover_image || imgArr[0] || 'https://placehold.co/600x340?text=NovaObqva';
       const city  = ad.city ? `<span class="text-slate-500"> · ${escapeHTML(ad.city)}</span>` : '';
       const cat   = ad.category ? `<span class="text-slate-500"> · ${escapeHTML(ad.category)}</span>` : '';
+      const newCls = isNewAd(ad.approved_at || ad.created_at) ? 'ad-new' : '';
       return `
         <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}"
-           class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative">
+           class="open-ad ${newCls} group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative">
           <div class="aspect-video bg-slate-100 relative">
             ${planBadge(ad.plan_name)}
             <img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy">
