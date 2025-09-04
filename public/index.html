@@ -199,7 +199,7 @@
 
     function card(ad){
       const imgArr = Array.isArray(ad.images) ? ad.images : [];
-      theThumb = ad.cover_image || imgArr[0] || 'https://placehold.co/600x340?text=NovaObqva';
+      const thumb = ad.cover_image || imgArr[0] || 'https://placehold.co/600x340?text=NovaObqva';
       const city  = ad.city ? `<span class="text-slate-500"> · ${escapeHTML(ad.city)}</span>` : '';
       const cat   = ad.category ? `<span class="text-slate-500"> · ${escapeHTML(ad.category)}</span>` : '';
       const badge = planBadge(ad.plan_name);
@@ -208,7 +208,7 @@
            class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative">
           <div class="aspect-video bg-slate-100 relative">
             ${badge}
-            <img src="${theThumb}" alt="" class="w-full h-full object-cover" loading="lazy">
+            <img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy">
           </div>
           <div class="p-4">
             <div class="flex items-center justify-between gap-2">
@@ -241,7 +241,7 @@
     function closeModal(){ modalEl.classList.add('hidden'); modalEl.setAttribute('aria-hidden','true'); document.body.classList.remove('overflow-hidden'); }
 
     modalEl?.addEventListener('click', (e)=>{ if (e.target.matches('[data-close]')) closeModal(); });
-    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') && !modalEl.classList.contains('hidden')) closeModal(); });
+    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && !modalEl.classList.contains('hidden')) closeModal(); });
 
     // делегация: клик по карта → popup (Ctrl/⌘-клик отваря в нов таб)
     document.addEventListener('click', async (e)=>{
@@ -296,21 +296,6 @@
             ${data.city?` · ${escapeHTML(data.city)}`:''}
             ${data.category?` · ${escapeHTML(data.category)}`:''}
           </div>
-
-          <!-- МАСКИРАН ТЕЛЕФОН + РАЗКРИВАНЕ -->
-          <div class="mt-4">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-slate-600">Телефон:</span>
-              <a id="phoneLink" class="hidden font-medium underline decoration-emerald-600 underline-offset-2" href="#" rel="nofollow"></a>
-              <span id="phoneMasked" class="font-medium text-slate-900">скрит</span>
-              <button id="revealPhoneBtn" class="px-3 py-1.5 rounded-lg border hover:bg-slate-50">
-                Покажи телефона
-              </button>
-            </div>
-            <p class="text-xs text-slate-500 mt-1">Лимит: до 5 разкривания на ден.</p>
-            <p id="revealErr" class="text-xs text-rose-600 mt-1 hidden"></p>
-          </div>
-
           <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${escapeHTML(data.description||'')}</div>
 
           <div class="mt-6 flex justify-end">
@@ -330,57 +315,7 @@
         });
       }
 
-      // свържи разкриването на телефона
-      attachRevealHandler(data.id);
-
       openModal();
-    }
-
-    // ---------- ЛОГИКА ЗА РАЗКРИВАНЕ ----------
-    async function ensureLogin() {
-      const { data:{ user } } = await sb.auth.getUser();
-      if (!user) {
-        location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href);
-        return null;
-      }
-      return user;
-    }
-    function showRevealError(msg){
-      const el = modalBody.querySelector('#revealErr');
-      if (!el) return;
-      el.textContent = msg; el.classList.remove('hidden');
-    }
-
-    function attachRevealHandler(adId){
-      const btn = modalBody.querySelector('#revealPhoneBtn');
-      const masked = modalBody.querySelector('#phoneMasked');
-      const link = modalBody.querySelector('#phoneLink');
-      if (!btn || !masked || !link) return;
-
-      btn.addEventListener('click', async ()=>{
-        if (!await ensureLogin()) return;
-        btn.disabled = true;
-
-        const { data, error } = await sb.rpc('reveal_phone', { p_ad_id: adId });
-        btn.disabled = false;
-
-        if (error) {
-          const m = (error.message||'').toUpperCase();
-          if (m.includes('DAILY_LIMIT_REACHED'))       showRevealError('Достигнахте дневния лимит (5). Опитайте утре.');
-          else if (m.includes('NO_PHONE'))             showRevealError('Няма въведен телефон за тази обява.');
-          else if (m.includes('AUTH_REQUIRED'))        showRevealError('Моля, влезте в профила си.');
-          else                                         showRevealError('Неуспешно разкриване. Опитайте отново.');
-          return;
-        }
-
-        // успех – покажи номер + tel: линк, скрий маската и бутона
-        const phone = String(data||'').trim();
-        masked.classList.add('hidden');
-        link.textContent = phone;
-        link.href = 'tel:' + phone.replace(/\s+/g,'');
-        link.classList.remove('hidden');
-        btn.classList.add('hidden');
-      });
     }
   </script>
 </body>
