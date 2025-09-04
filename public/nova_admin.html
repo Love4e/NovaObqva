@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NovaObqva — Админ</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <header class="border-b bg-white">
+    <div class="max-w-6xl mx-auto p-3 flex items-center justify-between">
+      <div class="font-semibold">NovaObqva — Админ панел</div>
+      <div id="userBox" class="text-sm text-slate-600"></div>
+    </div>
+  </header>
+
+  <main id="app" class="max-w-6xl mx-auto p-4">
+    <div class="grid md:grid-cols-2 gap-6">
+      <section class="bg-white rounded-2xl border p-4">
+        <h2 class="font-semibold mb-3">Чакащи обяви</h2>
+        <div id="adsPending" class="space-y-3">
+          <div class="animate-pulse h-20 bg-slate-100 rounded-xl"></div>
+          <div class="animate-pulse h-20 bg-slate-100 rounded-xl"></div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl border p-4">
+        <h2 class="font-semibold mb-3">Последно одобрени</h2>
+        <div id="adsApproved" class="space-y-3">
+          <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
+          <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // ===================== CONFIG =====================
+    if (!window.ENV?.SUPABASE_URL || !window.ENV?.SUPABASE_ANON_KEY) {
+      document.getElementById('app').innerHTML =
+        '<div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">Липсва env.js или SUPABASE_URL/ANON_KEY.</div>';
+      throw new Error('Missing ENV');
+    }
+    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+
+    // Постави тук своя реален UID на админа от Supabase → Authentication → Users
+    const ADMIN_UID = 'b4851997-679f-489d-8b1e-ad669b2148a8';
+
+    (async () => {
+      // 1) Изисква вход (Google OAuth през auth.html)
+      const { data: { user } } = await sb.auth.getUser();
+      if (!user) {
+        location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href);
+        return;
+      }
+
+      // 2) Само админът влиза
+      if (user.id !== ADMIN_UID) {
+        location.href = '/';
+        return;
+      }
+
+      // UI: текущ потребител + изход
+      const userBox = document.getElementById('userBox');
+      userBox.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="hidden sm:inline">Вписан като:</span>
+          <span class="font-medium">${user.email || '—'}</span>
+          <button id="logoutBtn" class="ml-2 px-3 py-1.5 rounded-lg border hover:bg-slate-50">Изход</button>
+        </div>
+      `;
+      document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+        await sb.auth.signOut();
+        location.href = '/';
+      });
+
+      // ===================== RENDER =====================
+      async function loadPending(){
+        const { data, error } = await sb
+          .from('ads')
+          .select('id,title,price,created_at')
+          .eq('status','pending')
+          .order('created_at',{ascending:true});
+        if (error) {
+          console.error(error);
+          document.getElementById('adsPending').innerHTML =
+            '<p class="text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">Грешка при зареждане (или липсват права).</p>';
+          return;
+        }
+        const html = (data||[]).map(r => renderPendingCard(r)).join('');
+        document.getElementById('adsPending').innerHTML = html || '<p class="text-slate-500">Няма чакащи.</p>';
+      }
+
+      async function loadApproved(){
+        const { data, error } = await sb
+          .from('ads')
+          .select('id,title,price,approved_at')
+          .eq('status','approved')
+          .order('approved_at',{ascending:false})
+          .limit(12);
+        if (error) { console.error(error); }
+        const html = (data||[]).map(r => `
+          <div class="border rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <div class="font-medium">${escapeHTML(r.title||'')}</div>
+              <div class="text-sm text-slate-500">Одобрена: ${r.approved_at ? new Date(r.approved_at).toLocaleString('bg-BG') : '—'}</div>
+            </div>
+            <a class="text-emerald-700 hover:underline" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Отвори</a>
+          </div>
+        `).join('');
+        document.getElementById('adsApproved').innerHTML = html || '<p class="text-slate-500">Още няма.</p>';
+      }
+
+      function renderPendingCard(r){
+        const title = escapeHTML(r.title||'');
+        const price = isFinite(Number(r.price)) ? Number(r.price).toFixed(2) : '—';
+        const created = r.created_at ? new Date(r.created_at).toLocaleString('bg-BG') : '—';
+        return `
+          <div class="border rounded-xl p-3">
+            <div class="flex items-center justify-between">
+              <div class="font-medium">${title}</div>
+              <div class="text-emerald-700 font-bold">${price} лв</div>
+            </div>
+            <div class="text-sm text-slate-500">Създадена: ${created}</div>
+            <div class="mt-3 flex gap-2">
+              <button class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl" data-approve="${r.id}">Одобри</button>
+              <button class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl" data-reject="${r.id}">Откажи</button>
+              <a class="px-3 py-2 rounded-xl border hover:bg-slate-50" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Виж</a>
+            </div>
+          </div>
+        `;
+      }
+
+      // Делегиране вместо inline onclick
+      document.addEventListener('click', async (e) => {
+        const approveBtn = e.target.closest('[data-approve]');
+        const rejectBtn = e.target.closest('[data-reject]');
+        if (approveBtn) {
+          const id = approveBtn.getAttribute('data-approve');
+          await approve(id);
+        } else if (rejectBtn) {
+          const id = rejectBtn.getAttribute('data-reject');
+          await rejectAd(id);
+        }
+      });
+
+      async function approve(id){
+        const { error } = await sb
+          .from('ads')
+          .update({ status:'approved', approved_at: new Date().toISOString() })
+          .eq('id', id);
+        if (error) {
+          console.error(error);
+          alert('Отказано от сървъра. Нямаш права или грешка.');
+          return;
+        }
+        await loadPending(); await loadApproved();
+      }
+
+      async function rejectAd(id){
+        const { error } = await sb
+          .from('ads')
+          .update({ status:'hidden' })
+          .eq('id', id);
+        if (error) {
+          console.error(error);
+          alert('Отказано от сървъра. Нямаш права или грешка.');
+          return;
+        }
+        await loadPending();
+      }
+
+      function escapeHTML(s){
+        return String(s)
+          .replaceAll('&','&amp;')
+          .replaceAll('<','&lt;')
+          .replaceAll('>','&gt;')
+          .replaceAll('"','&quot;')
+          .replaceAll("'",'&#39;');
+      }
+
+      // Реално време: авто-рефреш при промяна в ads
+      const channel = sb.channel('realtime-ads')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ads' }, async () => {
+          await loadPending();
+          await loadApproved();
+        })
+        .subscribe();
+
+      // Първоначално зареждане
+      await loadPending();
+      await loadApproved();
+
+      // Guard при промяна на сесията
+      sb.auth.onAuthStateChange((_event, session) => {
+        if (!session?.user || session.user.id !== ADMIN_UID) {
+          location.href = '/';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
