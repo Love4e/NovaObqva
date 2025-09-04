@@ -17,59 +17,75 @@
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
-  <!-- HEADER: desktop + mobile drawer (без „Публикувай“) -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-      <!-- Brand -->
-      <a href="/" class="flex items-center gap-2">
-        <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
-        <span class="text-xl font-bold">NovaObqva</span>
-      </a>
+  <!-- ===== HEADER (унифициран за всички страници) ===== -->
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+    <!-- Brand -->
+    <a href="/" class="flex items-center gap-2">
+      <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
+      <span class="text-xl font-bold">NovaObqva</span>
+    </a>
 
-      <!-- Desktop nav -->
-      <nav class="hidden md:flex items-center gap-2 ml-4">
-        <a href="index.html" class="px-3 py-1.5 rounded-lg bg-slate-100">Обяви</a>
-        <a href="plans.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
+    <!-- Desktop nav -->
+    <nav class="hidden md:flex items-center gap-2 ml-4">
+      <a href="index.html" class="px-3 py-1.5 rounded-lg bg-slate-100">Обяви</a>
+      <a href="plans.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
+      <!-- Показва се само за логнати (добавя се динамично от JS) -->
+      <a id="nav-messages" href="chat.html"
+         class="hidden px-3 py-1.5 rounded-lg hover:bg-slate-100 relative">
+        Съобщения
+        <span id="nav-unread"
+              class="hidden absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 rounded-full text-[11px] leading-[18px] text-white bg-rose-500 text-center"></span>
+      </a>
+    </nav>
+
+    <div class="flex-1"></div>
+
+    <!-- Desktop auth (пълни се от JS) -->
+    <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
+
+    <!-- Mobile hamburger -->
+    <button id="nav-open"
+            class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border hover:bg-slate-50"
+            aria-label="Отвори меню">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile drawer -->
+  <div id="drawer" class="fixed inset-0 z-50 hidden">
+    <div id="backdrop" class="absolute inset-0 bg-black/40"></div>
+    <div class="absolute right-0 top-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl p-4 flex flex-col">
+      <div class="flex items-center justify-between">
+        <span class="text-lg font-semibold">Меню</span>
+        <button id="nav-close" class="inline-flex w-10 h-10 items-center justify-center rounded-lg border hover:bg-slate-50" aria-label="Затвори">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="mt-4 grid gap-2">
+        <a href="index.html"  class="px-3 py-2 rounded-lg bg-slate-100">Обяви</a>
+        <a href="plans.html"  class="px-3 py-2 rounded-lg hover:bg-slate-100">Планове</a>
+        <!-- Съобщения за mobile – показва се за логнати (JS) -->
+        <a id="m-nav-messages" href="chat.html"
+           class="hidden px-3 py-2 rounded-lg hover:bg-slate-100 relative">
+          Съобщения
+          <span id="m-nav-unread"
+                class="hidden absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 rounded-full text-[11px] leading-[18px] text-white bg-rose-500 text-center"></span>
+        </a>
       </nav>
 
-      <div class="flex-1"></div>
-
-      <!-- Desktop auth + Chat (динамични) -->
-      <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
-
-      <!-- Mobile hamburger -->
-      <button id="nav-open" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border hover:bg-slate-50" aria-label="Отвори меню">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Mobile drawer -->
-    <div id="drawer" class="fixed inset-0 z-50 hidden">
-      <div id="backdrop" class="absolute inset-0 bg-black/40"></div>
-      <div class="absolute right-0 top-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl p-4 flex flex-col">
-        <div class="flex items-center justify-between">
-          <span class="text-lg font-semibold">Меню</span>
-          <button id="nav-close" class="inline-flex w-10 h-10 items-center justify-center rounded-lg border hover:bg-slate-50" aria-label="Затвори">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-
-        <nav class="mt-4 grid gap-2" id="mobile-nav-links">
-          <a href="index.html" class="px-3 py-2 rounded-lg bg-slate-100">Обяви</a>
-          <a href="plans.html" class="px-3 py-2 rounded-lg hover:bg-slate-100">Планове</a>
-        </nav>
-
-        <div class="mt-auto pt-4 border-t">
-          <!-- Mobile auth + Chat (динамични) -->
-          <div id="nav-auth-mobile" class="grid gap-2"></div>
-        </div>
+      <div class="mt-auto pt-4 border-t">
+        <!-- Mobile auth (пълни се от JS) -->
+        <div id="nav-auth-mobile" class="grid gap-2"></div>
       </div>
     </div>
-  </header>
+  </div>
+</header>
 
   <!-- MAIN -->
   <main class="max-w-6xl mx-auto p-4">
@@ -108,107 +124,97 @@
 
   <!-- APP SCRIPT -->
   <script>
-    // Supabase client
-    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    <script>
+  // Supabase клиент
+  const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
 
-    // -------- Навигация: Вход/Профил/Чат + мобилен drawer --------
-    async function renderAuthAreas() {
-      const { data: { user} } = await sb.auth.getUser();
-      const d = document.getElementById('nav-auth-desktop');
-      const m = document.getElementById('nav-auth-mobile');
-      const loginHref = `auth.html?redirectTo=${encodeURIComponent('chat.html')}`;
+  // Отключва/заключва drawer
+  (function initDrawer(){
+    const drawer = document.getElementById('drawer'); if (!drawer) return;
+    const openBtn  = document.getElementById('nav-open');
+    const closeBtn = document.getElementById('nav-close');
+    const backdrop = document.getElementById('backdrop');
+    const open  = () => { drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); };
+    const close = () => { drawer.classList.add('hidden');    document.body.classList.remove('overflow-hidden'); };
+    openBtn?.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    backdrop?.addEventListener('click', close);
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
+  })();
 
-      // Chat link (desktop)
-      const chatDesktop = user
-        ? `<a href="chat.html" class="relative px-3 py-1.5 rounded-lg hover:bg-slate-100">
-             Съобщения
-             <span id="unreadBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
-           </a>`
-        : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Съобщения</a>`;
+  // Непрочетени съобщения (използва rpc('chat_unread_count'); има graceful fallback 0)
+  async function fetchUnread() {
+    try {
+      const { data, error } = await sb.rpc('chat_unread_count');
+      if (error) return 0;
+      return Number(data)||0;
+    } catch { return 0; }
+  }
 
-      // Chat link (mobile)
-      const chatMobile = user
-        ? `<a href="chat.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50 relative">
-             Съобщения
-             <span id="unreadBadgeM" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
-           </a>`
-        : `<a href="${loginHref}" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Съобщения</a>`;
+  // Рисува горното меню (Вход/Профил/Изход + Съобщения за логнати)
+  async function renderAuthAreas() {
+    const { data: { user } } = await sb.auth.getUser();
 
-      let desktopHTML = '', mobileHTML  = '';
-      if (user) {
-        desktopHTML = `
-          ${chatDesktop}
-          <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
-          <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
-        mobileHTML = `
-          ${chatMobile}
-          <a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
-          <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>`;
-      } else {
-        desktopHTML = `<a href="auth.html?redirectTo=${encodeURIComponent(location.href)}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a> ${chatDesktop}`;
-        mobileHTML  = `<a href="auth.html?redirectTo=${encodeURIComponent(location.href)}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a> ${chatMobile}`;
+    const desk = document.getElementById('nav-auth-desktop');
+    const mobi = document.getElementById('nav-auth-mobile');
+
+    const dm = document.getElementById('nav-messages');
+    const mm = document.getElementById('m-nav-messages');
+    const dBadge = document.getElementById('nav-unread');
+    const mBadge = document.getElementById('m-nav-unread');
+
+    const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
+
+    // Съобщения – по дефолт скрити
+    dm?.classList.add('hidden');
+    mm?.classList.add('hidden');
+    dBadge?.classList.add('hidden');
+    mBadge?.classList.add('hidden');
+
+    if (user) {
+      // Показваме Съобщения
+      dm?.classList.remove('hidden');
+      mm?.classList.remove('hidden');
+
+      const unread = await fetchUnread();
+      if (unread > 0) {
+        dBadge.textContent = unread;
+        mBadge.textContent = unread;
+        dBadge.classList.remove('hidden');
+        mBadge.classList.remove('hidden');
       }
 
-      if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
-      if (m) { m.innerHTML = mobileHTML; }
+      // Auth бутони
+      desk.classList.remove('hidden');
+      desk.innerHTML = `
+        <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
+        <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>
+      `;
+      mobi.innerHTML = `
+        <a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
+        <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>
+      `;
+      const doLogout = async () => { await sb.auth.signOut(); location.href = '/'; };
+      document.getElementById('nav-logout')?.addEventListener('click', doLogout);
+      document.getElementById('nav-logout-m')?.addEventListener('click', doLogout);
 
-      // logout
-      [document.getElementById('nav-logout'), document.getElementById('nav-logout-m')].filter(Boolean).forEach(btn => {
-        btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+      // обновяване на баджа при връщане във фокус
+      window.addEventListener('focus', async ()=>{
+        const n = await fetchUnread();
+        if (n>0){ dBadge.textContent=n; mBadge.textContent=n; dBadge.classList.remove('hidden'); mBadge.classList.remove('hidden'); }
+        else     { dBadge.classList.add('hidden'); mBadge.classList.add('hidden'); }
       });
 
-      // wire floating button
-      const fab = document.getElementById('floatingChat');
-      fab.addEventListener('click', async ()=>{
-        const { data:{ user } } = await sb.auth.getUser();
-        if (!user) {
-          location.href = `auth.html?redirectTo=${encodeURIComponent('chat.html')}`;
-        } else {
-          location.href = 'chat.html';
-        }
-      });
-
-      // unread badges (optional RPC)
-      if (user) {
-        async function updateUnread(){
-          try{
-            // очаква се RPC: chat_unread_count() RETURNS int
-            const { data, error } = await sb.rpc('chat_unread_count');
-            if (!error && typeof data === 'number') {
-              const n = data;
-              const elD = document.getElementById('unreadBadge');
-              const elM = document.getElementById('unreadBadgeM');
-              const fabB= document.getElementById('fabBadge');
-              [elD,elM,fabB].forEach(el=>{
-                if (!el) return;
-                if (n>0){ el.textContent = n>99 ? '99+' : n; el.classList.remove('hidden'); }
-                else { el.classList.add('hidden'); }
-              });
-            }
-          }catch(_){}
-        }
-        updateUnread();
-        // периодична проверка
-        setInterval(updateUnread, 20000);
-      }
+    } else {
+      // Гост – показваме само „Вход“
+      desk.classList.remove('hidden');
+      desk.innerHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
+      mobi.innerHTML = `<a href="${loginHref}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a>`;
     }
+  }
 
-    (function initDrawer(){
-      const drawer   = document.getElementById('drawer'); if (!drawer) return;
-      const openBtn  = document.getElementById('nav-open');
-      const closeBtn = document.getElementById('nav-close');
-      const backdrop = document.getElementById('backdrop');
-
-      function open()  { drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
-      function close() { drawer.classList.add('hidden');    document.body.classList.remove('overflow-hidden'); }
-
-      openBtn?.addEventListener('click', open);
-      closeBtn?.addEventListener('click', close);
-      backdrop?.addEventListener('click', close);
-      window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
-    })();
-
-    renderAuthAreas();
+  renderAuthAreas();
+</script>
 
     // -------- Търсене / зареждане на категории и обяви --------
     const CATEGORIES = ['Недвижими имоти','Автомобили','Работа','Услуги','Техника','Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'];
