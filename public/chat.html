@@ -3,399 +3,286 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NovaObqva — Съобщения</title>
+  <title>NovaObqva — Чат</title>
   <link rel="icon" type="image/png" href="favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles/base.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <style>
-    .msg-bubble{max-width:80%;word-wrap:break-word}
-    .msg-time{font-size:11px}
-    .scrollbar-thin::-webkit-scrollbar{width:8px;height:8px}
-    .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
-    .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
+    .bubble{max-width:80%}
+    .scroll-snap-y{scroll-snap-type:y proximity}
+    .snap-start{scroll-snap-align:start}
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-  <!-- HEADER (унифициран) -->
+  <!-- Header -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-      <button id="backBtn" class="md:hidden inline-flex w-10 h-10 items-center justify-center rounded-lg border hover:bg-slate-50" aria-label="Назад" onclick="history.back()">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-      </button>
       <a href="/" class="flex items-center gap-2">
-        <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
+        <img src="favicon.png" alt="" class="w-6 h-6 rounded"/>
         <span class="text-xl font-bold">NovaObqva</span>
       </a>
-
       <nav class="hidden md:flex items-center gap-2 ml-4">
         <a href="index.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Обяви</a>
         <a href="plans.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
       </nav>
-
       <div class="flex-1"></div>
       <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
-
-      <button id="nav-open" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border hover:bg-slate-50" aria-label="Отвори меню">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Mobile drawer -->
-    <div id="drawer" class="fixed inset-0 z-50 hidden">
-      <div id="backdrop" class="absolute inset-0 bg-black/40"></div>
-      <div class="absolute right-0 top-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl p-4 flex flex-col">
-        <div class="flex items-center justify-between">
-          <span class="text-lg font-semibold">Меню</span>
-          <button id="nav-close" class="inline-flex w-10 h-10 items-center justify-center rounded-lg border hover:bg-slate-50" aria-label="Затвори">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-
-        <nav class="mt-4 grid gap-2">
-          <a href="index.html" class="px-3 py-2 rounded-lg hover:bg-slate-100">Обяви</a>
-          <a href="plans.html" class="px-3 py-2 rounded-lg hover:bg-slate-100">Планове</a>
-          <a href="chat.html" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Съобщения</a>
-        </nav>
-
-        <div class="mt-auto pt-4 border-t">
-          <div id="nav-auth-mobile" class="grid gap-2"></div>
-        </div>
-      </div>
     </div>
   </header>
 
-  <!-- CHAT LAYOUT -->
+  <!-- Main -->
   <main class="max-w-6xl mx-auto p-4 md:p-6">
     <div class="grid md:grid-cols-[320px,1fr] gap-4">
-      <!-- Sidebar: списък разговори -->
-      <aside id="sidebar" class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-        <div class="p-3 border-b">
-          <div class="flex items-center gap-2">
-            <input id="searchConv" placeholder="Търси разговори" class="w-full px-3 py-2 rounded-xl border">
-            <button id="refreshConvs" class="px-3 py-2 rounded-xl border hover:bg-slate-50" title="Обнови">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6V3L8 7l4 4V8c2.757 0 5 2.243 5 5a5.006 5.006 0 0 1-5 5 5.006 5.006 0 0 1-5-5H5a7 7 0 0 0 14 0 7.008 7.008 0 0 0-7-7z"/></svg>
-            </button>
-          </div>
+      <!-- Inbox -->
+      <aside class="bg-white rounded-2xl border overflow-hidden">
+        <div class="px-4 py-3 border-b flex items-center gap-2">
+          <h2 class="font-semibold">Разговори</h2>
+          <div class="ml-auto text-xs text-slate-500">обновява се в реално време</div>
         </div>
-        <div id="convList" class="max-h-[calc(100vh-260px)] md:max-h-[calc(100vh-220px)] overflow-auto scrollbar-thin"></div>
+        <div id="threads" class="max-h-[70vh] overflow-auto divide-y">
+          <!-- списък -->
+        </div>
       </aside>
 
-      <!-- Content: разговор -->
-      <section id="chatPanel" class="bg-white rounded-2xl border shadow-sm flex flex-col overflow-hidden min-h-[70vh]">
-        <!-- Top bar -->
-        <div class="flex items-center justify-between gap-3 p-3 border-b">
-          <div class="flex items-center gap-3">
-            <button id="mobileClose" class="md:hidden inline-flex w-9 h-9 items-center justify-center rounded-lg border hover:bg-slate-50" title="Назад към списъка">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            <div>
-              <div id="chatTitle" class="font-semibold">Избери разговор</div>
-              <div id="chatSub" class="text-xs text-slate-500"></div>
-            </div>
+      <!-- Chat pane -->
+      <section class="bg-white rounded-2xl border flex flex-col min-h-[60vh]">
+        <div id="chatHeader" class="px-4 py-3 border-b flex items-center gap-3">
+          <div class="flex-1">
+            <div id="chatTitle" class="font-semibold">Избери разговор</div>
+            <div id="chatSubtitle" class="text-xs text-slate-500"></div>
           </div>
-          <a id="chatAdLink" class="hidden px-3 py-1.5 rounded-lg border hover:bg-slate-50 text-sm" target="_blank" rel="noopener">Обява</a>
+          <a id="adLink" class="hidden text-sm px-3 py-1.5 rounded-lg border hover:bg-slate-50">Към обявата</a>
         </div>
 
-        <!-- Messages -->
-        <div id="msgs" class="flex-1 overflow-auto p-3 md:p-4 space-y-2 bg-slate-50/40"></div>
+        <div id="chatLog" class="flex-1 p-3 md:p-4 overflow-auto space-y-2 scroll-snap-y bg-slate-50">
+          <!-- съобщения -->
+        </div>
 
-        <!-- Composer -->
-        <form id="composer" class="border-t p-2 md:p-3 flex items-end gap-2">
-          <textarea id="input" rows="1" placeholder="Напишете съобщение…" class="flex-1 resize-none px-3 py-2 rounded-xl border focus:ring-2 focus:ring-emerald-500"></textarea>
-          <button id="sendBtn" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Изпрати</button>
+        <form id="composer" class="p-3 md:p-4 border-t flex items-end gap-2">
+          <textarea id="msg" rows="1" placeholder="Напиши съобщение..."
+            class="flex-1 resize-none rounded-xl border px-3 py-2 focus:ring-2 focus:ring-emerald-500"></textarea>
+          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Изпрати</button>
         </form>
       </section>
     </div>
   </main>
 
   <script>
-    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    // ===== Supabase client =====
+    const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
 
-    // ----- Header auth -----
-    async function renderAuthAreas() {
-      const { data: { user } } = await sb.auth.getUser();
-      const d = document.getElementById('nav-auth-desktop');
-      const m = document.getElementById('nav-auth-mobile');
-      const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
-      let desktopHTML = '', mobileHTML  = '';
-      if (user) {
-        desktopHTML = `<a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
-                       <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
-        mobileHTML = `<a href="account.html" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Моят профил</a>
-                      <button id="nav-logout-m" class="px-3 py-2 rounded-lg bg-slate-800 text-white">Изход</button>`;
-      } else {
-        desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
-        mobileHTML  = `<a href="${loginHref}" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Вход</a>`;
+    // ===== Auth helpers =====
+    async function ensureAuth() {
+      const { data:{ user } } = await sb.auth.getUser();
+      if (!user) {
+        location.replace('auth.html?redirectTo=' + encodeURIComponent(location.href));
+        await new Promise(()=>{});
       }
-      if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
-      if (m) { m.innerHTML = mobileHTML; }
-      [document.getElementById('nav-logout'), document.getElementById('nav-logout-m')].filter(Boolean).forEach(btn => {
-        btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+      return user;
+    }
+    async function renderAuthArea(){
+      const { data:{ user } } = await sb.auth.getUser();
+      const d = document.getElementById('nav-auth-desktop');
+      const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
+      d.classList.remove('hidden');
+      d.innerHTML = user
+        ? `<a href="account.html" class="px-3 py-1.5 rounded-lg border hover:bg-slate-50 text-sm">Моят профил</a>
+           <button id="logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`
+        : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
+      document.getElementById('logout')?.addEventListener('click', async ()=>{
+        await sb.auth.signOut(); location.href='/';
       });
     }
-    (function initDrawer(){
-      const drawer = document.getElementById('drawer'); if (!drawer) return;
-      const openBtn  = document.getElementById('nav-open');
-      const closeBtn = document.getElementById('nav-close');
-      const backdrop = document.getElementById('backdrop');
-      const open  = () => { drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); };
-      const close = () => { drawer.classList.add('hidden');    document.body.classList.remove('overflow-hidden'); };
-      openBtn?.addEventListener('click', open);
-      closeBtn?.addEventListener('click', close);
-      backdrop?.addEventListener('click', close);
-      window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
-    })();
-    renderAuthAreas();
 
-    // ----- Chat state -----
-    let me=null, convIds=[], conversations=[], activeConv=null, adMap=new Map(), lastMessages=new Map(), unreadByConv=new Map();
-    let msgRealtime=null;
+    // ===== Chat state =====
+    let me = null;
+    let currentConv = null;
+    let messagesSub = null;     // realtime subscription for current conversation
 
-    const convListEl = document.getElementById('convList');
-    const msgsEl = document.getElementById('msgs');
-    const inputEl = document.getElementById('input');
-    const sendBtn = document.getElementById('sendBtn');
+    // DOM refs
+    const threadsEl = document.getElementById('threads');
+    const chatLogEl = document.getElementById('chatLog');
+    const chatTitleEl = document.getElementById('chatTitle');
+    const chatSubtitleEl = document.getElementById('chatSubtitle');
+    const adLinkEl = document.getElementById('adLink');
+    const msgInput = document.getElementById('msg');
+    const composer = document.getElementById('composer');
 
-    // Ensure login
-    (async function init(){
-      const { data:{ user } } = await sb.auth.getUser();
-      if(!user){ location.replace('auth.html?redirectTo='+encodeURIComponent(location.href)); return; }
-      me=user;
+    // ===== Utils =====
+    const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    const fmtDate = ts => new Date(ts).toLocaleString('bg-BG');
 
-      // If deep-link params present → ensure conversation via RPC
-      const url = new URL(location.href);
-      const convId = url.searchParams.get('id');
-      const adId   = url.searchParams.get('ad');
-      const toUser = url.searchParams.get('to');
-
-      if (!convId && adId && toUser) {
-        try{
-          const { data, error } = await sb.rpc('ensure_conversation', { p_ad_id: adId, p_other_user: toUser });
-          if (error) throw error;
-          if (data) {
-            url.searchParams.set('id', data);
-            history.replaceState({}, '', url.toString());
-          }
-        }catch(e){ console.warn('ensure_conversation RPC липсва/греши', e); }
-      }
-
-      await loadConversations();
-      // Activate conversation if provided
-      const idFromUrl = (new URL(location.href)).searchParams.get('id');
-      if (idFromUrl && convIds.includes(idFromUrl)) {
-        openConversation(idFromUrl);
-      }
-    })();
-
-    // Load conversations for current user
-    async function loadConversations(){
-      // 1) IDs през участници
-      const { data: parts, error: e1 } = await sb.from('conversation_participants')
-        .select('conversation_id').eq('user_id', me.id);
-      if (e1){ console.error(e1); convListEl.innerHTML = `<div class="p-4 text-slate-600">Грешка при зареждане на разговори.</div>`; return; }
-
-      convIds = (parts||[]).map(p=>p.conversation_id);
-      if (convIds.length===0){ convListEl.innerHTML = `<div class="p-4 text-slate-500">Нямате разговори все още.</div>`; return; }
-
-      // 2) Conversations
-      const { data: convs } = await sb.from('conversations')
-        .select('id, ad_id, created_at').in('id', convIds).order('created_at',{ascending:false});
-      conversations = convs||[];
-
-      // 3) Ads map (заглавие)
-      const adIds = [...new Set((conversations||[]).map(c=>c.ad_id).filter(Boolean))];
-      if (adIds.length){
-        const { data: ads } = await sb.from('ads').select('id,title').in('id', adIds);
-        (ads||[]).forEach(a=>adMap.set(a.id, a.title));
-      }
-
-      // 4) Last messages (взимаме последните N наведнъж и групираме)
-      const { data: lastMsgs } = await sb.from('messages')
-        .select('id,conversation_id,sender_id,body,created_at,read_at')
-        .in('conversation_id', convIds).order('created_at',{ascending:false}).limit(500);
-      lastMessages = new Map();
-      (lastMsgs||[]).forEach(m=>{ if(!lastMessages.has(m.conversation_id)) lastMessages.set(m.conversation_id,m); });
-
-      // 5) Unread per conversation
-      const { data: unreadRows } = await sb.from('messages')
-        .select('id,conversation_id').in('conversation_id', convIds)
-        .is('read_at', null).neq('sender_id', me.id);
-      unreadByConv = new Map();
-      (unreadRows||[]).forEach(r=> unreadByConv.set(r.conversation_id, (unreadByConv.get(r.conversation_id)||0)+1) );
-
-      renderConvList();
-
-      // 6) Realtime for new messages
-      if (msgRealtime) { sb.removeChannel(msgRealtime); msgRealtime=null; }
-      msgRealtime = sb.channel('rt-chat')
-        .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, async (payload)=>{
-          const m = payload.new;
-          if (!convIds.includes(m.conversation_id)) return;
-          // update last message
-          lastMessages.set(m.conversation_id, m);
-          // unread count
-          if (m.sender_id !== me.id) {
-            unreadByConv.set(m.conversation_id, (unreadByConv.get(m.conversation_id)||0)+1);
-            window.dispatchEvent(new CustomEvent('novaobqva:unread-updated')); // за shell-mobile
-            // ако разговорът е активен → маркни за прочетено
-            if (activeConv === m.conversation_id) {
-              await markRead(activeConv);
-            }
-          }
-          renderConvList();
-          if (activeConv === m.conversation_id) {
-            appendMessage(m); scrollToBottom();
-          }
-        })
-        .subscribe();
+    function bubble(m){
+      const mine = m.user_id === me.id;
+      return `
+        <div class="snap-start flex ${mine?'justify-end':''}">
+          <div class="bubble rounded-2xl px-3 py-2 ${mine?'bg-emerald-600 text-white':'bg-white border'}">
+            <div class="whitespace-pre-wrap break-words">${esc(m.content)}</div>
+            <div class="mt-1 text-[11px] ${mine?'text-white/70':'text-slate-400'}">${fmtDate(m.created_at)}</div>
+          </div>
+        </div>`;
     }
 
-    function convRow(c){
-      const last = lastMessages.get(c.id);
-      const lastTxt = last?.body ? escapeHTML(String(last.body)).slice(0,80) : '—';
-      const when = last?.created_at ? new Date(last.created_at).toLocaleString('bg-BG') : new Date(c.created_at).toLocaleDateString('bg-BG');
-      const unread = unreadByConv.get(c.id)||0;
-      const title = adMap.get(c.ad_id) || 'Разговор';
+    function threadItem(t){
+      const last = t._last || {};
+      const title = esc(t._ad_title || 'Разговор');
       return `
-        <button data-open="${c.id}" class="w-full text-left px-3 py-3 border-b hover:bg-slate-50 ${activeConv===c.id?'bg-emerald-50':''}">
+        <button data-conv="${t.id}" class="w-full text-left px-4 py-3 hover:bg-slate-50 ${t.id===currentConv?'bg-slate-100':''}">
           <div class="flex items-center justify-between gap-2">
-            <div class="font-medium line-clamp-1">${escapeHTML(title)}</div>
-            <div class="msg-time text-slate-500">${when}</div>
+            <div class="font-medium line-clamp-1">${title}</div>
+            <div class="text-[11px] text-slate-500">${last.created_at?fmtDate(last.created_at):''}</div>
           </div>
-          <div class="text-sm text-slate-600 line-clamp-1">${lastTxt}</div>
-          ${unread>0?`<span class="mt-1 inline-block text-[11px] px-2 py-0.5 rounded-full bg-emerald-600 text-white">${unread}</span>`:''}
+          <div class="text-sm text-slate-600 line-clamp-1">${esc(last.content || '')}</div>
         </button>`;
     }
 
-    function renderConvList(){
-      const q = document.getElementById('searchConv').value?.toLowerCase().trim() || '';
-      const rows = conversations.filter(c=>{
-        const title = (adMap.get(c.ad_id)||'').toLowerCase();
-        return !q || title.includes(q);
+    async function loadThreads(){
+      // 1) моите разговори (през participants)
+      const { data: parts, error } = await sb
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', me.id);
+      if (error) { console.error(error); return; }
+      const convIds = (parts||[]).map(p=>p.conversation_id);
+      if (convIds.length===0){ threadsEl.innerHTML = `<div class="px-4 py-6 text-slate-500">Нямаш разговори.</div>`; return; }
+
+      // 2) разговорите
+      const { data: convs } = await sb
+        .from('conversations')
+        .select('id, ad_id, updated_at')
+        .in('id', convIds)
+        .order('updated_at', { ascending: false });
+
+      // 3) заглавия на обяви
+      const adIds = [...new Set((convs||[]).map(c=>c.ad_id).filter(Boolean))];
+      let adMap = {};
+      if (adIds.length){
+        const { data: ads } = await sb.from('ads').select('id,title').in('id', adIds);
+        (ads||[]).forEach(a => adMap[a.id] = a.title);
+      }
+
+      // 4) взимаме последно съобщение на пакет
+      const { data: lastMsgs } = await sb
+        .from('messages')
+        .select('conversation_id, content, created_at')
+        .in('conversation_id', convIds)
+        .order('created_at', { ascending:false });
+      const lastMap = {};
+      (lastMsgs||[]).forEach(m => { if (!lastMap[m.conversation_id]) lastMap[m.conversation_id] = m; });
+
+      const rows = (convs||[]).map(c => ({ ...c, _ad_title: adMap[c.ad_id], _last: lastMap[c.id]}));
+      threadsEl.innerHTML = rows.map(threadItem).join('');
+    }
+
+    async function openConversation(convId){
+      if (messagesSub){ sb.removeChannel(messagesSub); messagesSub=null; }
+      currentConv = convId;
+
+      // инфо за разговора
+      const { data: conv } = await sb.from('conversations').select('id, ad_id, updated_at').eq('id', convId).maybeSingle();
+      let adTitle = 'Разговор', adId = null;
+      if (conv?.ad_id){
+        const { data: ad } = await sb.from('ads').select('id,title').eq('id', conv.ad_id).maybeSingle();
+        if (ad){ adTitle = ad.title; adId = ad.id; }
+      }
+      chatTitleEl.textContent = adTitle;
+      chatSubtitleEl.textContent = conv?.updated_at ? ('Обновен: ' + fmtDate(conv.updated_at)) : '';
+      if (adId){ adLinkEl.href = 'ad.html?id='+encodeURIComponent(adId); adLinkEl.classList.remove('hidden'); }
+      else { adLinkEl.classList.add('hidden'); }
+
+      // зареди съобщения
+      const { data: msgs } = await sb
+        .from('messages')
+        .select('id, conversation_id, user_id, content, created_at')
+        .eq('conversation_id', convId)
+        .order('created_at', { ascending: true });
+
+      chatLogEl.innerHTML = (msgs||[]).map(bubble).join('');
+      chatLogEl.scrollTop = chatLogEl.scrollHeight;
+
+      // realtime
+      messagesSub = sb
+        .channel('room:'+convId)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${convId}`
+        }, payload => {
+          chatLogEl.insertAdjacentHTML('beforeend', bubble(payload.new));
+          chatLogEl.scrollTop = chatLogEl.scrollHeight;
+          // обнови inbox без да мигаш
+          loadThreads();
+        })
+        .subscribe();
+
+      // маркирай активния в списъка
+      [...threadsEl.querySelectorAll('[data-conv]')].forEach(b=>{
+        b.classList.toggle('bg-slate-100', b.dataset.conv===convId);
       });
-      convListEl.innerHTML = rows.map(convRow).join('');
-      convListEl.querySelectorAll('[data-open]').forEach(btn=>{
-        btn.addEventListener('click', ()=> openConversation(btn.getAttribute('data-open')));
-      });
-    }
-    document.getElementById('searchConv').addEventListener('input', renderConvList);
-    document.getElementById('refreshConvs').addEventListener('click', loadConversations);
-
-    // Open conversation
-    async function openConversation(id){
-      activeConv = id;
-
-      // UI: на мобилни скрий списъка
-      document.getElementById('sidebar').classList.add('hidden','md:block');
-      document.getElementById('mobileClose').onclick = ()=>{
-        document.getElementById('sidebar').classList.remove('hidden','md:block');
-      };
-
-      // Заглавие + линк към обявата
-      const conv = conversations.find(c=>c.id===id);
-      const title = adMap.get(conv?.ad_id) || 'Разговор';
-      document.getElementById('chatTitle').textContent = title;
-      document.getElementById('chatSub').textContent = '';
-      const adLink = document.getElementById('chatAdLink');
-      if (conv?.ad_id){ adLink.classList.remove('hidden'); adLink.href = `ad.html?id=${conv.ad_id}`; } else { adLink.classList.add('hidden'); }
-
-      // Messages (initial)
-      msgsEl.innerHTML = `<div class="p-4 text-slate-500">Зареждане…</div>`;
-      const { data: rows, error } = await sb.from('messages').select('*')
-        .eq('conversation_id', id).order('created_at', { ascending: true }).limit(500);
-      if (error){ msgsEl.innerHTML = `<div class="p-4 text-rose-600">Грешка при зареждане на съобщения.</div>`; return; }
-      msgsEl.innerHTML = '';
-      (rows||[]).forEach(appendMessage);
-      scrollToBottom();
-
-      // Маркирай прочетени
-      await markRead(id);
-
-      // Обнови URL (без reload)
-      const url = new URL(location.href); url.searchParams.set('id', id); history.replaceState({}, '', url.toString());
-
-      renderConvList(); // обнови активния ред/бейдж
     }
 
-    function appendMessage(m){
-      const mine = m.sender_id === me.id;
-      const side = mine ? 'items-end' : 'items-start';
-      const bubble = mine
-        ? 'bg-emerald-600 text-white rounded-2xl rounded-br-sm'
-        : 'bg-white border rounded-2xl rounded-bl-sm';
-      const time = new Date(m.created_at).toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
-      const html = `
-        <div class="flex ${side}">
-          <div class="msg-bubble px-3 py-2 ${bubble}">
-            <div class="whitespace-pre-wrap">${escapeHTML(m.body||'')}</div>
-            <div class="msg-time mt-1 ${mine?'text-emerald-200':'text-slate-500'}">${time}</div>
-          </div>
-        </div>`;
-      msgsEl.insertAdjacentHTML('beforeend', html);
-    }
-
-    function scrollToBottom(){ msgsEl.scrollTop = msgsEl.scrollHeight + 9999; }
-
-    async function markRead(id){
-      // mark unread in this conversation as read
-      const { error } = await sb.from('messages').update({ read_at: new Date().toISOString() })
-        .eq('conversation_id', id).is('read_at', null).neq('sender_id', me.id);
-      if (!error){ unreadByConv.set(id, 0); renderConvList(); window.dispatchEvent(new CustomEvent('novaobqva:unread-updated')); }
-    }
-
-    // Composer
-    document.getElementById('composer').addEventListener('submit', async (e)=>{
+    // изпращане
+    composer.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const body = inputEl.value.trim();
-      if (!activeConv || !body) return;
-      inputEl.value=''; inputEl.style.height='auto';
-      const { error } = await sb.from('messages').insert([{ conversation_id: activeConv, sender_id: me.id, body }]);
-      if (error){ console.error(error); alert('Неуспешно изпращане.'); return; }
-      // локално ще се появи през realtime; ако е забавено — добави optimistic:
-      appendMessage({ conversation_id: activeConv, sender_id: me.id, body, created_at: new Date().toISOString() });
-      scrollToBottom();
+      const text = msgInput.value.trim();
+      if (!text || !currentConv) return;
+      msgInput.value=''; msgInput.style.height='auto';
+      const { error } = await sb.from('messages').insert([{
+        conversation_id: currentConv, user_id: me.id, content: text
+      }]);
+      if (error) { console.error(error); alert('Неуспешно изпращане.'); }
     });
 
-    // autosize textarea
-    inputEl.addEventListener('input', ()=>{
-      inputEl.style.height='auto';
-      inputEl.style.height = Math.min(160, inputEl.scrollHeight) + 'px';
+    // авто-растеж на textarea
+    msgInput.addEventListener('input', ()=>{
+      msgInput.style.height='auto';
+      msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
     });
 
-    function escapeHTML(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+    // отваряне от query: ?id=<conv> ИЛИ ?ad=<ad_id>&to=<user_id>
+    async function maybeStartFromQuery(){
+      const u = new URL(location.href);
+      const convId = u.searchParams.get('id');
+      const adId   = u.searchParams.get('ad');
+      const toUser = u.searchParams.get('to');
+      if (convId){ await openConversation(convId); return; }
+      if (adId && toUser){
+        // RPC: гарантира нишка и връща id
+        const { data, error } = await sb.rpc('ensure_conversation', {
+          p_ad_id: adId,
+          p_other_user: toUser
+        });
+        if (!error && data){ await loadThreads(); await openConversation(data); }
+      }
+    }
+
+    // клик на нишка
+    threadsEl.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('[data-conv]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-conv');
+      await openConversation(id);
+    });
+
+    // boot
+    (async ()=>{
+      me = await ensureAuth();
+      await renderAuthArea();
+      await loadThreads();
+      await maybeStartFromQuery();
+
+      // realtime за обновяване на inbox при нови съобщения (в която и да е нишка)
+      sb.channel('inbox:'+me.id)
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload=>{
+          // ако съобщението е в нишка, в която участвам → рефреш списъка
+          loadThreads();
+        })
+        .subscribe();
+    })();
   </script>
-
-  <!-- Единен мобилен док + нотиси -->
-  <script src="shell-mobile.js"></script>
-
-  <!-- Подсказка: SQL (ако още не е добавено)
-  create table if not exists public.conversations (
-    id uuid primary key default gen_random_uuid(),
-    ad_id uuid references public.ads(id) on delete set null,
-    created_at timestamptz default now()
-  );
-  create table if not exists public.conversation_participants (
-    conversation_id uuid references public.conversations(id) on delete cascade,
-    user_id uuid not null,
-    primary key(conversation_id, user_id)
-  );
-  create table if not exists public.messages (
-    id uuid primary key default gen_random_uuid(),
-    conversation_id uuid references public.conversations(id) on delete cascade,
-    sender_id uuid not null,
-    body text not null,
-    created_at timestamptz default now(),
-    read_at timestamptz
-  );
-  -- RPC ensure_conversation(p_ad_id uuid, p_other_user uuid) returns uuid
-  -- намира или създава разговор между текущия (auth.uid()) и p_other_user по дадена обява.
-  -->
 </body>
 </html>
