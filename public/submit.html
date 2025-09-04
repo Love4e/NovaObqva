@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <style>
-    /* тънък хоризонтален скрол */
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
@@ -25,14 +24,14 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
   <header class="sticky top-0 bg-white/80 backdrop-blur border-b">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
       <a href="/" class="text-2xl font-bold">NovaObqva</a>
       <div class="flex-1"></div>
       <a href="auth.html" class="text-sm text-slate-600 hover:text-slate-900">Вход</a>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto p-4 md:p-6 pb-24 md:pb-6">
+  <main class="max-w-5xl mx-auto p-4 md:p-6 pb-24 md:pb-6">
     <div class="bg-white rounded-2xl border shadow-sm p-4 md:p-6">
       <h1 class="text-xl md:text-2xl font-semibold mb-1">Подай нова обява</h1>
       <p class="text-slate-600 mb-6">Попълни полетата, добави снимки, избери план и валута, и изпрати за одобрение.</p>
@@ -78,7 +77,7 @@
           </div>
         </div>
 
-        <!-- СНИМКИ -->
+        <!-- СНИМКИ (с избор „Основна“) -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium">Снимки</label>
@@ -90,26 +89,27 @@
             <input id="images" type="file" accept="image/*" multiple class="sr-only">
           </div>
 
-          <!-- Прегледи с избор на основна снимка -->
           <div id="previews" class="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
-          <p class="text-xs text-slate-500 mt-2">До 6 файла, максимум 10MB всяка. Първата е основна (може да смените).</p>
+          <p class="text-xs text-slate-500 mt-2">До 6 файла, максимум 10MB всяка. Маркирайте „Основна“ за първа снимка в обявата.</p>
         </div>
 
-        <!-- ПЛАНОВЕ + ВАЛУТА -->
+        <!-- ПЛАНОВЕ + ВАЛУТА (ГРИД на десктоп, без рязане) -->
         <div>
-          <div class="flex flex-col md:flex-row md:items-end gap-4">
+          <div class="flex flex-col lg:flex-row lg:items-end gap-4">
             <div class="flex-1">
               <label class="block text-sm font-medium mb-2">Изберете план</label>
+
+              <!-- На мобилни: 1 колона, на sm: 2, на lg: 3 колони -->
               <div id="plansBar"
-                   class="flex gap-5 overflow-x-auto pb-3 scrollbar-thin snap-x snap-mandatory">
+                   class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 <!-- картите се инжектират от JS -->
               </div>
             </div>
 
-            <div class="w-full md:w-44">
+            <div class="w-full lg:w-44">
               <label class="block text-sm font-medium mb-1">Валута</label>
               <div id="currencySwitch"
-                   class="flex w-full md:inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
+                   class="flex w-full lg:inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
                 <button type="button" data-cur="bgn"
                         class="curBtn flex-1 px-3 py-2 text-sm font-medium aria-selected:bg-emerald-600 aria-selected:text-white">
                   🇧🇬 BGN
@@ -150,7 +150,7 @@
 
   <!-- Sticky action bar — мобилни -->
   <div id="stickyBar" class="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t p-3">
-    <div class="max-w-4xl mx-auto px-2">
+    <div class="max-w-5xl mx-auto px-2">
       <button id="stickySubmit"
               class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium">
         Изпрати за одобрение
@@ -166,7 +166,7 @@
       'Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'
     ];
 
-    // Fallback планове с BGN/EUR линкове (по твоите линкове)
+    // Fallback планове с BGN/EUR линкове
     const FALLBACK_PLANS = [
       {
         id: 'starter',
@@ -215,7 +215,7 @@
     let selectedPlan = null;  // текущо избран план
     let selectedFiles = [];   // File[]
     let currentCurrency = 'bgn'; // 'bgn' | 'eur'
-    let selectedCoverIndex = 0;  // индекс на основната снимка
+    let selectedCoverIndex = 0;  // индекс на „основна снимка“
 
     (async () => {
       // 1) require login
@@ -230,14 +230,13 @@
         opt.value = c; opt.textContent = c; catSel.appendChild(opt);
       });
 
-      // 3) load plans table (ако има), иначе fallback
+      // 3) load plans (ако имаш таблица), иначе fallback
       try {
         const { data, error } = await sb
           .from('plans')
           .select('id,name,price,pay_url,features,price_bgn,price_eur');
         if (!error && data?.length) {
           plans = data.map(p => {
-            // поддръжка ако pay_url е json текст
             let pay = p.pay_url;
             if (typeof pay === 'string' && pay.trim().startsWith('{')) {
               try { pay = JSON.parse(pay); } catch { pay = { bgn: pay, eur: pay }; }
@@ -265,7 +264,7 @@
       drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('bg-slate-50'); addFiles([...e.dataTransfer.files]); });
       input.addEventListener('change', e => addFiles([...e.target.files]));
 
-      // 5) submit buttons
+      // 5) submit
       el('adForm').addEventListener('submit', onSubmit);
       el('stickySubmit').addEventListener('click', ()=> el('adForm').requestSubmit());
 
@@ -284,20 +283,19 @@
           renderPlans();
         });
       });
-      // по подразбиране BGN
-      document.querySelector('#currencySwitch [data-cur="bgn"]').click();
+      document.querySelector('#currencySwitch [data-cur="bgn"]').click(); // default
     })();
 
     function renderPlans(){
       const bar = el('plansBar'); bar.innerHTML = '';
-      const cur = currentCurrency; // 'bgn' | 'eur'
+      const cur = currentCurrency;
 
       plans.forEach((p) => {
         const price = cur === 'eur' ? Number(p.price_eur) : Number(p.price_bgn);
         const isSelected = selectedPlan?.id === p.id;
 
         const wrap = document.createElement('div');
-        wrap.className = 'planWrap snap-start';
+        wrap.className = 'planWrap';
 
         const isPro = (p.name||'').toLowerCase() === 'pro';
         const badge = isPro
@@ -307,7 +305,7 @@
         wrap.innerHTML = `
           ${badge}
           <button type="button"
-                  class="relative group min-w-[85vw] sm:min-w-[260px] rounded-2xl border bg-white/70 backdrop-blur-md
+                  class="relative group w-full rounded-2xl border bg-white/70 backdrop-blur-md
                          hover:shadow-lg transition-all duration-300 p-5 text-left">
             <div class="flex items-center justify-between">
               <div class="text-lg md:text-xl font-semibold">${escapeHTML(p.name)}</div>
@@ -343,7 +341,6 @@
         bar.appendChild(wrap);
       });
 
-      // ако няма избран → първия
       if (!selectedPlan && bar.children.length) {
         bar.children[0].classList.add('is-selected');
         selectedPlan = plans[0];
@@ -362,9 +359,8 @@
       if (remain <= 0) { msg('Достигнат е лимитът от 6 снимки.', true); return; }
       selectedFiles = selectedFiles.concat(filtered.slice(0, remain));
 
-      // ако няма избрана основна — първата
       if (selectedFiles.length && (selectedCoverIndex == null || selectedCoverIndex >= selectedFiles.length)) {
-        selectedCoverIndex = 0;
+        selectedCoverIndex = 0; // по подразбиране първата е основна
       }
       renderPreviews();
     }
@@ -381,19 +377,15 @@
         wrap.className = 'relative group';
 
         wrap.innerHTML = `
-          <img src="${url}"
-               class="w-full h-28 object-cover rounded-lg border ${isCover ? 'ring-2 ring-indigo-500' : ''}">
-          <button type="button"
-                  class="absolute top-1 left-1 text-[11px] px-2 py-1 rounded bg-indigo-600 text-white ${isCover ? '' : 'hidden'}">
-            Основна
+          <!-- „радио“ за избор на основна -->
+          <button type="button" data-cover="${idx}"
+                  class="absolute top-1 left-1 z-10 rounded-full border bg-white/90 px-2 py-1 text-[11px] ${isCover?'border-indigo-500 text-indigo-600':'text-slate-700'}">
+            ${isCover ? 'Основна' : 'Направи осн.'}
           </button>
 
-          <div class="absolute bottom-1 left-1 flex gap-1">
-            <button type="button" data-make="${idx}"
-                    class="bg-white/90 border rounded-md px-2 py-1 text-xs ${isCover ? 'hidden' : ''}">
-              Направи осн.
-            </button>
-          </div>
+          <img src="${url}"
+               class="w-full h-28 object-cover rounded-lg border ${isCover ? 'ring-2 ring-indigo-500' : ''}"
+               alt="Снимка ${idx+1}" />
 
           <button type="button"
                   class="absolute top-1 right-1 bg-white/90 border rounded-md px-2 py-1 text-xs">
@@ -404,7 +396,6 @@
         // премахване
         wrap.querySelector('.absolute.top-1.right-1')?.addEventListener('click', ()=>{
           selectedFiles.splice(idx,1);
-          // коригирай cover индекса
           if (selectedFiles.length === 0) {
             selectedCoverIndex = 0;
           } else if (idx < selectedCoverIndex) {
@@ -416,7 +407,13 @@
         });
 
         // направи основна
-        wrap.querySelector(`[data-make="${idx}"]`)?.addEventListener('click', ()=>{
+        wrap.querySelector(`[data-cover="${idx}"]`)?.addEventListener('click', ()=>{
+          selectedCoverIndex = idx;
+          renderPreviews();
+        });
+
+        // клик по картинката също прави основна
+        wrap.querySelector('img')?.addEventListener('click', ()=>{
           selectedCoverIndex = idx;
           renderPreviews();
         });
@@ -445,7 +442,6 @@
         image_urls = uploaded.urls;
       }
 
-      // определяне на cover url според индекса
       const cover_index = Math.min(Math.max(selectedCoverIndex || 0, 0), Math.max(image_urls.length - 1, 0));
       const cover_image = image_urls[cover_index] || null;
 
@@ -455,8 +451,7 @@
         user_id: currentUser.id,
         title, description, price, city, category,
         images: image_urls,                     // jsonb
-        cover_image,                            // текстов URL (по избор)
-        cover_index,                            // число (по избор)
+        cover_image, cover_index,               // нови полета
         plan_id: selectedPlan.id,
         plan_name: selectedPlan.name,
         plan_price: plan_price,
@@ -467,9 +462,9 @@
       const { data, error } = await sb.from('ads').insert([insertPayload]).select('id').single();
       if (error) { console.error(error); msg('Грешка при запис. Проверете правата (RLS) и полетата в таблицата.', true); return; }
 
-      // 3) резултат + бутон за плащане според валутата
+      // 3) резултат + бутон за плащане
       el('adForm').classList.add('hidden');
-      el('stickyBar').classList.add('hidden'); // скрий мобилния бар
+      el('stickyBar').classList.add('hidden');
       const res = el('result'); res.classList.remove('hidden');
       el('viewBtn').href = 'ad.html?id=' + encodeURIComponent(data.id);
 
