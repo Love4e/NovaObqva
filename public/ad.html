@@ -18,7 +18,7 @@
 <body class="bg-slate-50 min-h-screen">
 
   <!-- HEADER (без „Публикувай“) -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blур border-b">
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
       <a href="/" class="flex items-center gap-2">
         <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
@@ -351,21 +351,6 @@
             ${data.city?` · ${esc(data.city)}`:''}
             ${data.category?` · ${esc(data.category)}`:''}
           </div>
-
-          <!-- МАСКИРАН ТЕЛЕФОН + РАЗКРИВАНЕ -->
-          <div class="mt-4">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-slate-600">Телефон:</span>
-              <a id="phoneLink" class="hidden font-medium underline decoration-emerald-600 underline-offset-2" href="#" rel="nofollow"></a>
-              <span id="phoneMasked" class="font-medium text-slate-900">скрит</span>
-              <button id="revealPhoneBtn" class="px-3 py-1.5 rounded-lg border hover:bg-slate-50">
-                Покажи телефона
-              </button>
-            </div>
-            <p class="text-xs text-slate-500 mt-1">Лимит: до 5 разкривания на ден.</p>
-            <p id="revealErr" class="text-xs text-rose-600 mt-1 hidden"></p>
-          </div>
-
           <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${esc(data.description||'')}</div>
 
           <div class="mt-6 flex justify-end">
@@ -385,57 +370,7 @@
         });
       }
 
-      // свържи разкриването на телефона
-      attachRevealHandler(data.id);
-
       openModal();
-    }
-
-    // ---------- ЛОГИКА ЗА РАЗКРИВАНЕ ----------
-    async function ensureLogin() {
-      const { data:{ user } } = await sb.auth.getUser();
-      if (!user) {
-        location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href);
-        return null;
-      }
-      return user;
-    }
-    function showRevealError(msg){
-      const el = modalBody.querySelector('#revealErr');
-      if (!el) return;
-      el.textContent = msg; el.classList.remove('hidden');
-    }
-
-    function attachRevealHandler(adId){
-      const btn = modalBody.querySelector('#revealPhoneBtn');
-      const masked = modalBody.querySelector('#phoneMasked');
-      const link = modalBody.querySelector('#phoneLink');
-      if (!btn || !masked || !link) return;
-
-      btn.addEventListener('click', async ()=>{
-        if (!await ensureLogin()) return;
-        btn.disabled = true;
-
-        const { data, error } = await sb.rpc('reveal_phone', { p_ad_id: adId });
-        btn.disabled = false;
-
-        if (error) {
-          const m = (error.message||'').toUpperCase();
-          if (m.includes('DAILY_LIMIT_REACHED'))       showRevealError('Достигнахте дневния лимит (5). Опитайте утре.');
-          else if (m.includes('NO_PHONE'))             showRevealError('Няма въведен телефон за тази обява.');
-          else if (m.includes('AUTH_REQUIRED'))        showRevealError('Моля, влезте в профила си.');
-          else                                         showRevealError('Неуспешно разкриване. Опитайте отново.');
-          return;
-        }
-
-        // успех – покажи номер + tel: линк, скрий маската и бутона
-        const phone = String(data||'').trim();
-        masked.classList.add('hidden');
-        link.textContent = phone;
-        link.href = 'tel:' + phone.replace(/\s+/g,'');
-        link.classList.remove('hidden');
-        btn.classList.add('hidden');
-      });
     }
 
     // start
