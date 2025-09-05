@@ -575,192 +575,144 @@
   </div>
 </footer>
 
-<!-- === NovaObqva · Messenger-балонче с мини въпросник === -->
+<!-- NOVA QUESTION BUBBLE – mobile tap fix -->
 <style>
-  :root{ --nq-bottom: 20px; --nq-right: 16px; --nq-z: 85; --nq-sheet-w: 480px; }
-  @media (max-width: 640px){ :root{ --nq-bottom: 96px; --nq-right: 12px; --nq-sheet-w: min(96vw, 480px);} }
-
-  .nq-wrap{ position:fixed; right:var(--nq-right); bottom:var(--nq-bottom); z-index:var(--nq-z); }
-  .nq-launch{
-    appearance:none; border:0; cursor:pointer;
-    width:56px; height:56px; border-radius:999px;
-    display:grid; place-items:center;
-    background: radial-gradient(120% 120% at 0% 0%, #22c55e, #0ea5e9 45%, #6366f1 75%, #a855f7 100%);
-    color:#fff; box-shadow:0 10px 35px rgba(2,6,23,.35); position:relative;
+  #novaQ.nq-root{
+    position: fixed;
+    right: 14px;
+    bottom: 96px;              /* над мобилния док */
+    z-index: 80;               /* по-високо от дока (който е ~60) */
+    pointer-events: none;      /* само панелът приема кликове */
   }
-  .nq-launch::after{ /* „пулс“ ефект */
-    content:""; position:absolute; inset:-6px; border-radius:999px; border:2px solid rgba(255,255,255,.35);
-    animation:nqPulse 2.2s ease-in-out infinite;
+  @media (min-width:768px){
+    #novaQ.nq-root{ bottom: 24px; }
   }
-  @keyframes nqPulse{ 0%,100%{opacity:.35; transform:scale(1)} 50%{opacity:.05; transform:scale(1.12)} }
-
-  /* мини подсказка над балончето (еднократно на сесия) */
-  .nq-tip{
-    position:absolute; right:64px; bottom:12px; background:#0f172a; color:#fff;
-    border:1px solid rgba(255,255,255,.15); border-radius:14px; padding:.55rem .7rem; font-size:12.5px;
-    box-shadow:0 10px 30px rgba(0,0,0,.4); display:none;
+  #novaQ .nq-panel{
+    pointer-events: auto;
+    width: min(92vw, 380px);
+    border-radius: 16px;
+    background: #0f172a;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.12);
+    overflow: hidden;
   }
-  .nq-tip::after{ /* стрелка */
-    content:""; position:absolute; right:-7px; bottom:14px; width:12px; height:12px; rotate:45deg;
-    background:#0f172a; border-right:1px solid rgba(255,255,255,.15); border-bottom:1px solid rgba(255,255,255,.15);
+  #novaQ .nq-head{
+    display:flex;align-items:center;gap:.5rem;
+    padding:.8rem 1rem;border-bottom:1px solid rgba(255,255,255,.08)
   }
-  .nq-tip.show{ display:block; animation:nqIn .25s ease }
-  @keyframes nqIn{ from{ opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
-  .nq-tip a{ color:#22d3ee; text-decoration:underline; }
-
-  /* панел (мини чат/шийт) */
-  .nq-panel{
-    position:absolute; right:0; bottom:72px; width:var(--nq-sheet-w);
-    background:#0b1220; color:#fff; border-radius:16px; overflow:hidden;
-    border:1px solid rgba(255,255,255,.12); box-shadow:0 18px 60px rgba(0,0,0,.55);
-    display:none;
+  #novaQ .nq-dot{width:8px;height:8px;border-radius:9999px;background:#22c55e}
+  #novaQ .nq-body{padding:1rem}
+  #novaQ .nq-actions{display:flex;gap:.5rem;flex-wrap:wrap;padding:0 1rem 1rem}
+  #novaQ .nq-btn{
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none; -webkit-user-select:none;
+    padding:.6rem .9rem;border-radius:12px;border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06);color:#fff;font-weight:600;
   }
-  .nq-panel.open{ display:block; animation:nqSlide .22s ease-out }
-  @keyframes nqSlide{ from{ transform:translateY(10px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
-
-  .nq-topbar{ height:4px;
-    background:linear-gradient(90deg,#10b981,#22d3ee,#6366f1,#a855f7,#f59e0b,#f43f5e,#10b981);
-    background-size:300% 100%; animation:nqGrad 8s linear infinite;
-  }
-  @keyframes nqGrad{ from{background-position:0 50%} to{background-position:300% 50%} }
-
-  .nq-x{ position:absolute; right:8px; top:8px; padding:.4rem .55rem; border-radius:10px;
-    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:#fff;
-  }
-  .nq-btn{ display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1rem; border-radius:12px; font-weight:700; border:1px solid rgba(255,255,255,.18) }
-  .nq-yes{ background:linear-gradient(90deg,#22c55e,#10b981); color:#0b1220 }
-  .nq-no{ background:rgba(255,255,255,.08); color:#fff }
-  .nq-badge{ font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.18);
-             background:linear-gradient(135deg,#facc15,#f59e0b); color:#111827 }
-
-  /* за мобилния док – ако JS добави .with-dock, отмести още */
-  .nq-wrap.with-dock{ bottom: 104px; }
-  @media (min-width: 768px){ .nq-wrap.with-dock{ bottom: 24px; } }
+  #novaQ .nq-btn.primary{ background:linear-gradient(90deg,#22c55e,#10b981); color:#0b1220; }
+  #novaQ .nq-btn:hover{ background:rgba(255,255,255,.1) }
+  /* по желание: скрий Х бутона */
+  #novaQ .nq-x{ display:none !important; }
 </style>
 
-<div id="nqWrap" class="nq-wrap" aria-live="polite">
-  <button id="nqLaunch" class="nq-launch" aria-label="Помощ за бърза обява">
-    <!-- икона „чат“ -->
-    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M4 4h16v10H6l-2 2z"/></svg>
-  </button>
-  <div id="nqTip" class="nq-tip">Искаш да пуснеш бърза обява? <a href="#" id="nqTipYes">Да</a> / <a href="#" id="nqTipNo">Не</a></div>
-
-  <div id="nqPanel" class="nq-panel" role="dialog" aria-modal="true" aria-labelledby="nqT1">
-    <div class="nq-topbar" aria-hidden="true"></div>
-
-    <!-- Стъпка 1 -->
-    <section id="nqS1" class="p-4 md:p-5">
-      <h3 id="nqT1" class="text-xl md:text-2xl font-extrabold">Хей! Искаш ли да пуснеш бърза обява?</h3>
-      <p class="text-slate-300 mt-1 text-sm">Ще те преведем през 2 бързи стъпки.</p>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button class="nq-btn nq-yes" id="nqBtnS1Yes">Да, хайде</button>
-        <button class="nq-btn nq-no"  id="nqBtnS1No">Не</button>
-      </div>
-    </section>
-
-    <!-- Стъпка 2 -->
-    <section id="nqS2" class="p-4 md:p-5 hidden">
-      <div class="flex items-center justify-between gap-2">
-        <h4 class="text-lg md:text-xl font-bold">Избор на план</h4>
-        <span class="nq-badge">Препоръчано</span>
-      </div>
-      <p class="text-slate-300 mt-2 text-sm">Препоръчваме <strong class="text-amber-300">VIP</strong> — <strong>30 дни на първа страница</strong> и повече внимание.</p>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button class="nq-btn nq-yes" id="nqBtnS2Yes">Да, VIP</button>
-        <a href="plans.html" class="nq-btn nq-no">Виж всички планове</a>
-        <button class="nq-btn nq-no" id="nqBtnS2No">Не</button>
-      </div>
-    </section>
-
-    <!-- Стъпка 3 -->
-    <section id="nqS3" class="p-4 md:p-5 hidden">
-      <h4 class="text-lg md:text-xl font-bold">Почти готово!</h4>
-      <ul class="mt-2 text-slate-300 space-y-1 text-[13.5px] leading-relaxed">
-        <li>• Можеш да публикуваш: работа, запознанства, обучения, хоби и др.</li>
-        <li>• Не сме посредник в сделки между потребители.</li>
-        <li>• Спазвай Общите политики на сайта.</li>
-        <li>• Всички планове са с ДДС; публикуваме след успешно плащане.</li>
-      </ul>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button class="nq-btn nq-yes" id="nqBtnS3Go">Вход и публикувай</button>
-        <button class="nq-btn nq-no"  id="nqBtnS3No">Не</button>
-      </div>
-    </section>
+<div id="novaQ" class="nq-root" hidden>
+  <div class="nq-panel" role="dialog" aria-live="polite">
+    <div class="nq-head">
+      <span class="nq-dot" aria-hidden="true"></span>
+      <strong>NovaObqva</strong>
+      <button id="nqClose" class="nq-x" aria-label="Затвори">✕</button>
+    </div>
+    <div class="nq-body" id="nqText">
+      Хей, искаш ли да пуснеш бърза обява?
+    </div>
+    <div class="nq-actions" id="nqActions">
+      <button class="nq-btn primary" data-a="yes">Да</button>
+      <button class="nq-btn" data-a="no">Не</button>
+    </div>
   </div>
 </div>
 
 <script>
 (function(){
-  // елементи
-  const wrap = document.getElementById('nqWrap');
-  const launch = document.getElementById('nqLaunch');
-  const tip = document.getElementById('nqTip');
-  const panel = document.getElementById('nqPanel');
-  const s1 = document.getElementById('nqS1'), s2 = document.getElementById('nqS2'), s3 = document.getElementById('nqS3');
+  const root = document.getElementById('novaQ');
+  const text = document.getElementById('nqText');
+  const acts = document.getElementById('nqActions');
 
-  const featureLayer = document.getElementById('featureLayer'); // ако е отворен – скрий балончето
-  const hasDock = !!document.getElementById('nova-dock');
-  if (hasDock) wrap.classList.add('with-dock');
+  // показване след кратка пауза (можеш да махнеш setTimeout)
+  setTimeout(()=> root.hidden = false, 600);
 
-  // Supabase (по възможност)
-  let sb = null;
-  try{ if (window.supabase && window.ENV){ sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY); } }catch(_){}
-
-  // помощни
-  function show(sec){ [s1,s2,s3].forEach(x=>x.classList.add('hidden')); sec.classList.remove('hidden'); panel.classList.add('open'); }
-  function toggle(){ panel.classList.toggle('open'); if(panel.classList.contains('open')) show(s1); }
-  function goAds(){ location.href='ad.html'; }
-  async function goSubmit(plan='vip'){
-    const target = 'submit.html?plan='+encodeURIComponent(plan);
-    if (!sb){ location.href='auth.html?redirectTo='+encodeURIComponent(target); return; }
-    try{
-      const { data:{ user } } = await sb.auth.getUser();
-      if (user) location.href = target;
-      else location.href='auth.html?redirectTo='+encodeURIComponent(target);
-    }catch(_){ location.href='auth.html?redirectTo='+encodeURIComponent(target); }
+  // универсален bind за мобилни (pointerup/touchend/click)
+  function bindTap(el, handler){
+    let lock = false;
+    const fn = (e)=>{
+      if (lock) return;
+      lock = true; setTimeout(()=>lock=false, 250);
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      handler(e);
+    };
+    ['pointerup','touchend','click'].forEach(ev=> el.addEventListener(ev, fn, {passive:false}));
   }
 
-  // подсказка веднъж на сесия
-  if (!sessionStorage.getItem('nqTipSeen')){
-    setTimeout(()=>{
-      if (featureLayer && !featureLayer.classList.contains('is-hidden')) return; // изчакай оверлея
-      tip.classList.add('show'); sessionStorage.setItem('nqTipSeen','1');
-    }, 1600);
-  }
-
-  // затваряй при клик извън панела
-  document.addEventListener('click', (e)=>{
-    if (!panel.classList.contains('open')) return;
-    if (!panel.contains(e.target) && !launch.contains(e.target)) panel.classList.remove('open');
+  // делегиран обработчик за всички бутони в панела
+  acts.querySelectorAll('.nq-btn').forEach(btn=>{
+    bindTap(btn, ()=> handle(btn.dataset.a));
   });
-  // скрий балончето, когато е активен featureLayer
-  const maybeToggleWrap = ()=>{
-    if (!featureLayer) return;
-    const hidden = !featureLayer.classList.contains('is-hidden');
-    wrap.style.display = hidden ? 'none' : '';
-    if (hidden) panel.classList.remove('open');
-  };
-  if (featureLayer){
-    const obs = new MutationObserver(maybeToggleWrap);
-    obs.observe(featureLayer, { attributes:true, attributeFilter:['class'] }); maybeToggleWrap();
+
+  // ако все пак държиш да има Х, ще работи и на мобилни:
+  const closeBtn = document.getElementById('nqClose');
+  closeBtn && bindTap(closeBtn, ()=> root.remove());
+
+  function handle(a){
+    if (a === 'yes'){
+      // стъпка 2: препоръка за VIP
+      text.textContent =
+        'Препоръчваме VIP – 30 дни позиция на първа страница. ' +
+        'Публикувай всичко: работа, запознанства, обучения, хоби. ' +
+        'Не сме посредници по сделки. Всички планове са с ДДС; ' +
+        'обявата се публикува след успешно плащане.';
+      acts.innerHTML = `
+        <button class="nq-btn primary" data-a="vip">Избор на план</button>
+        <button class="nq-btn" data-a="submit">Направо към обява</button>
+        <button class="nq-btn" data-a="back">Назад</button>
+      `;
+      acts.querySelectorAll('.nq-btn').forEach(b=> bindTap(b, ()=> handle(b.dataset.a)));
+      return;
+    }
+
+    if (a === 'vip'){
+      // към планове (ако имаш страница plans.html), иначе директно към submit
+      location.href = 'plans.html';
+      return;
+    }
+
+    if (a === 'submit'){
+      // submit.html сам ще пренасочи към login при нужда
+      location.href = 'submit.html';
+      return;
+    }
+
+    if (a === 'back'){
+      reset();
+      return;
+    }
+
+    // „Не“ или всичко друго → към списъка
+    if (a === 'no'){
+      location.href = 'ad.html';
+      return;
+    }
   }
 
-  // събития
-  launch.addEventListener('click', ()=>{ tip.classList.remove('show'); toggle(); });
-  document.getElementById('nqClose').addEventListener('click', ()=> panel.classList.remove('open'));
-
-  document.getElementById('nqBtnS1Yes').addEventListener('click', ()=> show(s2));
-  document.getElementById('nqBtnS1No').addEventListener('click', ()=> goAds());
-
-  document.getElementById('nqBtnS2Yes').addEventListener('click', ()=> show(s3));
-  document.getElementById('nqBtnS2No').addEventListener('click', ()=> goAds());
-
-  document.getElementById('nqBtnS3Go').addEventListener('click', ()=> goSubmit('vip'));
-  document.getElementById('nqBtnS3No').addEventListener('click', ()=> goAds());
-
-  // линкове в подсказката
-  document.getElementById('nqTipYes').addEventListener('click', (e)=>{ e.preventDefault(); tip.classList.remove('show'); show(s1); panel.classList.add('open'); });
-  document.getElementById('nqTipNo').addEventListener('click', (e)=>{ e.preventDefault(); tip.classList.remove('show'); goAds(); });
+  function reset(){
+    text.textContent = 'Хей, искаш ли да пуснеш бърза обява?';
+    acts.innerHTML = `
+      <button class="nq-btn primary" data-a="yes">Да</button>
+      <button class="nq-btn" data-a="no">Не</button>
+    `;
+    acts.querySelectorAll('.nq-btn').forEach(b=> bindTap(b, ()=> handle(b.dataset.a)));
+  }
 })();
 </script>
 
