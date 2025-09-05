@@ -68,7 +68,7 @@
           <div class="rounded-xl border p-3">
             <div class="text-sm text-slate-500 mb-2">План & плащане</div>
             <div id="mPlan" class="font-medium"></div>
-            <div class="text-slate-600" id="mPrice"></div>
+            <div class="text-slate-700" id="mPrice"></div>
             <div class="mt-2">
               <span id="mPayStatus" class="inline-block text-xs px-2 py-1 rounded bg-slate-100"></span>
             </div>
@@ -141,7 +141,6 @@
           <div class="text-xs text-slate-500">* Редакцията е видима веднага.</div>
           <div class="flex gap-2">
             <button type="button" id="eHide" class="px-3 py-2 rounded-lg border text-rose-700 hover:bg-rose-50">Скрий обявата</button>
-            <!-- Ако искаш „твърдо“ изтриване, ползвай eDeleteHard вътре в JS -->
             <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white">Запази</button>
           </div>
         </div>
@@ -152,6 +151,7 @@
   <script>
     // ====== CONFIG ======
     const ADMIN_EMAIL = 'uzunov.ange@gmail.com';
+    const EXRATE_EUR_BGN = 1.95583; // фиксиран курс
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
     const FALLBACK_PLANS = [
@@ -167,6 +167,16 @@
     ];
     let PLAN_MAP = {};
 
+    // Форматиране на две валути
+    function fmtBGN(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} лв.`; } }
+    function fmtEUR(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'EUR'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} €`; } }
+    function dual(amount, currency){
+      const cur = String(currency||'BGN').toUpperCase();
+      const val = Number(amount)||0;
+      if (cur === 'EUR') return `${fmtEUR(val)}  ·  ${fmtBGN(val*EXRATE_EUR_BGN)}`;
+      return `${fmtBGN(val)}  ·  ${fmtEUR(val/EXRATE_EUR_BGN)}`;
+    }
+
     // ====== INIT / GUARD ======
     (async () => {
       const { data:{ user } } = await sb.auth.getUser();
@@ -175,12 +185,14 @@
 
       document.getElementById('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.href='/'; };
 
-      // Plans map (за линкове към плащане в модала)
+      // Plans map (за линкове към плащане)
       try {
         const { data, error } = await sb.from('plans').select('id,name,pay_url,price_bgn,price_eur');
         if (!error && data?.length) {
           for (const p of data) {
-            PLAN_MAP[p.id] = typeof p.pay_url === 'object' ? p : { ...p, pay_url: JSON.parse(p.pay_url||'{}') };
+            let pay = p.pay_url;
+            if (typeof pay === 'string') { try{ pay = JSON.parse(pay); }catch{ pay = {}; } }
+            PLAN_MAP[p.id] = { ...p, pay_url: pay };
             PLAN_MAP[p.name?.toLowerCase?.()] = PLAN_MAP[p.id];
           }
         }
@@ -244,17 +256,18 @@
             <div class="text-sm text-slate-500">Създадена: ${new Date(r.created_at).toLocaleString('bg-BG')}</div>
             <div class="text-sm text-slate-500">Потребител: ${esc(r.contact_name||'—')} · ${esc(r.contact_email||r.posted_by_email||'—')} · ${esc(r.contact_phone||'—')}</div>
             <div class="text-sm text-slate-500">Категория: ${esc(r.category||'—')} · Град: ${esc(r.city||'—')}</div>
-            <div class="mt-1"><span class="text-emerald-700 font-bold">${Number(r.price).toFixed(2)} лв</span> · План: ${esc(r.plan_name||'—')} ·
-              <span class="text-slate-700">${Number(r.plan_price||0).toFixed(2)} ${currency}</span>
+            <div class="mt-1">
+              <span class="text-slate-700">План: ${esc(r.plan_name||'—')} · ${dual(r.plan_price||0, currency)}</span>
+              ${pill(r.payment_status)}
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
             <div class="flex gap-2">
-              <button class="px-4 py-2 bg-emerald-600 text-white rounded-xl" onclick="approve('${r.id}', 'unknown')">Одобри</button>
+              <button class="px-4 py-2 bg-emerald-600 text-white rounded-xl" onclick="approve('${r.id}', '${r.payment_status||''}')">Одобри</button>
               <button class="px-4 py-2 bg-rose-600 text-white rounded-xl" onclick="rejectAd('${r.id}')">Откажи</button>
               <button class="px-4 py-2 rounded-xl border" onclick="preview('${r.id}')">Виж</button>
             </div>
-            <div class="text-emerald-700 font-bold">${Number(r.price).toFixed(2)} лв</div>
+            <div class="text-emerald-700 font-bold">${fmtBGN(r.price)}</div>
           </div>
         </div>
       </div>`;
@@ -281,7 +294,7 @@
 
     // ====== ACTIONS (approve/reject) ======
     async function approve(id, payStatus){
-      // ако държиш да изисква платено, върни проверката:
+      // ако държиш да изисква платено предварително, разкоментирай:
       // if (payStatus !== 'paid' && !confirm('Тази обява не е маркирана като платена. Да продължа с одобрение?')) return;
       const { error } = await sb.from('ads').update({ ad_status:'approved', approved_at: new Date().toISOString() }).eq('id', id);
       if (error) { alert('Отказано от сървъра. Нямаш права или грешка.'); console.error(error); return; }
@@ -302,7 +315,7 @@
         images,cover_image,
         plan_name,plan_price,plan_currency,plan_id,
         contact_name,contact_phone,contact_email,posted_by_email,
-        payment_status,payment_checked_at
+        payment_status,paid_at,payment_checked_at
       `).eq('id', id).single();
       if (error) { alert('Грешка при зареждане на обявата.'); return; }
 
@@ -317,7 +330,8 @@
 
       const currency = (data.plan_currency||'BGN').toUpperCase();
       document.getElementById('mPlan').textContent = data.plan_name || '—';
-      document.getElementById('mPrice').textContent = `${Number(data.plan_price||0).toFixed(2)} ${currency}`;
+      document.getElementById('mPrice').textContent = dual(data.plan_price||0, currency);
+
       const paid = data.payment_status === 'paid' || data.payment_status === 'manual';
       const pill = document.getElementById('mPayStatus');
       pill.textContent = data.payment_status || 'unpaid';
@@ -338,6 +352,16 @@
       btnPay.classList.toggle('pointer-events-none', !payUrl || payUrl === '#');
       btnPay.classList.toggle('opacity-60', !payUrl || payUrl === '#');
 
+      // Маркирай платено
+      const btnPaid = document.getElementById('btnMarkPaid');
+      btnPaid.disabled = paid;
+      btnPaid.classList.toggle('opacity-50', paid);
+      btnPaid.textContent = paid ? 'Платено' : 'Маркирай „платено“';
+      btnPaid.onclick = async () => {
+        await markPaid(data.id, pill, btnPaid);
+        await loadPending(); // обнови списъка ако е бил pending
+      };
+
       // approve / reject от модал
       document.getElementById('mApprove').onclick = () => approve(data.id, data.payment_status);
       document.getElementById('mReject').onclick  = () => rejectAd(data.id);
@@ -349,6 +373,38 @@
       m.querySelector('.absolute.inset-0').onclick = () => { m.classList.add('hidden'); m.classList.remove('flex'); };
     }
     window.preview = preview;
+
+    // ====== MARK PAID (RPC + fallback) ======
+    async function markPaid(adId, pillEl, btnEl){
+      try{
+        btnEl.disabled = true;
+        btnEl.textContent = 'Маркирам...';
+        // Вариант A: RPC (ако е създадено mark_ad_paid)
+        let rpcErr = null;
+        try{
+          const { error } = await sb.rpc('mark_ad_paid', { p_ad_id: adId });
+          if (error) rpcErr = error;
+        }catch(e){ rpcErr = e; }
+
+        if (rpcErr){
+          // Вариант B: директен update (ако RLS ти позволява като админ)
+          const { error: upErr } = await sb
+            .from('ads')
+            .update({ payment_status:'paid', paid_at: new Date().toISOString() })
+            .eq('id', adId);
+          if (upErr) throw upErr;
+        }
+
+        // UI update
+        pillEl.textContent = 'paid';
+        pillEl.className = 'inline-block text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-800';
+        btnEl.textContent = 'Платено';
+      }catch(err){
+        alert('Неуспешна промяна на статус: ' + (err?.message || err));
+        btnEl.textContent = 'Маркирай „платено“';
+        btnEl.disabled = false;
+      }
+    }
 
     // ====== EDIT ======
     async function openEdit(id){
@@ -400,9 +456,8 @@
     }
     window.openEdit = openEdit;
 
-    // Премахване (по подразбиране = скриване). Ако искаш „твърдо“ изтриване, виж коментара вътре.
+    // Премахване (по подразбиране = скриване)
     async function hideAd(id){
-      // SOFT DELETE
       const { error } = await sb.from('ads').update({ ad_status:'hidden' }).eq('id', id);
       if (error){ alert('Неуспешно премахване.'); console.error(error); return; }
       await loadApproved();
@@ -414,21 +469,6 @@
       */
     }
     window.hideAd = hideAd;
-
-    // По избор: опит за изтриване на снимки (ако имаш Storage policy за админ)
-    async function deleteAdImages(urls){
-      try{
-        const paths = [];
-        (urls||[]).forEach(u=>{
-          // очакван публичен URL: .../object/public/ad-images/<path>
-          const m = String(u).split('/object/public/ad-images/')[1];
-          if (m) paths.push(m);
-        });
-        if (paths.length){
-          await sb.storage.from('ad-images').remove(paths);
-        }
-      }catch(_){}
-    }
 
     // ====== UTILS ======
     function byId(id){ return document.getElementById(id); }
