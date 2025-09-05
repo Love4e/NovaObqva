@@ -1,0 +1,78 @@
+<!-- adults.html -->
+
+
+async function loadAds(){
+// 1) Опитайте да вземете динамични обяви (примерен край): /api/ads.json
+// 2) Филтрирайте само категория "Услуги"
+// 3) При грешка – fallback към демо данни
+try{
+const r = await fetch('/api/ads.json',{cache:'no-store'});
+if(!r.ok) throw new Error('No feed');
+const all = await r.json();
+const filtered = (all||[]).filter(a=> (a.category||'').toLowerCase()==='услуги');
+const fx = applyToggles(filtered);
+renderAds(fx);
+}catch(e){
+const demo = [
+{title:'Премиум услуга A (18+)', category:'Услуги', description:'Демо описание за целите на тестване.', price:120, image:'https://images.unsplash.com/photo-1545235617-9465d2a55698?q=80&w=1200&auto=format&fit=crop'},
+{title:'Премиум услуга B (18+)', category:'Услуги', description:'Демо описание. Заменете с реални данни.', price:90, image:'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop'}
+];
+const fx = applyToggles(demo);
+renderAds(fx);
+}
+}
+
+
+function applyToggles(list){
+const onlyVerified = document.getElementById('onlyVerified').checked;
+const withPhotos = document.getElementById('withPhotos').checked;
+let out = list;
+if(onlyVerified) out = out.filter(a=> a.verified===true);
+if(withPhotos) out = out.filter(a=> !!a.image);
+return out;
+}
+
+
+// Тогъли
+document.getElementById('onlyVerified').addEventListener('change', loadAds);
+document.getElementById('withPhotos').addEventListener('change', loadAds);
+
+
+// Възрастова проверка
+const ageGate = document.getElementById('ageGate');
+const maxGate = document.getElementById('maxGate');
+const ageOk = localStorage.getItem(AGE_KEY)==='1';
+const plan = localStorage.getItem(PLAN_KEY)||'';
+
+
+function open(el){el.style.display='flex'}
+function close(el){el.style.display='none'}
+
+
+if(!ageOk){open(ageGate)}
+else if(plan!=='MAX'){open(maxGate)}
+else{loadAds()}
+
+
+document.getElementById('ageYes').onclick = ()=>{
+localStorage.setItem(AGE_KEY,'1');
+close(ageGate);
+if((localStorage.getItem(PLAN_KEY)||'')!=='MAX') open(maxGate); else loadAds();
+}
+document.getElementById('ageNo').onclick = ()=>{
+alert('Достъпът е отказан.');
+location.replace('/');
+}
+
+
+// Ако URL има #max=1 – позволи еднократен достъп (временен)
+if(location.hash.includes('max=1')){
+localStorage.setItem(PLAN_KEY,'MAX');
+}
+
+
+// Footer year
+document.getElementById('y').textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
