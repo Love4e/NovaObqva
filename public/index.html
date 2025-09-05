@@ -57,6 +57,7 @@
       box-shadow:0 0 0 0 rgba(250,204,21,.0);
       animation:newGlow 2.2s ease-in-out infinite;
     }
+    /* НОВА в списъка — вдясно */
     .ad-new::after{
       content:"НОВА"; position:absolute; top:10px; right:10px; z-index:10;
       font-size:11px; font-weight:800; letter-spacing:.02em;
@@ -100,22 +101,24 @@
       transition:transform .2s ease, box-shadow .2s ease;
     }
     .feature-card:hover{ transform:translateY(-2px); box-shadow:0 16px 40px rgba(0,0,0,.45); }
+
     .feature-badge{
       position:absolute; top:10px; right:10px; z-index:5;
       font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px;
       border:1px solid rgba(255,255,255,.18);
     }
+    /* ляв план-бадж в overlay */
+    .feature-badge-left{ left:10px; right:auto; }
     .badge-pro{ background:#ede9fe; color:#5b21b6; border-color:rgba(91,33,182,.35); }
     .badge-gold{ background:linear-gradient(135deg,#facc15,#f59e0b); color:#111827; border-color:rgba(0,0,0,.25); }
+    .badge-new{ background:#fde68a; color:#78350f; border-color:#f59e0b; }
 
     .page-locked{ pointer-events:none; user-select:none; filter:grayscale(.15) saturate(.85) opacity(.95); }
 
-    /* малко по-голям бутон за затваряне */
     .feature-actions{ padding:12px 16px; border-top:1px solid rgba(255,255,255,.12); display:flex; justify-content:flex-end; gap:8px; }
     .btn{display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1rem; border-radius:12px; font-weight:700;}
     .btn-ghost{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:#fff; }
     .btn-primary{ background:linear-gradient(90deg,#22c55e,#10b981); color:#0b1220; border:1px solid rgba(255,255,255,.18); }
-
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -140,29 +143,23 @@
 
   <!-- WRAP целия сайт, за да го „заключим“ докато overlay е активен -->
   <div id="pageShell" class="page-locked" aria-hidden="true">
-    <!-- HEADER: desktop only (мобилното горно меню е премахнато) -->
+    <!-- HEADER -->
     <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
       <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-        <!-- Brand -->
         <a href="/" class="flex items-center gap-2">
           <img src="favicon.png" alt="" class="w-6 h-6 rounded" />
           <span class="text-xl font-bold">NovaObqva</span>
         </a>
-
-        <!-- Desktop nav -->
         <nav class="hidden md:flex items-center gap-2 ml-4">
           <a href="index.html" class="px-3 py-1.5 rounded-lg bg-slate-100">Обяви</a>
           <a href="plans.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
         </nav>
-
         <div class="flex-1"></div>
-
-        <!-- Desktop auth + Chat (динамични) -->
         <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
       </div>
     </header>
 
-    <!-- HERO (вграден, с преливка към списъка) -->
+    <!-- HERO -->
     <section class="hero-gold">
       <div class="glow" aria-hidden="true"></div>
       <div class="max-w-6xl mx-auto px-4">
@@ -234,7 +231,8 @@
         ? `<a href="chat.html" class="relative px-3 py-1.5 rounded-lg hover:bg-slate-100">
              Съобщения
              <span id="unreadBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
-           </a>` : '';
+           </a>`
+        : '';
 
       let desktopHTML = '';
       if (user) {
@@ -315,6 +313,7 @@
       render(data || []);
     }
 
+    // План бадж — В ЛЯВО
     function planBadge(name) {
       const n = String(name||'').toLowerCase();
       let cls = 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
@@ -322,7 +321,7 @@
       if (n === 'pro') { cls = 'bg-violet-50 text-violet-800 ring-1 ring-violet-200'; label='PRO'; }
       if (n === 'max' || n === 'gold') { cls = 'bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label = (name||'').toUpperCase(); }
       if (n === 'vip'){ cls = 'bg-indigo-50 text-indigo-800 ring-1 ring-indigo-200'; label='VIP'; }
-      return `<span class="absolute top-2 right-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}">
+      return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}">
                 <svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                 ${label}
               </span>`;
@@ -386,7 +385,7 @@
 
     async function openAdPopup(id){
       const { data, error } = await sb.from('ads')
-        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
+        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency,created_at')
         .eq('id', id)
         .maybeSingle();
 
@@ -400,11 +399,13 @@
       const badge = planBadge(data.plan_name);
       const cur = String(data.plan_currency || 'BGN').toUpperCase();
       const price = isFinite(+data.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+data.price) : '';
+      const isNew = isNewAd(data.approved_at || data.created_at);
 
       modalBody.innerHTML = `
         <div class="relative">
           <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
-            ${badge}
+            ${badge} <!-- план в ЛЯВО -->
+            ${isNew ? `<span class="absolute top-2 right-2 z-10 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 ring-1 ring-amber-300">НОВА</span>` : ``}
             <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
           </div>
           ${imgs.length>1 ? `
@@ -454,21 +455,19 @@
     document.getElementById('featClose').addEventListener('click', closeFeature);
     document.getElementById('featEnter').addEventListener('click', closeFeature);
     document.getElementById('featSkip').addEventListener('click', closeFeature);
-    // затваряне и с Escape:
     window.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !featureLayer.classList.contains('is-hidden')) closeFeature(); });
 
     function closeFeature(){
       featureLayer.classList.add('is-hidden');
       pageShell.classList.remove('page-locked');
       pageShell.removeAttribute('aria-hidden');
-      // за гладък scroll/UX
       document.body.classList.remove('overflow-hidden');
     }
 
     async function loadFeatured(){
       // PRO / GOLD / VIP / MAX (case-insensitive)
       const { data, error } = await sb.from('ads')
-        .select('id,title,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
+        .select('id,title,price,city,category,approved_at,cover_image,images,plan_name,plan_currency,created_at')
         .eq('ad_status','approved')
         .or('plan_name.ilike.%pro%,plan_name.ilike.%gold%,plan_name.ilike.%vip%,plan_name.ilike.%max%')
         .order('approved_at',{ascending:false})
@@ -488,13 +487,15 @@
         const cur = String(ad.plan_currency||'BGN').toUpperCase();
         const price = isFinite(+ad.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+ad.price) : '';
         const plan = String(ad.plan_name||'').toLowerCase();
-        const badgeCls = (plan.includes('gold')||plan.includes('max')) ? 'badge-gold' : 'badge-pro';
-        const label = plan.includes('gold')||plan.includes('max') ? 'GOLD' : (plan.includes('vip') ? 'VIP' : 'PRO');
+        const isGold = plan.includes('gold') || plan.includes('max');
+        const label  = isGold ? 'GOLD' : (plan.includes('vip') ? 'VIP' : 'PRO');
+        const isNew  = isNewAd(ad.approved_at || ad.created_at);
 
         return `
           <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}" class="open-ad feature-card">
             <div class="relative aspect-video bg-slate-800">
-              <span class="feature-badge ${badgeCls}">${label}</span>
+              <span class="feature-badge feature-badge-left ${isGold ? 'badge-gold':'badge-pro'}">${label}</span>
+              ${isNew ? `<span class="feature-badge badge-new">НОВА</span>` : ``}
               <img src="${thumb}" class="w-full h-full object-cover" alt="">
             </div>
             <div class="p-3">
@@ -508,7 +509,7 @@
         `;
       }).join('');
 
-      // докато overlay е отворен, заключваме фона и скриваме скрола на body
+      // заключване на фона
       document.body.classList.add('overflow-hidden');
       pageShell.classList.add('page-locked');
       pageShell.setAttribute('aria-hidden','true');
@@ -516,7 +517,6 @@
 
     // init
     loadFeatured();
-
   </script>
 </body>
 </html>
