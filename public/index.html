@@ -483,7 +483,8 @@
         <div class="relative">
           <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
             ${badge}
-            <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
+            ${isNew ? `<span class="absolute top-2 right-2 z-10 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-300/90 text-amber-900 ring-1 ring-amber-400 shadow-sm">НОВА</span>` : ''}
+           <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
           </div>
           ${imgs.length>1 ? `
             <div class="p-3 grid grid-flow-col auto-cols-[96px] gap-2 overflow-x-auto scrollbar-thin">
