@@ -61,14 +61,32 @@
           </div>
 
           <div>
-            <label class="block textsm font-medium mb-1" for="city">Град / Населено място</label>
+            <label class="block text-sm font-medium mb-1" for="city">Град / Населено място</label>
             <input id="city" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="София">
           </div>
 
+          <!-- === Цена + превключвател за въведената валута + двувалутен преглед === -->
           <div>
             <label class="block text-sm font-medium mb-1" for="price">Цена (число)</label>
             <input id="price" type="number" step="0.01" min="0" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500" placeholder="0.00">
+
+            <!-- Въведена валута -->
+            <div class="mt-2 flex items-center gap-2">
+              <span class="text-xs text-slate-500">Въведената сума е в:</span>
+              <div id="priceCurSwitch" class="inline-flex rounded-lg border bg-white overflow-hidden">
+                <button type="button" data-cur="BGN" class="px-2.5 py-1 text-xs font-semibold bg-emerald-600 text-white">BGN</button>
+                <button type="button" data-cur="EUR" class="px-2.5 py-1 text-xs font-semibold text-slate-600">EUR</button>
+              </div>
+            </div>
+
+            <!-- Двувалутен преглед -->
+            <div id="pricePreview" class="text-sm text-slate-700 mt-2 hidden">
+              ≈ <span id="ppBGN" class="font-semibold text-emerald-700"></span>
+              <span class="mx-2 text-slate-400">·</span>
+              <span id="ppEUR" class="font-semibold text-indigo-700"></span>
+            </div>
           </div>
+          <!-- === /Цена === -->
 
           <div class="md:col-span-2">
             <label class="block text-sm font-medium mb-1" for="description">Описание</label>
@@ -115,7 +133,7 @@
               <div id="plansBar" class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"></div>
             </div>
             <div class="w-full lg:w-44">
-              <label class="block text-sm font-medium mb-1">Валута</label>
+              <label class="block text-sm font-medium mb-1">Валута (плащане)</label>
               <div id="currencySwitch" class="flex w-full lg:inline-flex rounded-xl border bg-white shadow-sm overflow-hidden">
                 <button type="button" data-cur="bgn" class="curBtn flex-1 px-3 py-2 text-sm font-medium aria-selected:bg-emerald-600 aria-selected:text-white">🇧🇬 BGN</button>
                 <button type="button" data-cur="eur" class="curBtn flex-1 px-3 py-2 text-sm font-medium text-slate-600">🇪🇺 EUR</button>
@@ -187,7 +205,7 @@
       });
     })();
 
-    // Drawer
+    // Drawer (оставен безвреден)
     (function initDrawer(){
       const drawer = document.getElementById('drawer'); if (!drawer) return;
       const openBtn  = document.getElementById('nav-open');
@@ -218,10 +236,20 @@
         features:['Публикуване 90 дни','Макс. видимост','Закрепване'] }
     ];
 
+    // Фиксиран курс EUR/BGN (валутен борд)
+    const RATE_EUR_BGN = 1.95583;
+
     const el = (id)=>document.getElementById(id);
     const msg = (t,err=false)=>{ const m=el('msg'); m.textContent=t; m.className='text-center text-sm '+(err?'text-rose-600':'text-slate-600'); };
 
+    // помощен форматер
+    const fmt = (n, cur) => {
+      try { return new Intl.NumberFormat('bg-BG', { style:'currency', currency:cur }).format(Number(n)); }
+      catch { return `${Number(n).toFixed(2)} ${cur}`; }
+    };
+
     let currentUser=null, plans=[], selectedPlan=null, selectedFiles=[], currentCurrency='bgn', selectedCoverIndex=0;
+    let priceInputCurrency = 'BGN'; // в каква валута е въведена сумата в полето Цена
 
     (async ()=>{
       currentUser = await ensureAuth();
@@ -259,7 +287,7 @@
       el('adForm').addEventListener('submit', onSubmit);
       el('stickySubmit').addEventListener('click', ()=>el('adForm').requestSubmit());
 
-      // Валутен превключвател
+      // Валутен превключвател (плащане)
       document.querySelectorAll('#currencySwitch .curBtn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           currentCurrency=btn.dataset.cur;
@@ -271,6 +299,40 @@
         });
       });
       document.querySelector('#currencySwitch [data-cur="bgn"]').click();
+
+      // === Цена: превключвател + жив преглед ===
+      const priceEl = el('price');
+      const previewWrap = el('pricePreview'), ppBGN = el('ppBGN'), ppEUR = el('ppEUR');
+
+      function updatePricePreview(){
+        const val = parseFloat(priceEl.value);
+        if (isNaN(val) || val < 0) { previewWrap.classList.add('hidden'); return; }
+        let bgn, eur;
+        if (priceInputCurrency === 'BGN') { bgn = val; eur = val / RATE_EUR_BGN; }
+        else { eur = val; bgn = val * RATE_EUR_BGN; }
+        ppBGN.textContent = fmt(bgn, 'BGN');
+        ppEUR.textContent = fmt(eur, 'EUR');
+        previewWrap.classList.remove('hidden');
+      }
+
+      priceEl.addEventListener('input', updatePricePreview);
+
+      document.querySelectorAll('#priceCurSwitch [data-cur]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          priceInputCurrency = btn.dataset.cur;
+          // визуално състояние
+          document.querySelectorAll('#priceCurSwitch [data-cur]').forEach(b=>{
+            const on=b===btn;
+            b.classList.toggle('bg-emerald-600', on);
+            b.classList.toggle('text-white', on);
+            b.classList.toggle('text-slate-600', !on);
+          });
+          updatePricePreview();
+        });
+      });
+      // по подразбиране — BGN активно
+      updatePricePreview();
+      // === /Цена ===
     })();
 
     function renderPlans(){
@@ -351,15 +413,19 @@
       const description=el('description').value.trim();
       const category=el('category').value;
       const city=el('city').value.trim();
-      const price=parseFloat(el('price').value);
-      const currency=currentCurrency;
+      const priceEntered=parseFloat(el('price').value); // въведената стойност (BGN или EUR според превключвателя)
+      const currency=currentCurrency; // валута за плащане/план
 
       const contact_name = el('contact_name').value.trim();
       const contact_phone= el('contact_phone').value.trim();
       const contact_email= el('contact_email').value.trim() || (await sb.auth.getUser()).data.user.email;
 
-      if (!title || !description || !category || isNaN(price)) { msg('Попълнете всички задължителни полета.', true); return; }
+      if (!title || !description || !category || isNaN(priceEntered)) { msg('Попълнете всички задължителни полета.', true); return; }
       if (!selectedPlan) { msg('Моля, изберете план.', true); return; }
+
+      // Конвертираме въведената цена към BGN за запис
+      const priceBGN = priceInputCurrency === 'BGN' ? priceEntered : priceEntered * RATE_EUR_BGN;
+      const price = Math.round(priceBGN * 100) / 100;
 
       let image_urls=[];
       if (selectedFiles.length){
