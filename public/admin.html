@@ -7,7 +7,6 @@
   <link rel="icon" type="image/png" href="favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="env.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
   <header class="border-b bg-white">
@@ -18,18 +17,25 @@
   </header>
 
   <main id="app" class="max-w-6xl mx-auto p-4">
-    <!-- initial skeletons -->
-    <div class="grid md:grid-cols-2 gap-6">
+    <div id="alert" class="hidden mb-4 p-3 rounded-xl border"></div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- Pending -->
       <section class="bg-white rounded-2xl border p-4">
-        <h2 class="font-semibold mb-3">Чакащи обяви</h2>
-        <div class="space-y-3" id="adsPending">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold">Чакащи обяви</h2>
+          <button id="refresh" class="text-sm px-3 py-1.5 rounded-lg border hover:bg-slate-50">Обнови</button>
+        </div>
+        <div id="adsPending" class="space-y-3">
           <div class="animate-pulse h-20 bg-slate-100 rounded-xl"></div>
           <div class="animate-pulse h-20 bg-slate-100 rounded-xl"></div>
         </div>
       </section>
+
+      <!-- Recent approved -->
       <section class="bg-white rounded-2xl border p-4">
         <h2 class="font-semibold mb-3">Последно одобрени</h2>
-        <div class="space-y-3" id="adsApproved">
+        <div id="adsApproved" class="space-y-3">
           <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
           <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
         </div>
@@ -38,173 +44,162 @@
   </main>
 
   <script>
-    // ---------- CONFIG ----------
-    if (!window.ENV?.SUPABASE_URL || !window.ENV?.SUPABASE_ANON_KEY) {
-      document.getElementById('app').innerHTML =
-        '<div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">Липсва env.js или SUPABASE_URL/ANON_KEY.</div>';
-      throw new Error('Missing ENV');
-    }
-    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    // -------- Supabase конфиг (твои реални ключове) ----------
+    const SUPABASE_URL  = "https://cmiylzpmpwqbacjoqtkx.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtaXlsenBtcHdxYmFjam9xdGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODcwMDUsImV4cCI6MjA2OTU2MzAwNX0.FY2d1NSGTmw6SydxT_V0cKF7Kp2USbp91VdfO_eqZz8";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    // По-сигурно: guard по UID, не по имейл
-    const ADMIN_UID = 'b4851997-679f-489d-8b1e-ad669b2148a8'; // <- постави реалния UUID от Supabase Users
+    // -------- Admin guard --------
+    // Смени с реалните админ имейли; ако списъкът е празен -> допуска всеки вписан
+    const ADMIN_EMAILS = ["admin@example.com"];
+
+    const $ = (s) => document.querySelector(s);
+    const alertBox = $("#alert");
+    function showAlert(text, ok=false){
+      alertBox.className = "mb-4 p-3 rounded-xl border " + (ok ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-rose-50 border-rose-200 text-rose-700");
+      alertBox.textContent = text;
+      alertBox.classList.remove("hidden");
+      setTimeout(()=>alertBox.classList.add("hidden"), 3000);
+    }
 
     (async () => {
-      // 1) guard: изисква вход
+      // 1) изисква вход
       const { data: { user } } = await sb.auth.getUser();
       if (!user) {
-        location.href = 'auth.html?redirectTo=' + encodeURIComponent(location.href);
+        location.href = "auth.html?next=" + encodeURIComponent(location.href);
         return;
       }
-
-      // 2) guard: потребителят трябва да е админ (UID)
-      if (user.id !== ADMIN_UID) {
-        location.href = '/';
+      // 2) имейл guard
+      if (ADMIN_EMAILS.length && !ADMIN_EMAILS.includes(user.email)) {
+        showAlert("Нямате достъп до админ панела.");
+        setTimeout(()=>location.href="/", 1200);
         return;
       }
-
-      // UI: показване на потребителя
-      const userBox = document.getElementById('userBox');
-      userBox.innerHTML = `
+      // UI header
+      $("#userBox").innerHTML = `
         <div class="flex items-center gap-2">
           <span class="hidden sm:inline">Вписан като:</span>
-          <span class="font-medium">${user.email || '—'}</span>
+          <span class="font-medium">${user.email || "—"}</span>
           <button id="logoutBtn" class="ml-2 px-3 py-1.5 rounded-lg border hover:bg-slate-50">Изход</button>
-        </div>
-      `;
-      document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-        await sb.auth.signOut();
-        location.href = '/';
-      });
+        </div>`;
+      $("#logoutBtn").addEventListener("click", async () => { await sb.auth.signOut(); location.href = "/"; });
 
-      // ---------- RENDER ----------
+      // -------- data loaders (RPC с SECURITY DEFINER) --------
       async function loadPending(){
-        const { data, error } = await sb
-          .from('ads')
-          .select('id,title,price,created_at')
-          .eq('status','pending')
-          .order('created_at',{ascending:true});
+        // Опит 1: RPC (препоръчително заради RLS)
+        let data, error;
+        ({ data, error } = await sb.rpc("admin_list_pending"));
+        if (error) {
+          // fallback: директно (ако RLS позволява)
+          ({ data, error } = await sb
+            .from("pending_places")
+            .select("id,title,price,created_at,plan,is_max_requested,status,category"));
+        }
         if (error) {
           console.error(error);
-          document.getElementById('adsPending').innerHTML =
-            '<p class="text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">Грешка при зареждане (или липсват права).</p>';
+          $("#adsPending").innerHTML = `<p class="text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">Грешка при зареждане.</p>`;
           return;
         }
-        const html = (data||[]).map(r => renderPendingCard(r)).join('');
-        document.getElementById('adsPending').innerHTML = html || '<p class="text-slate-500">Няма чакащи.</p>';
+        const html = (data||[]).map(renderPendingCard).join("");
+        $("#adsPending").innerHTML = html || '<p class="text-slate-500">Няма чакащи.</p>';
       }
 
       async function loadApproved(){
-        const { data, error } = await sb
-          .from('ads')
-          .select('id,title,price,approved_at')
-          .eq('status','approved')
-          .order('approved_at',{ascending:false})
-          .limit(10);
+        let data, error;
+        ({ data, error } = await sb.rpc("admin_list_recent_objects", { p_limit: 12 }));
         if (error) {
-          console.error(error);
+          ({ data, error } = await sb
+            .from("objects")
+            .select("id,title,price,approved_at:created_at,priority,is_max,category")
+            .order("created_at",{ascending:false})
+            .limit(12));
         }
         const html = (data||[]).map(r => `
           <div class="border rounded-xl p-3 flex items-center justify-between">
             <div>
-              <div class="font-medium">${escapeHTML(r.title||'')}</div>
-              <div class="text-sm text-slate-500">Одобрена: ${r.approved_at ? new Date(r.approved_at).toLocaleString('bg-BG') : '—'}</div>
+              <div class="font-medium">${esc(r.title||"")}${r.is_max ? ' <span class="ml-2 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">MAX</span>' : ''}</div>
+              <div class="text-sm text-slate-500">Позиция: ${Number(r.priority)||0} · Категория: ${esc(r.category||"—")}</div>
             </div>
-            <a class="text-emerald-700 hover:underline" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Отвори</a>
+            <div class="flex items-center gap-2">
+              <button class="text-indigo-700 hover:underline" data-boost="${r.id}">MAX Boost</button>
+              <a class="text-slate-700 hover:underline" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Отвори</a>
+            </div>
           </div>
-        `).join('');
-        document.getElementById('adsApproved').innerHTML = html || '<p class="text-slate-500">Още няма.</p>';
+        `).join("");
+        $("#adsApproved").innerHTML = html || '<p class="text-slate-500">Още няма.</p>';
       }
 
       function renderPendingCard(r){
-        const title = escapeHTML(r.title||'');
-        const price = isFinite(Number(r.price)) ? Number(r.price).toFixed(2) : '—';
-        const created = r.created_at ? new Date(r.created_at).toLocaleString('bg-BG') : '—';
+        const title = esc(r.title||"");
+        const price = isFinite(Number(r.price)) ? Number(r.price).toFixed(2) : "—";
+        const created = r.created_at ? new Date(r.created_at).toLocaleString("bg-BG") : "—";
+        const planLbl = r.plan === "MAX" || r.is_max_requested ? '<span class="ml-2 text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">MAX</span>' : "";
         return `
           <div class="border rounded-xl p-3">
             <div class="flex items-center justify-between">
-              <div class="font-medium">${title}</div>
+              <div class="font-medium">${title}${planLbl}</div>
               <div class="text-emerald-700 font-bold">${price} лв</div>
             </div>
-            <div class="text-sm text-slate-500">Създадена: ${created}</div>
-            <div class="mt-3 flex gap-2">
-              <button class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl" data-approve="${r.id}">Одобри</button>
+            <div class="text-sm text-slate-500">Създадена: ${created} · Статус: ${esc(r.status||"pending")} · Категория: ${esc(r.category||"—")}</div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl" data-approve-max="${r.id}">Одобри като MAX</button>
+              <button class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl" data-approve-free="${r.id}">Одобри като FREE</button>
               <button class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl" data-reject="${r.id}">Откажи</button>
-              <a class="px-3 py-2 rounded-xl border hover:bg-slate-50" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Виж</a>
             </div>
           </div>
         `;
       }
 
-      // Делегиране вместо inline onclick
-      document.addEventListener('click', async (e) => {
-        const approveBtn = e.target.closest('[data-approve]');
-        const rejectBtn = e.target.closest('[data-reject]');
-        if (approveBtn) {
-          const id = approveBtn.getAttribute('data-approve');
-          await approve(id);
-        } else if (rejectBtn) {
-          const id = rejectBtn.getAttribute('data-reject');
-          await rejectAd(id);
+      // Actions
+      document.addEventListener("click", async (e) => {
+        const t = e.target.closest("[data-approve-max],[data-approve-free],[data-reject],[data-boost]");
+        if (!t) return;
+        const pid = t.getAttribute("data-approve-max") || t.getAttribute("data-approve-free") || t.getAttribute("data-reject");
+        const oid = t.getAttribute("data-boost");
+        try{
+          if (t.hasAttribute("data-approve-max")) {
+            const { error } = await sb.rpc("approve_pending_max", { p_pid: pid });
+            if (error) throw error;
+            showAlert("Одобрена като MAX.", true);
+            await loadPending(); await loadApproved();
+          } else if (t.hasAttribute("data-approve-free")) {
+            const { error } = await sb.rpc("approve_pending_free", { p_pid: pid });
+            if (error) throw error;
+            showAlert("Одобрена като FREE.", true);
+            await loadPending(); await loadApproved();
+          } else if (t.hasAttribute("data-reject")) {
+            const { error } = await sb.from("pending_places").update({ status: "rejected" }).eq("id", pid);
+            if (error) throw error;
+            showAlert("Отказана.", true);
+            await loadPending();
+          } else if (t.hasAttribute("data-boost")) {
+            const { error } = await sb.rpc("boost_max", { p_object_id: oid });
+            if (error) throw error;
+            showAlert("MAX Boost изпълнен.", true);
+            await loadApproved();
+          }
+        }catch(err){
+          console.error(err);
+          showAlert("Грешка: " + (err.message||err));
         }
       });
 
-      async function approve(id){
-        const { error } = await sb
-          .from('ads')
-          .update({ status:'approved', approved_at: new Date().toISOString() })
-          .eq('id', id);
-        if (error) {
-          console.error(error);
-          alert('Отказано от сървъра. Нямаш права или грешка.');
-          return;
-        }
-        await loadPending();
-        await loadApproved();
-      }
+      $("#refresh").addEventListener("click", async () => { await loadPending(); await loadApproved(); });
 
-      async function rejectAd(id){
-        const { error } = await sb
-          .from('ads')
-          .update({ status:'hidden' })
-          .eq('id', id);
-        if (error) {
-          console.error(error);
-          alert('Отказано от сървъра. Нямаш права или грешка.');
-          return;
-        }
-        await loadPending();
-      }
-
-      function escapeHTML(s){
-        return String(s)
-          .replaceAll('&','&amp;')
-          .replaceAll('<','&lt;')
-          .replaceAll('>','&gt;')
-          .replaceAll('"','&quot;')
-          .replaceAll("'",'&#39;');
-      }
-
-      // Реално време: авто-рефреш при промяна в ads
-      const channel = sb.channel('realtime-ads')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ads' }, async (payload) => {
-          // За лекота: просто презареди списъците
-          await loadPending();
-          await loadApproved();
-        })
+      // Realtime — ако имаш включен Realtime за таблиците
+      sb.channel("realtime-objects")
+        .on("postgres_changes", { event: "*", schema: "public", table: "objects" }, async () => { await loadApproved(); })
+        .on("postgres_changes", { event: "*", schema: "public", table: "pending_places" }, async () => { await loadPending(); })
         .subscribe();
 
-      // Първоначално зареждане
+      // Init
       await loadPending();
       await loadApproved();
-
-      // Ако сесията се промени → guard
-      sb.auth.onAuthStateChange((_event, session) => {
-        if (!session?.user || session.user.id !== ADMIN_UID) {
-          location.href = '/';
-        }
-      });
     })();
+
+    function esc(s){
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+    }
   </script>
 </body>
 </html>
