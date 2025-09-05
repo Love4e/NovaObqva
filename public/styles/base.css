@@ -1,26 +1,2 @@
 /* Допълнителни козметики */
 img { image-rendering: -webkit-optimize-contrast; }
-
-/* ---- Mobile dock helpers ---- */
-:root{
-  --dock-h: 72px;                     /* височина на долното меню */
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* добави този клас на контейнера/страницата с основното съдържание */
-.pb-dock{
-  padding-bottom: calc(var(--dock-h) + var(--safe-bottom));
-}
-
-/* докът винаги да е под модали/оверлеи, но над съдържанието */
-#mobileDock{ position: fixed; left:0; right:0; bottom:0; z-index:45; }
-
-/* на по-широки екрани не ни трябва отстъп */
-@media (min-width: 768px){
-  .pb-dock{ padding-bottom: 0; }
-}
-
-/* модалите и feature overlay са над дока */
-#adModal{ z-index: 60; }                /* имаш z-50 в Tailwind – това просто подсигурява */
-.feature-mask{ z-index: 70; }           /* PRO/GOLD оверлеят */
-
