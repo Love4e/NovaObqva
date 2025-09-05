@@ -52,21 +52,14 @@
     .gold-bridge{height:64px; background:linear-gradient(#0f172a, #f8fafc);}
 
     /* Мека мигаща подцветка за НОВИ обяви (последни 48ч) */
-    .ad-new{
-      position:relative;
-      box-shadow:0 0 0 0 rgba(250,204,21,.0);
-      animation:newGlow 2.2s ease-in-out infinite;
-    }
+    .ad-new{ position:relative; box-shadow:0 0 0 0 rgba(250,204,21,.0); animation:newGlow 2.2s ease-in-out infinite; }
     .ad-new::after{
       content:"НОВА"; position:absolute; top:10px; right:10px; z-index:10;
       font-size:11px; font-weight:800; letter-spacing:.02em;
       color:#78350f; background:#fde68a; border:1px solid #f59e0b;
       padding:2px 8px; border-radius:999px;
     }
-    @keyframes newGlow{
-      0%,100% { box-shadow:0 0 0 0 rgba(250,204,21,.0) }
-      50%     { box-shadow:0 0 22px 2px rgba(250,204,21,.35) }
-    }
+    @keyframes newGlow{ 0%,100% { box-shadow:0 0 0 0 rgba(250,204,21,.0) } 50% { box-shadow:0 0 22px 2px rgba(250,204,21,.35) } }
 
     /* ===== FEATURE OVERLAY (PRO/GOLD) ===== */
     .feature-mask{
@@ -269,8 +262,30 @@
     // -------- Търсене / зареждане на категории и обяви --------
     const CATEGORIES = ['Недвижими имоти','Автомобили','Работа','Услуги','Техника','Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'];
 
+    /* === Валути и форматиране: показваме BGN + EUR едновременно === */
+    const FX = { EUR_BGN: 1.95583 }; // 1 EUR = 1.95583 BGN (фиксиран курс)
+
     const utils = {
-      money(n){ try { return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)); } catch { return n; } }
+      fmt(n, c) {
+        try { return new Intl.NumberFormat('bg-BG', { style:'currency', currency:c }).format(Number(n)||0); }
+        catch { return `${Number(n).toFixed(2)} ${c}`; }
+      },
+      pair(n, base='BGN'){
+        let bgn, eur;
+        if ((base||'BGN').toUpperCase()==='EUR'){ eur = Number(n); bgn = eur * FX.EUR_BGN; }
+        else { bgn = Number(n); eur = bgn / FX.EUR_BGN; }
+        return { bgn, eur };
+      },
+      // theme: 'light' (карти/попъп) | 'dark' (overlay)
+      pairHTML(n, base='BGN', theme='light'){
+        const { bgn, eur } = utils.pair(n, base);
+        const mainCls = theme==='dark' ? 'text-emerald-300' : 'text-emerald-700';
+        const subCls  = theme==='dark' ? 'text-slate-300'   : 'text-slate-500';
+        return `
+          <span class="${mainCls} font-bold whitespace-nowrap">${utils.fmt(bgn,'BGN')}</span>
+          <span class="${subCls} text-xs ml-2 whitespace-nowrap">(${utils.fmt(eur,'EUR')})</span>
+        `;
+      }
     };
 
     const listEl  = document.getElementById('list');
@@ -342,7 +357,7 @@
           <div class="p-4">
             <div class="flex items-center justify-between gap-2">
               <h3 class="font-semibold line-clamp-1">${escapeHTML(ad.title||'—')}</h3>
-              <div class="text-emerald-700 font-bold whitespace-nowrap">${utils.money(ad.price)}</div>
+              <div class="whitespace-nowrap">${utils.pairHTML(ad.price, ad.price_currency)}</div>
             </div>
             <div class="text-sm mt-1">
               <span class="text-slate-500">Публикувана: ${new Date(ad.approved_at || ad.created_at).toLocaleDateString('bg-BG')}</span>${city}${cat}
@@ -396,8 +411,6 @@
       const imgs = Array.from(new Set([data.cover_image, ...(Array.isArray(data.images)?data.images:[])].filter(Boolean)));
       const big = imgs[0] || 'https://placehold.co/800x500?text=NovaObqva';
       const badge = planBadge(data.plan_name);
-      const cur = String(data.plan_currency || 'BGN').toUpperCase();
-      const price = isFinite(+data.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+data.price) : '';
 
       modalBody.innerHTML = `
         <div class="relative">
@@ -417,7 +430,7 @@
         <div class="p-4 md:p-6 pt-2">
           <div class="flex items-start justify-between gap-3">
             <h2 class="text-xl md:text-2xl font-semibold">${escapeHTML(data.title||'—')}</h2>
-            <div class="text-emerald-700 font-bold text-lg md:text-xl whitespace-nowrap">${price}</div>
+            <div class="text-lg md:text-xl whitespace-nowrap">${utils.pairHTML(data.price, data.price_currency)}</div>
           </div>
           <div class="text-sm text-slate-600 mt-1">
             Публикувана: ${new Date(data.approved_at).toLocaleString('bg-BG')}
@@ -477,8 +490,6 @@
       wrap.innerHTML = data.map(ad=>{
         const imgArr = Array.isArray(ad.images) ? ad.images : [];
         const thumb = ad.cover_image || imgArr[0] || 'https://placehold.co/600x340?text=NovaObqva';
-        const cur = String(ad.plan_currency||'BGN').toUpperCase();
-        const price = isFinite(+ad.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+ad.price) : '';
         const plan = String(ad.plan_name||'').toLowerCase();
         const badgeCls = (plan.includes('gold')||plan.includes('max')) ? 'badge-gold' : 'badge-pro';
         const label = plan.includes('gold')||plan.includes('max') ? 'GOLD' : (plan.includes('vip') ? 'VIP' : 'PRO');
@@ -493,7 +504,7 @@
             <div class="p-3">
               <div class="title font-semibold line-clamp-1">${escapeHTML(ad.title||'—')}</div>
               <div class="meta text-sm mt-0.5">${escapeHTML(ad.city||'')}${ad.category?` · ${escapeHTML(ad.category)}`:''}</div>
-              <div class="mt-2 font-bold text-emerald-300">${price}</div>
+              <div class="mt-2">${utils.pairHTML(ad.price, ad.price_currency, 'dark')}</div>
             </div>
           </div>
         `;
