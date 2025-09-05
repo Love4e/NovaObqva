@@ -1,51 +1,32 @@
-/* Допълнителни козметики */
+/* -------- Общи козметики -------- */
 img { image-rendering: -webkit-optimize-contrast; }
 
-/* ---- Mobile dock – ВГРАДЕН ПО ПОДРАЗБИРАНЕ ---- */
+/* ---- Mobile dock (вграден) ---- */
 :root{
-  /* Оставяме променливите за съвместимост, ако решиш пак да го правиш fixed */
-  --dock-h: 72px;
+  /* ориентировъчна височина; real-height идва от самия елемент */
+  --dock-h: 76px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
-/* fallback за по-стари Safari */
-@supports (padding-bottom: constant(safe-area-inset-bottom)) {
-  :root { --safe-bottom: constant(safe-area-inset-bottom); }
-}
 
-/* Когато докът е вграден, не ни трябва долен отстъп */
+/* ако някъде си оставил .pb-dock – вече не ни трябва отстъпът */
 .pb-dock{ padding-bottom: 0 !important; }
 
-/* Вграден док: част от потока (НЕ е fixed) */
+/* Dock-ът е STICKY, не fixed → не припокрива съдържанието */
 #mobileDock{
-  position: static;                /* ключовото за “вграден” */
-  z-index: auto;
-  padding-bottom: var(--safe-bottom);    /* да не влиза под iOS Home индикатора, ако има */
-  background: rgba(255,255,255,.96);
-  backdrop-filter: saturate(120%) blur(8px);
-  -webkit-backdrop-filter: saturate(120%) blur(8px);
-  border-top: 1px solid #e5e7eb;
+  position: sticky !important;   /* override ако JS е задавал fixed */
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 45;                   /* под модалите/оверлея */
+  min-height: var(--dock-h);
+  padding-bottom: var(--safe-bottom);   /* за iPhone home indicator */
+  /* ако имаш фон/сенки – те остават от HTML-а на дока */
 }
 
-/* Ако все пак някъде използваш sticky submit лента – да не се бута нагоре от дока */
-#stickyBar{
-  z-index: 55;     /* над съдържанието, под модалите */
-  bottom: 0;       /* без offset за док */
-}
+/* модали/оверлеи са над дока */
+#adModal{ z-index: 70; }
+.feature-mask{ z-index: 80; }
 
-/* Модалите и feature overlay остават над всичко */
-#adModal{ z-index: 60; }
-.feature-mask{ z-index: 70; }
-
-/* ---- Опция: клас за FIXED док, ако някой екран трябва да го “закове” долу ---- */
-/* Добави class="has-fixed-dock" на <body> само там, където искаш фикснато поведение */
-body.has-fixed-dock #mobileDock{
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  z-index: 45;
-}
-body.has-fixed-dock .pb-dock{
-  padding-bottom: calc(var(--dock-h) + var(--safe-bottom)) !important;
-}
-body.has-fixed-dock #stickyBar{
-  bottom: calc(var(--dock-h) + var(--safe-bottom));
+/* по-широки екрани – dock обикновено е скрит; нищо специално не е нужно */
+@media (min-width: 768px){
+  .pb-dock{ padding-bottom: 0 !important; }
 }
