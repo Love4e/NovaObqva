@@ -8,77 +8,37 @@
   <link rel="icon" href="/favicon.png">
   <meta name="theme-color" content="#0e061a">
   <style>
-    :root{
-      --bg:#0a0614; --fg:#e9ecf8; --muted:#aab0c8;
-      --card:rgba(18,16,45,.45); --stroke:rgba(255,255,255,.15);
-      --rose:#ff6aa7; --lav:#a78bfa; --sun:#f9c74f; --sea:#22d3ee; --mint:#10b981;
-      --danger:#ef4444;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; color:var(--fg); background:radial-gradient(1200px 600px at 65% -10%,rgba(167,139,250,.25),transparent),
-                                 radial-gradient(1000px 500px at -10% 10%,rgba(34,211,238,.18),transparent),
-                                 #0a0614;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      overflow-x:hidden;
-    }
-    .space, .noise{position:fixed; inset:0; pointer-events:none; z-index:-1}
-    .space{background:
-      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.6), transparent 60%),
-      radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,.5), transparent 60%),
-      radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,.5), transparent 60%),
-      radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,.5), transparent 60%); filter:saturate(1.2) brightness(1.1); animation: twinkle 8s linear infinite; opacity:.7}
+    :root{--bg:#0a0614;--fg:#e9ecf8;--muted:#aab0c8;--card:rgba(18,16,45,.45);--stroke:rgba(255,255,255,.15);--rose:#ff6aa7;--lav:#a78bfa;--sun:#f9c74f;--sea:#22d3ee;--mint:#10b981;--danger:#ef4444}
+    *{box-sizing:border-box}html,body{height:100%}
+    body{margin:0;color:var(--fg);background:radial-gradient(1200px 600px at 65% -10%,rgba(167,139,250,.25),transparent),radial-gradient(1000px 500px at -10% 10%,rgba(34,211,238,.18),transparent),#0a0614;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;overflow-x:hidden}
+    .space,.noise{position:fixed;inset:0;pointer-events:none;z-index:-1}
+    .space{background:radial-gradient(1px 1px at 10% 20%,rgba(255,255,255,.6),transparent 60%),radial-gradient(1px 1px at 30% 80%,rgba(255,255,255,.5),transparent 60%),radial-gradient(1px 1px at 70% 30%,rgba(255,255,255,.5),transparent 60%),radial-gradient(1px 1px at 90% 60%,rgba(255,255,255,.5),transparent 60%);filter:saturate(1.2) brightness(1.1);animation:twinkle 8s linear infinite;opacity:.7}
     @keyframes twinkle{0%{opacity:.7}50%{opacity:.95}100%{opacity:.7}}
     .noise{background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity=".04"/></svg>')}
     .wrap{max-width:1200px;margin:0 auto;padding:20px}
     header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:8px}
     .brand{display:flex;align-items:center;gap:14px}
-    .orb{width:52px;height:52px;border-radius:16px;background:conic-gradient(from 210deg at 50% 50%, var(--rose), var(--sun), var(--sea), var(--lav), var(--rose));box-shadow:0 10px 40px rgba(167,139,250,.35), inset 0 0 20px rgba(255,255,255,.25)}
+    .orb{width:52px;height:52px;border-radius:16px;background:conic-gradient(from 210deg at 50% 50%,var(--rose),var(--sun),var(--sea),var(--lav),var(--rose));box-shadow:0 10px 40px rgba(167,139,250,.35),inset 0 0 20px rgba(255,255,255,.25)}
     .title{display:grid}.title b{font-size:20px;letter-spacing:.4px}.title small{color:var(--muted)}
     .hero{position:relative;margin:18px 0 24px}
-    .blob{position:absolute; inset:-120px -140px auto auto; width:min(44vw,520px); aspect-ratio:1/1; filter:blur(20px) saturate(1.2) brightness(1.2); background:
-      radial-gradient(60% 60% at 50% 50%, rgba(255,106,167,.35), transparent 60%),
-      radial-gradient(40% 40% at 30% 30%, rgba(167,139,250,.35), transparent 70%),
-      radial-gradient(50% 50% at 70% 70%, rgba(34,211,238,.25), transparent 70%);
-      border-radius:38% 62% 65% 35% / 43% 33% 67% 57%; animation: morph 18s ease-in-out infinite; opacity:.7; z-index:-1}
-    @keyframes morph{0%,100%{border-radius:38% 62% 65% 35% / 43% 33% 67% 57%; transform:translate3d(0,0,0) rotate(0deg)}50%{border-radius:56% 44% 35% 65% / 37% 63% 37% 63%; transform:translate3d(-2%, -1%,0) rotate(10deg)}}
-    .grid{display:grid;gap:18px;grid-template-columns: 1.2fr .8fr}@media (max-width:980px){.grid{grid-template-columns: 1fr}}
-    .glass{background:var(--card); backdrop-filter: blur(10px); border:1px solid var(--stroke); border-radius:20px; overflow:hidden}
-    .pad{padding:16px}
+    .blob{position:absolute;inset:-120px -140px auto auto;width:min(44vw,520px);aspect-ratio:1/1;filter:blur(20px) saturate(1.2) brightness(1.2);background:radial-gradient(60% 60% at 50% 50%,rgba(255,106,167,.35),transparent 60%),radial-gradient(40% 40% at 30% 30%,rgba(167,139,250,.35),transparent 70%),radial-gradient(50% 50% at 70% 70%,rgba(34,211,238,.25),transparent 70%);border-radius:38% 62% 65% 35% / 43% 33% 67% 57%;animation:morph 18s ease-in-out infinite;opacity:.7;z-index:-1}
+    @keyframes morph{0%,100%{border-radius:38% 62% 65% 35% / 43% 33% 67% 57%;transform:translate3d(0,0,0) rotate(0deg)}50%{border-radius:56% 44% 35% 65% / 37% 63% 37% 63%;transform:translate3d(-2%,-1%,0) rotate(10deg)}}
+    .glass{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--stroke);border-radius:20px;overflow:hidden}.pad{padding:16px}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--stroke);font-size:12px;color:#d8def0}
     .list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}@media (max-width:760px){.list{grid-template-columns:1fr}}
     .ad{position:relative;border:1px solid var(--stroke);border-radius:18px;overflow:hidden;background:linear-gradient(180deg,rgba(15,12,40,.7),rgba(15,12,40,.92))}
     .ad img{width:100%;height:190px;object-fit:cover;filter:contrast(1.03) saturate(1.1)}
     .ad-body{padding:12px}.ad h3{margin:0 0 6px;font-size:18px}.ad p{margin:0;color:var(--muted)}.price{font-weight:700}
     .ribbon{position:absolute;top:10px;left:-12px;padding:6px 14px;border-radius:10px;background:linear-gradient(135deg,var(--rose),var(--lav));color:#fff;transform:rotate(-6deg);box-shadow:0 8px 20px rgba(255,106,167,.25)}
-    .fab{position:fixed; right:20px; bottom:20px; z-index:60; display:flex;align-items:center;gap:10px; padding:14px 16px; border-radius:999px; background:linear-gradient(135deg,var(--rose),var(--lav)); border:1px solid rgba(255,255,255,.2); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 18px 40px rgba(167,139,250,.4)}
-    .fab[disabled]{opacity:.6;cursor:not-allowed}
+    .fab{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:999px;background:linear-gradient(135deg,var(--rose),var(--lav));border:1px solid rgba(255,255,255,.2);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 18px 40px rgba(167,139,250,.4)}
     .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(4,3,9,.6);backdrop-filter:blur(3px);z-index:80}
 
     /* Modal with invisible scroll */
-    .modal{
-      width:min(780px,94vw);
-      max-height:88vh;               /* ограничаваме височината на модала */
-      display:flex;                  /* правим го колона */
-      flex-direction:column;
-      border:1px solid var(--stroke);
-      border-radius:22px; overflow:hidden;
-      background:linear-gradient(180deg,rgba(18,16,45,.6),rgba(18,16,45,.92))
-    }
-    .m-head{padding:18px 18px 10px;background:linear-gradient(90deg, rgba(255,106,167,.2), rgba(167,139,250,.2)); border-bottom:1px solid var(--stroke); position:relative}
-    .m-head h2{margin:0;font-size:22px}
-    .closeX{position:absolute; right:12px; top:10px; width:36px;height:36px;border-radius:12px;border:1px solid var(--stroke);background:rgba(7,6,18,.5);color:#fff;cursor:pointer}
-
-    .m-body{
-      padding:16px; display:grid; gap:12px;
-      overflow:auto;                /* скрол само върху тялото */
-      -webkit-overflow-scrolling:touch; /* плавно на iOS */
-      scrollbar-width:none;         /* Firefox: невидим скролбар */
-    }
-    .m-body::-webkit-scrollbar{     /* WebKit/Blink: невидим скролбар */
-      width:0; height:0; background:transparent;
-    }
+    .modal{width:min(780px,94vw);max-height:88vh;display:flex;flex-direction:column;border:1px solid var(--stroke);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(18,16,45,.6),rgba(18,16,45,.92))}
+    .m-head{padding:18px 18px 10px;background:linear-gradient(90deg,rgba(255,106,167,.2),rgba(167,139,250,.2));border-bottom:1px solid var(--stroke);position:relative}
+    .m-head h2{margin:0;font-size:22px}.closeX{position:absolute;right:12px;top:10px;width:36px;height:36px;border-radius:12px;border:1px solid var(--stroke);background:rgba(7,6,18,.5);color:#fff;cursor:pointer}
+    .m-body{padding:16px;display:grid;gap:12px;overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .m-body::-webkit-scrollbar{width:0;height:0;background:transparent}
 
     label{font-size:14px;color:#dfe6ff}
     input,textarea,select{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--stroke);background:rgba(12,10,28,.9);color:#fff}
@@ -90,7 +50,6 @@
     .err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);padding:10px;border-radius:12px;color:#ffd7d7;display:none}
     .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--stroke);background:rgba(12,10,28,.9);color:#fff;cursor:pointer;text-decoration:none}
     .btn.primary{background:linear-gradient(135deg,var(--rose),var(--lav));border-color:rgba(255,255,255,.2)}
-    .btn[disabled]{opacity:.6;cursor:not-allowed}
     .hint{font-size:12px;color:#cbd2f6}
     .thumb{width:100%;height:140px;object-fit:cover;border-radius:12px;border:1px solid var(--stroke);display:none}
     footer{margin:22px 0;color:#9aa6c4;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -147,6 +106,7 @@
         <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
       </div>
       <div class="m-body">
+        <!-- honeypot -->
         <input id="hpt" type="text" style="position:absolute;left:-9999px;opacity:0" autocomplete="off" tabindex="-1" aria-hidden="true">
         <div class="row">
           <div style="flex:2;min-width:220px">
@@ -170,7 +130,7 @@
           </div>
           <div style="flex:1;min-width:180px">
             <label>Категория</label>
-            <select id="f_cat"><option selected>Услуги</option></select>
+            <select id="f_cat" disabled><option selected>Услуги</option></select>
           </div>
         </div>
 
@@ -209,15 +169,16 @@
     const $ = s => document.querySelector(s);
     const show = el => el.style.display='block';
     const hide = el => el.style.display='none';
-    const disable = (el, v=true) => el.setAttribute('disabled', v), enable = (el)=> el.removeAttribute('disabled');
+
     document.getElementById('y').textContent = new Date().getFullYear();
 
+    // Витрина
     async function loadAds(){
       const empty = $('#empty'); const list = $('#ads');
       try{
         const { data, error } = await sb
           .from('objects')
-          .select('id,title,description,image_url,price,category,is_max,priority,created_at')
+          .select('id,title,description,image_url,price,is_max,priority,created_at,category')
           .eq('category','Услуги')
           .order('is_max',{ascending:false})
           .order('priority',{ascending:false})
@@ -235,13 +196,11 @@
               <p class="price">${ad.price ? ad.price + ' лв.' : ''}</p>
             </div>
           </article>`).join('');
-        document.querySelectorAll('.ad').forEach((el,i)=>{ el.style.opacity=0; el.style.transform='translateY(6px)';
-          setTimeout(()=>{ el.style.transition='all .5s ease'; el.style.opacity=1; el.style.transform='none'; }, 60*i);
-        });
       }catch{ show(empty); }
     }
     loadAds();
 
+    // Модал
     const openModal = () => $('#publishModal').style.display='flex';
     const closeModal = () => $('#publishModal').style.display='none';
     document.getElementById('openPublish').onclick = openModal;
@@ -249,17 +208,19 @@
     document.getElementById('closePublish').onclick = closeModal;
     document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
-    let plan = 'FREE', createdPid=null;
-    const thumb = document.getElementById('thumb');
-    document.getElementById('f_image').addEventListener('input', () => {
-      const url = document.getElementById('f_image').value.trim();
-      if(/^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url)){ thumb.src = url; thumb.style.display='block'; }
-      else { thumb.style.display='none'; }
-    });
-
+    // План
+    let plan='FREE', createdPid=null;
     document.getElementById('optFree').onclick = ()=>{ plan='FREE'; document.getElementById('optFree').classList.add('active'); document.getElementById('optMax').classList.remove('active'); hide(document.getElementById('upsell')); };
     document.getElementById('optMax').onclick  = ()=>{ plan='MAX';  document.getElementById('optMax').classList.add('active');  document.getElementById('optFree').classList.remove('active'); show(document.getElementById('upsell')); };
 
+    // Мини преглед на изображение
+    const thumb = document.getElementById('thumb');
+    document.getElementById('f_image').addEventListener('input', () => {
+      const url = document.getElementById('f_image').value.trim();
+      if(/^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url)){ thumb.src=url; thumb.style.display='block'; } else { thumb.style.display='none'; }
+    });
+
+    // Изпращане (без category и без is_max_requested)
     async function submitAd(){
       const msg = document.getElementById('msg'); msg.style.display='none'; msg.textContent='';
       if(document.getElementById('hpt').value){ return; } // honeypot
@@ -269,40 +230,28 @@
       const price = priceRaw? Number(priceRaw) : null;
       const description = document.getElementById('f_desc').value.trim();
       const image_url = document.getElementById('f_image').value.trim();
-
-      if(title.length < 3 || description.length < 20){
-        msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; show(msg); return;
-      }
-      if(price !== null && (!isFinite(price) || price < 0)){ msg.textContent='Невалидна цена.'; show(msg); return; }
-
-      disable(document.getElementById('sendAd')); disable(document.getElementById('floatingCta'));
-      document.getElementById('sendAd').textContent='Изпращане...';
+      if(title.length<3 || description.length<20){ msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; show(msg); return; }
+      if(price!==null && (!isFinite(price)||price<0)){ msg.textContent='Невалидна цена.'; show(msg); return; }
 
       try{
         const { data:{ session } } = await sb.auth.getSession();
         const user_id = session?.user?.id || null;
 
-        // Не изпращаме category (DEFAULT 'Услуги')
-        const payload = { title, description, image_url, price, plan, is_max_requested: plan==='MAX', status:'pending' };
+        // <-- ключовото: не включваме category и is_max_requested
+        const payload = { title, description, image_url, price, plan, status:'pending' };
         const { data, error } = await sb.from('pending_places').insert({ ...payload, user_id }).select('id').single();
         if(error) throw error;
-
         createdPid = data.id;
-        const l1 = PAY_MAX_BGN + '?ref=' + encodeURIComponent(createdPid) + '&action=approve_max&cur=BGN';
-        const l2 = PAY_MAX_EUR + '?ref=' + encodeURIComponent(createdPid) + '&action=approve_max&cur=EUR';
-        const a1 = document.getElementById('btnMaxBGN'), a2 = document.getElementById('btnMaxEUR');
-        a1.href = l1; a2.href = l2; a1.removeAttribute('aria-disabled'); a2.removeAttribute('aria-disabled');
+
+        // MAX бутони с референт
+        document.getElementById('btnMaxBGN').href = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10?ref="+encodeURIComponent(createdPid)+"&action=approve_max&cur=BGN";
+        document.getElementById('btnMaxEUR').href = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527?ref="+encodeURIComponent(createdPid)+"&action=approve_max&cur=EUR";
 
         msg.className='note';
         msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
         show(msg);
       }catch(e){
-        msg.className='err';
-        msg.textContent = 'Грешка: ' + (e?.message || e);
-        show(msg);
-      }finally{
-        document.getElementById('sendAd').textContent='Изпрати за одобрение';
-        enable(document.getElementById('sendAd')); enable(document.getElementById('floatingCta'));
+        msg.className='err'; msg.textContent='Грешка: '+(e?.message||e); show(msg);
       }
     }
     document.getElementById('sendAd').onclick = submitAd;
