@@ -582,6 +582,156 @@
     if (el) el.textContent = new Date().getFullYear();
   })();
 </script>
+<!-- === NovaObqva: Поп-ъп въпросник (вграден) === -->
+<style>
+  .nq-mask{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
+           background:rgba(10,15,26,.65);backdrop-filter:blur(8px)}
+  .nq-mask.is-open{display:flex}
+  .nq-card{width:min(680px,92vw);border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.12);
+           background:#0f172a;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .nq-bar{height:4px;background:linear-gradient(90deg,#10b981,#22d3ee,#6366f1,#a855f7,#f59e0b,#f43f5e,#10b981);
+          background-size:300% 100%;animation:nqGrad 8s linear infinite}
+  @keyframes nqGrad{from{background-position:0 50%}to{background-position:300% 50%}}
+  .nq-close{position:absolute;right:.75rem;top:.75rem;border:1px solid rgba(255,255,255,.18);
+            background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:.5rem .65rem}
+  .nq-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1rem;border-radius:12px;font-weight:700}
+  .nq-yes{background:linear-gradient(90deg,#22c55e,#10b981);color:#0b1220;border:1px solid rgba(255,255,255,.18)}
+  .nq-no{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.18)}
+  .nq-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);
+            background:linear-gradient(135deg,#facc15,#f59e0b);color:#111827}
+</style>
+
+<div id="novaQuiz" class="nq-mask" role="dialog" aria-modal="true" aria-labelledby="nqTitle">
+  <div class="nq-card relative">
+    <div class="nq-bar" aria-hidden="true"></div>
+    <button class="nq-close" id="nqClose" aria-label="Затвори">✕</button>
+
+    <!-- STEP 1 -->
+    <section id="nqStep1" class="p-5 md:p-6">
+      <h2 id="nqTitle" class="text-2xl md:text-3xl font-black leading-tight">
+        Хей! Искаш ли да пуснеш бърза обява?
+      </h2>
+      <p class="text-slate-300 mt-1">Ще те преведем през 2 бързи стъпки.</p>
+      <div class="mt-5 flex flex-wrap gap-2">
+        <button class="nq-btn nq-yes" id="nqS1Yes">Да, хайде</button>
+        <button class="nq-btn nq-no" id="nqS1No">Не</button>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section id="nqStep2" class="p-5 md:p-6 hidden">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-xl md:text-2xl font-extrabold">Избор на план</h3>
+        <span class="nq-badge">Препоръчано</span>
+      </div>
+      <p class="text-slate-300 mt-2">
+        Препоръчваме да стартираш с <strong class="text-amber-300">VIP</strong> — получаваш
+        <strong>30 дни позиция на първа страница</strong> и повече внимание.
+      </p>
+      <div class="mt-5 flex flex-wrap gap-2">
+        <button class="nq-btn nq-yes" id="nqS2YesVip">Да, VIP</button>
+        <a href="plans.html" class="nq-btn nq-no">Виж всички планове</a>
+        <button class="nq-btn nq-no" id="nqS2No">Не</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section id="nqStep3" class="p-5 md:p-6 hidden">
+      <h3 class="text-xl md:text-2xl font-extrabold">Почти готово!</h3>
+      <ul class="mt-2 text-slate-300 space-y-1 text-sm leading-relaxed">
+        <li>• Можеш да публикуваш всичко: <em>работа, запознанства, обучения, хоби</em> и др.</li>
+        <li>• Не сме посредник в сделки между потребители.</li>
+        <li>• Уважаваме всяка обява, която отговаря на Общите политики на сайта.</li>
+        <li>• <strong>Всички цени на плановете са с ДДС</strong>.</li>
+        <li>• Обявата се публикува след <strong>успешно плащане</strong>.</li>
+      </ul>
+      <div class="mt-5 flex flex-wrap gap-2">
+        <button class="nq-btn nq-yes" id="nqS3Go">Вход и публикувай</button>
+        <button class="nq-btn nq-no" id="nqS3No">Не</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  // показвай веднъж на сесия (смени на false, ако искаш всеки път)
+  const SHOW_ONCE_PER_SESSION = true;
+
+  // ако имаме активен "featureLayer", изчакай да се скрие
+  const featureLayer = document.getElementById('featureLayer');
+
+  const $ = (id)=>document.getElementById(id);
+  const el = {
+    mask: $('novaQuiz'),
+    s1: $('nqStep1'), s2: $('nqStep2'), s3: $('nqStep3'),
+    s1yes: $('nqS1Yes'), s1no: $('nqS1No'),
+    s2yes: $('nqS2YesVip'), s2no: $('nqS2No'),
+    s3go: $('nqS3Go'), s3no: $('nqS3No'), close: $('nqClose')
+  };
+
+  let chosenPlan = 'vip';
+  let sb = null;
+  try {
+    if (window.supabase && window.ENV) {
+      sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    }
+  } catch(_) {}
+
+  function show(step){
+    el.mask.classList.add('is-open');
+    document.body.classList.add('overflow-hidden');
+    // скрий всички стъпки
+    [el.s1, el.s2, el.s3].forEach(sec=>sec.classList.add('hidden'));
+    (step||el.s1).classList.remove('hidden');
+  }
+  function goAds(){ location.href = 'ad.html'; }
+  function closeToAds(){ goAds(); } // всяко „НЕ“ → ad.html
+
+  async function goSubmit(){
+    const target = 'submit.html?plan=' + encodeURIComponent(chosenPlan);
+    if (!sb){
+      location.href = 'auth.html?redirectTo=' + encodeURIComponent(target);
+      return;
+    }
+    try{
+      const { data:{ user } } = await sb.auth.getUser();
+      if (user) location.href = target;
+      else location.href = 'auth.html?redirectTo=' + encodeURIComponent(target);
+    }catch(_){
+      location.href = 'auth.html?redirectTo=' + encodeURIComponent(target);
+    }
+  }
+
+  // събития
+  el.s1yes.addEventListener('click', ()=> show(el.s2));
+  el.s1no .addEventListener('click', closeToAds);
+
+  el.s2yes.addEventListener('click', ()=> { chosenPlan='vip'; show(el.s3); });
+  el.s2no .addEventListener('click', closeToAds);
+
+  el.s3go .addEventListener('click', goSubmit);
+  el.s3no .addEventListener('click', closeToAds);
+
+  el.close.addEventListener('click', closeToAds);
+  window.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && el.mask.classList.contains('is-open')) closeToAds(); });
+
+  // показване — след 2.2s, веднъж на сесия; изчакай feature overlay ако е видим
+  function maybeShow(){
+    if (SHOW_ONCE_PER_SESSION && sessionStorage.getItem('novaQuizSeen')) return;
+    setTimeout(()=>{
+      // ако featureLayer е отворен, опитай по-късно
+      if (featureLayer && !featureLayer.classList.contains('is-hidden')){
+        setTimeout(maybeShow, 2000);
+        return;
+      }
+      sessionStorage.setItem('novaQuizSeen','1');
+      show(el.s1);
+    }, 2200);
+  }
+  maybeShow();
+})();
+</script>
 
 </body>
 </html>
