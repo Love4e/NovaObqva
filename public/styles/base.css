@@ -1,2 +1,57 @@
 /* Допълнителни козметики */
 img { image-rendering: -webkit-optimize-contrast; }
+
+/* ---- Mobile dock helpers ---- */
+:root{
+  --dock-h: 72px;                              /* височина на долното меню */
+  --safe-bottom: env(safe-area-inset-bottom);  /* iOS/Android жестова зона */
+}
+/* fallback за по-стари Safari */
+@supports (padding-bottom: constant(safe-area-inset-bottom)) {
+  :root { --safe-bottom: constant(safe-area-inset-bottom); }
+}
+
+/* добави този клас на контейнера/страницата с основното съдържание */
+.pb-dock{
+  padding-bottom: calc(var(--dock-h) + var(--safe-bottom));
+}
+
+/* фиксирано долно меню – стои под модалите, но над съдържанието */
+#mobileDock{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 45;
+  padding-bottom: var(--safe-bottom);          /* да не влиза под Home индикатора */
+  backdrop-filter: saturate(120%) blur(8px);
+  -webkit-backdrop-filter: saturate(120%) blur(8px);
+}
+
+/* на по-широки екрани обикновено няма мобилен док => махаме отстъпа */
+@media (min-width: 768px){
+  .pb-dock{ padding-bottom: 0; }
+}
+
+/* sticky submit лентата (submit.html) да е над дока и изтласкана от него */
+#stickyBar{
+  z-index: 55;
+  bottom: calc(var(--dock-h) + var(--safe-bottom));
+}
+@media (min-width: 768px){
+  #stickyBar{ bottom: 0; }
+}
+
+/* модалите и feature overlay са над дока */
+#adModal{ z-index: 60; }        /* подсигуряване над #mobileDock */
+.feature-mask{ z-index: 70; }   /* PRO/GOLD оверлей */
+
+/* --- Опционално: „вграден“ режим на дока (да е част от потока) --- */
+body.embedded-dock #mobileDock{
+  position: static;
+  z-index: auto;
+  padding-bottom: 0;
+}
+body.embedded-dock .pb-dock{ padding-bottom: 0; }
+body.embedded-dock #stickyBar{ bottom: 0; }
+
+/* Помощен клас: когато искаме временно да игнорираме отстъпа за дока */
+.no-dock.pb-dock{ padding-bottom: 0 !important; }
