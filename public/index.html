@@ -57,7 +57,6 @@
       box-shadow:0 0 0 0 rgba(250,204,21,.0);
       animation:newGlow 2.2s ease-in-out infinite;
     }
-    /* НОВА в списъка — вдясно */
     .ad-new::after{
       content:"НОВА"; position:absolute; top:10px; right:10px; z-index:10;
       font-size:11px; font-weight:800; letter-spacing:.02em;
@@ -101,17 +100,13 @@
       transition:transform .2s ease, box-shadow .2s ease;
     }
     .feature-card:hover{ transform:translateY(-2px); box-shadow:0 16px 40px rgba(0,0,0,.45); }
-
     .feature-badge{
       position:absolute; top:10px; right:10px; z-index:5;
       font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px;
       border:1px solid rgba(255,255,255,.18);
     }
-    /* ляв план-бадж в overlay */
-    .feature-badge-left{ left:10px; right:auto; }
     .badge-pro{ background:#ede9fe; color:#5b21b6; border-color:rgba(91,33,182,.35); }
     .badge-gold{ background:linear-gradient(135deg,#facc15,#f59e0b); color:#111827; border-color:rgba(0,0,0,.25); }
-    .badge-new{ background:#fde68a; color:#78350f; border-color:#f59e0b; }
 
     .page-locked{ pointer-events:none; user-select:none; filter:grayscale(.15) saturate(.85) opacity(.95); }
 
@@ -119,6 +114,10 @@
     .btn{display:inline-flex; align-items:center; gap:.5rem; padding:.65rem 1rem; border-radius:12px; font-weight:700;}
     .btn-ghost{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:#fff; }
     .btn-primary{ background:linear-gradient(90deg,#22c55e,#10b981); color:#0b1220; border:1px solid rgba(255,255,255,.18); }
+
+    /* --- БЯЛ текст в overlay картите --- */
+    .feature-card .title,
+    .feature-card .meta { color:#fff !important; text-shadow:0 1px 1px rgba(0,0,0,.18); }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -126,7 +125,7 @@
   <section id="featureLayer" class="feature-mask">
     <header class="feature-header">
       <div class="max-w-6xl mx-auto flex items-center justify-between">
-        <h2 class="feature-title">Избрани обяви · PRO & GOLD</h2>
+        <h2 class="feature-title">Избрани обяви · PRO &amp; GOLD</h2>
         <button id="featClose" class="btn btn-ghost" aria-label="Продължи към сайта">✕ Затвори</button>
       </div>
     </header>
@@ -223,16 +222,16 @@
     // Supabase client
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // -------- Навигация: Вход/Профил/Чат --------
+    // -------- Навигация --------
     async function renderAuthAreas() {
       const { data: { user } } = await sb.auth.getUser();
       const d = document.getElementById('nav-auth-desktop');
+
       const chatDesktop = user
         ? `<a href="chat.html" class="relative px-3 py-1.5 rounded-lg hover:bg-slate-100">
              Съобщения
              <span id="unreadBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
-           </a>`
-        : '';
+           </a>` : '';
 
       let desktopHTML = '';
       if (user) {
@@ -313,7 +312,7 @@
       render(data || []);
     }
 
-    // План бадж — В ЛЯВО
+    // Бадж за план – В ЛЯВО; "НОВА" е вдясно от псевдо-елемента
     function planBadge(name) {
       const n = String(name||'').toLowerCase();
       let cls = 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
@@ -385,7 +384,7 @@
 
     async function openAdPopup(id){
       const { data, error } = await sb.from('ads')
-        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency,created_at')
+        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
         .eq('id', id)
         .maybeSingle();
 
@@ -399,13 +398,11 @@
       const badge = planBadge(data.plan_name);
       const cur = String(data.plan_currency || 'BGN').toUpperCase();
       const price = isFinite(+data.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+data.price) : '';
-      const isNew = isNewAd(data.approved_at || data.created_at);
 
       modalBody.innerHTML = `
         <div class="relative">
           <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
-            ${badge} <!-- план в ЛЯВО -->
-            ${isNew ? `<span class="absolute top-2 right-2 z-10 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 ring-1 ring-amber-300">НОВА</span>` : ``}
+            ${badge}
             <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
           </div>
           ${imgs.length>1 ? `
@@ -467,7 +464,7 @@
     async function loadFeatured(){
       // PRO / GOLD / VIP / MAX (case-insensitive)
       const { data, error } = await sb.from('ads')
-        .select('id,title,price,city,category,approved_at,cover_image,images,plan_name,plan_currency,created_at')
+        .select('id,title,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
         .eq('ad_status','approved')
         .or('plan_name.ilike.%pro%,plan_name.ilike.%gold%,plan_name.ilike.%vip%,plan_name.ilike.%max%')
         .order('approved_at',{ascending:false})
@@ -475,11 +472,7 @@
 
       const wrap = document.getElementById('featList');
       if (error){ console.error(error); wrap.innerHTML = '<p class="text-slate-200">Неуспешно зареждане.</p>'; return; }
-
-      if (!data || !data.length){
-        wrap.innerHTML = '<p class="text-slate-200">Няма налични PRO/GOLD обяви в момента.</p>';
-        return;
-      }
+      if (!data || !data.length){ wrap.innerHTML = '<p class="text-slate-200">Няма налични PRO/GOLD обяви в момента.</p>'; return; }
 
       wrap.innerHTML = data.map(ad=>{
         const imgArr = Array.isArray(ad.images) ? ad.images : [];
@@ -487,29 +480,26 @@
         const cur = String(ad.plan_currency||'BGN').toUpperCase();
         const price = isFinite(+ad.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+ad.price) : '';
         const plan = String(ad.plan_name||'').toLowerCase();
-        const isGold = plan.includes('gold') || plan.includes('max');
-        const label  = isGold ? 'GOLD' : (plan.includes('vip') ? 'VIP' : 'PRO');
-        const isNew  = isNewAd(ad.approved_at || ad.created_at);
+        const badgeCls = (plan.includes('gold')||plan.includes('max')) ? 'badge-gold' : 'badge-pro';
+        const label = plan.includes('gold')||plan.includes('max') ? 'GOLD' : (plan.includes('vip') ? 'VIP' : 'PRO');
 
+        /* ВАЖНО: тук НЕ е anchor, за да не се отваря при клик */
         return `
-          <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}" class="open-ad feature-card">
+          <div class="feature-card" data-ad-id="${ad.id}">
             <div class="relative aspect-video bg-slate-800">
-              <span class="feature-badge feature-badge-left ${isGold ? 'badge-gold':'badge-pro'}">${label}</span>
-              ${isNew ? `<span class="feature-badge badge-new">НОВА</span>` : ``}
+              <span class="feature-badge ${badgeCls}">${label}</span>
               <img src="${thumb}" class="w-full h-full object-cover" alt="">
             </div>
             <div class="p-3">
-              <div class="font-semibold line-clamp-1">${escapeHTML(ad.title||'—')}</div>
-              <div class="text-sm text-white mt-0.5">
-                ${escapeHTML(ad.city||'')} ${ad.category?`· ${escapeHTML(ad.category)}`:''}
-              </div>
+              <div class="title font-semibold line-clamp-1">${escapeHTML(ad.title||'—')}</div>
+              <div class="meta text-sm mt-0.5">${escapeHTML(ad.city||'')}${ad.category?` · ${escapeHTML(ad.category)}`:''}</div>
               <div class="mt-2 font-bold text-emerald-300">${price}</div>
             </div>
-          </a>
+          </div>
         `;
       }).join('');
 
-      // заключване на фона
+      // Заключи фона и скрий скрола
       document.body.classList.add('overflow-hidden');
       pageShell.classList.add('page-locked');
       pageShell.setAttribute('aria-hidden','true');
