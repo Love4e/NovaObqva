@@ -32,8 +32,6 @@
 
       <div class="flex-1"></div>
       <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
-
-      <!-- Премахнато: Mobile hamburger бутонът и целият drawer -->
     </div>
   </header>
 
@@ -82,38 +80,44 @@
   <script>
     // SB
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+
+    // ===== ВАЛУТИ =====
+    const FX = { EUR_BGN: 1.95583 }; // 1 EUR = 1.95583 BGN
+    const utils = {
+      fmt(n,c){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:c}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} ${c}`; } },
+      pair(n, base='BGN'){
+        let bgn, eur;
+        if ((base||'BGN').toUpperCase()==='EUR'){ eur=Number(n)||0; bgn=eur*FX.EUR_BGN; }
+        else { bgn=Number(n)||0; eur=bgn/FX.EUR_BGN; }
+        return { bgn, eur };
+      },
+      pairHTML(n, base='BGN', theme='light'){
+        const { bgn, eur } = utils.pair(n, base);
+        const main = theme==='dark' ? 'text-emerald-300' : 'text-emerald-700';
+        const sub  = theme==='dark' ? 'text-slate-300'   : 'text-slate-500';
+        return `
+          <span class="${main} font-bold whitespace-nowrap">${utils.fmt(bgn,'BGN')}</span>
+          <span class="${sub} text-xs ml-2 whitespace-nowrap">(${utils.fmt(eur,'EUR')})</span>
+        `;
+      }
+    };
+
     // Хедър auth
     async function renderAuthAreas() {
       const { data: { user } } = await sb.auth.getUser();
       const d = document.getElementById('nav-auth-desktop');
-      const m = document.getElementById('nav-auth-mobile'); // няма елемент; безопасно
       const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
-      let desktopHTML = '', mobileHTML  = '';
+      let desktopHTML = '';
       if (user) {
         desktopHTML = `<a href="chat.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Съобщения</a>
                        <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
-                       <button id=\"nav-logout\" class=\"px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm\">Изход</button>`;
+                       <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
       } else {
         desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
       }
       if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
-      if (m) { m.innerHTML = mobileHTML; }
-      [document.getElementById('nav-logout'), document.getElementById('nav-logout-m')].filter(Boolean).forEach(btn => {
-        btn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
-      });
+      document.getElementById('nav-logout')?.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
     }
-    (function initDrawer(){
-      const drawer = document.getElementById('drawer'); if (!drawer) return; // няма drawer вече
-      const openBtn  = document.getElementById('nav-open');
-      const closeBtn = document.getElementById('nav-close');
-      const backdrop = document.getElementById('backdrop');
-      const open  = () => { drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); };
-      const close = () => { drawer.classList.add('hidden');    document.body.classList.remove('overflow-hidden'); };
-      openBtn?.addEventListener('click', open);
-      closeBtn?.addEventListener('click', close);
-      backdrop?.addEventListener('click', close);
-      window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
-    })();
     renderAuthAreas();
 
     // Данни/филтри
@@ -137,7 +141,6 @@
       catEl.innerHTML = `<option value="">Всички категории</option>` + CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
     }
 
-    function money(n){ try { return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)); } catch { return n; } }
     function esc(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
     function planBadge(name) {
@@ -157,18 +160,18 @@
       const thumb  = ad.cover_image || images[0] || 'https://placehold.co/600x340?text=NovaObqva';
       const city   = ad.city ? ` · ${esc(ad.city)}` : '';
       const cat    = ad.category ? ` · ${esc(ad.category)}` : '';
-      const badge  = planBadge(ad.plan_name);
+      const baseCur= (ad.price_currency || ad.plan_currency || 'BGN');
       return `
         <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}"
            class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative">
           <div class="aspect-video bg-slate-100 relative">
-            ${badge}
+            ${planBadge(ad.plan_name)}
             <img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy">
           </div>
           <div class="p-4">
             <div class="flex items-center justify-between gap-2">
               <h3 class="font-semibold line-clamp-1">${esc(ad.title||'—')}</h3>
-              <div class="text-emerald-700 font-bold whitespace-nowrap">${money(ad.price)}</div>
+              <div class="whitespace-nowrap">${utils.pairHTML(ad.price, baseCur)}</div>
             </div>
             <div class="text-sm text-slate-500 mt-1">
               Публикувана: ${new Date(ad.approved_at || ad.created_at).toLocaleDateString('bg-BG')}${city}${cat}
@@ -191,7 +194,7 @@
     async function fetchPage(){
       let query = sb
         .from('ads')
-        .select('id,title,price,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency,user_id')
+        .select('id,title,price,price_currency,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency,user_id')
         .eq('ad_status','approved');
 
       const q = qEl.value.trim();
@@ -234,19 +237,6 @@
     });
     moreBtn.addEventListener('click', async ()=>{ page += 1; await fetchPage(); });
 
-    (function initDrawer(){
-      const drawer = document.getElementById('drawer'); if (!drawer) return; // няма drawer вече
-      const openBtn  = document.getElementById('nav-open');
-      const closeBtn = document.getElementById('nav-close');
-      const backdrop = document.getElementById('backdrop');
-      const open  = () => { drawer.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); };
-      const close = () => { drawer.classList.add('hidden');    document.body.classList.remove('overflow-hidden'); };
-      openBtn?.addEventListener('click', open);
-      closeBtn?.addEventListener('click', close);
-      backdrop?.addEventListener('click', close);
-      window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
-    })();
-
     // ---------- POPUP ----------
     const modalEl = document.getElementById('adModal');
     const modalBody = document.getElementById('adModalBody');
@@ -285,7 +275,7 @@
 
     async function openAdPopup(id){
       const { data, error } = await sb.from('ads')
-        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
+        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,cover_image,images,plan_name,plan_currency')
         .eq('id', id).maybeSingle();
 
       if (error || !data){
@@ -296,8 +286,7 @@
       const imgs = Array.from(new Set([data.cover_image, ...(Array.isArray(data.images)?data.images:[])].filter(Boolean)));
       const big = imgs[0] || 'https://placehold.co/800x500?text=NovaObqva';
       const badge = (()=>{ const n=String(data.plan_name||'').toLowerCase(); let cls='bg-slate-100 text-slate-700 ring-1 ring-slate-200'; let label=data.plan_name||'Starter'; if(n==='pro'){cls='bg-violet-50 text-violet-800 ring-1 ring-violet-200';} if(n==='max'||n==='gold'){cls='bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label=(data.plan_name||'MAX').toUpperCase();} return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}"><svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${label}</span>`; })();
-      const cur = String(data.plan_currency || 'BGN').toUpperCase();
-      const price = isFinite(+data.price) ? new Intl.NumberFormat('bg-BG',{style:'currency',currency: cur}).format(+data.price) : '';
+      const baseCur = (data.price_currency || data.plan_currency || 'BGN');
 
       const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
@@ -318,7 +307,7 @@
         <div class="p-4 md:p-6 pt-2">
           <div class="flex items-start justify-between gap-3">
             <h2 class="text-xl md:text-2xl font-semibold">${esc(data.title||'—')}</h2>
-            <div class="text-emerald-700 font-bold text-lg md:text-xl whitespace-nowrap">${price}</div>
+            <div class="text-lg md:text-xl whitespace-nowrap">${utils.pairHTML(data.price, baseCur)}</div>
           </div>
           <div class="text-sm text-slate-600 mt-1">
             Публикувана: ${new Date(data.approved_at).toLocaleString('bg-BG')}
