@@ -3,201 +3,41 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>18+ Зона | NovaObqva</title>
-  <meta name="description" content="Специална зона 18+ достъпна само за потребители с план MAX. Показва обяви от секция Услуги." />
-  <style>
-    :root{--bg:#0b1020;--card:#111832;--muted:#a8b0c3;--txt:#e7ecf7;--acc:#f59e0b;--ok:#10b981;--danger:#ef4444}
-    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;background:radial-gradient(1000px 500px at 80% -10%,rgba(245,158,11,.15),transparent),#0b1020;color:var(--txt)}
-    .wrap{max-width:1100px;margin:0 auto;padding:20px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:10px 0 18px}
-    .logo{display:flex;align-items:center;gap:10px}
-    .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35)}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0e1833;color:#fff;text-decoration:none}
-    .btn:hover{filter:brightness(1.1)}
-    .grid{display:grid;gap:16px}
-    @media(min-width:860px){.grid{grid-template-columns:260px 1fr;gap:22px}}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
-    .filter{display:flex;flex-direction:column;gap:10px}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:#0e1833;font-size:12px;color:#e7ecf7}
-    .list{display:grid;gap:14px}
-    .ad{display:grid;gap:10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;background:#0e152b}
-    .ad img{width:100%;height:180px;object-fit:cover}
-    .ad-body{padding:12px}
-    .ad h3{margin:0 0 6px;font-size:18px}
-    .ad p{margin:0;color:var(--muted)}
-    .price{font-weight:700}
-    .tag{font-size:12px;opacity:.85}
-    .empty{padding:14px;border:1px dashed rgba(255,255,255,.2);border-radius:12px;color:#c8d1e7}
-    footer{margin:22px 0;color:#93a0b8;font-size:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-
-    /* Overlays */
-    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(2px);z-index:50}
-    .modal{width:min(560px,92vw);background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px}
-    .modal h2{margin:0 0 8px}
-    .modal p{color:var(--muted)}
-    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    .btn-warn{background:#231420;border-color:rgba(239,68,68,.35)}
-    .btn-ok{background:#12231d;border-color:rgba(16,185,129,.35)}
-    .btn-acc{background:#1f1a0d;border-color:rgba(245,158,11,.45)}
-  </style>
+  <title>NovaObqva — Вход</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
 </head>
-<body>
-  <div class="wrap">
-    <header>
-      <div class="logo">
-        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#22d3ee,#f59e0b)"></div>
-        <div>
-          <h1 style="margin:0;font-size:22px">18+ Зона</h1>
-          <div class="badge">Само за потребители с план <strong>MAX</strong> · Показва обяви от секция „Услуги“</div>
-        </div>
-      </div>
-      <div class="row">
-        <a class="btn" href="/about.html">За NovaObqva</a>
-        <a class="btn" href="/">Начало</a>
-      </div>
-    </header>
+<body class="min-h-screen bg-slate-50 flex items-center justify-center">
+  <main class="bg-white rounded-2xl border shadow-sm p-8 w-full max-w-md">
+    <h1 class="text-2xl font-semibold mb-2 text-center">Вход в NovaObqva</h1>
+    <p class="text-slate-600 mb-6 text-center">Използвай Google, за да продължиш</p>
 
-    <div class="grid">
-      <aside class="card">
-        <h3 style="margin:0 0 8px">Филтри</h3>
-        <div class="filter">
-          <span class="pill">Категория: Услуги (18+)</span>
-          <label class="pill" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input id="onlyVerified" type="checkbox" /> Само верифицирани профили
-          </label>
-          <label class="pill" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input id="withPhotos" type="checkbox" /> Само с изображения
-          </label>
-        </div>
-        <div style="margin-top:12px;font-size:13px;color:#cdd6ee">Сигнали за нередности: <a style="color:#93c5fd" href="mailto:[посочете-имейл]">[посочете-имейл]</a></div>
-      </aside>
+    <button id="googleBtn" class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white border hover:bg-slate-50">
+      <img alt="Google" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
+      <span class="font-medium">Вход с Google</span>
+    </button>
 
-      <main>
-        <div id="ads" class="list"></div>
-        <div id="empty" class="empty" style="display:none">Няма налични обяви в секция „Услуги“ за момента.</div>
-      </main>
-    </div>
-
-    <footer>
-      <div>© <span id="y"></span> NovaObqva</div>
-      <div>
-        <a href="/terms.html">Общи условия</a> · <a href="/policy.html">Политики</a>
-      </div>
-    </footer>
-  </div>
-
-  <!-- Age Gate Overlay -->
-  <div id="ageGate" class="overlay" role="dialog" aria-modal="true">
-    <div class="modal">
-      <h2>Потвърдете възраст</h2>
-      <p>Тази секция е предназначена за лица <strong>над 18 години</strong>. Продължавайки, потвърждавате, че сте пълнолетни.</p>
-      <div class="row">
-        <button id="ageNo" class="btn btn-warn">Аз съм под 18</button>
-        <button id="ageYes" class="btn btn-ok">Потвърждавам 18+</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAX Gate Overlay -->
-  <div id="maxGate" class="overlay" role="dialog" aria-modal="true">
-    <div class="modal">
-      <h2>Необходим е план MAX</h2>
-      <p>За достъп до 18+ зоната е нужен активен абонамент <strong>MAX</strong>.</p>
-      <div class="row">
-        <a class="btn btn-acc" href="https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10" target="_blank" rel="noopener">Купи MAX</a>
-        <a class="btn" href="/activate_max.html">Вече платих – активирай</a>
-      </div>
-      <p style="margin-top:10px;color:#cbd5e1;font-size:13px">* Временно активиране се пази локално на устройството Ви. За реална защита е нужен сървърна проверка на абонамента.</p>
-    </div>
-  </div>
+    <p id="err" class="text-rose-600 text-sm mt-4 hidden text-center"></p>
+  </main>
 
   <script>
-    const AGE_KEY = 'nova_age_ok';
-    const PLAN_KEY = 'nova_plan'; // очаквана стойност: 'MAX'
+    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    const redirectTo = new URL(location.href).searchParams.get('redirectTo') 
+      || (location.origin + '/nova_admin.html'); // след вход → админ панел
 
-    // Визуално съдържание
-    const adsEl = document.getElementById('ads');
-    const emptyEl = document.getElementById('empty');
-
-    function renderAds(items){
-      adsEl.innerHTML = '';
-      if(!items.length){ emptyEl.style.display='block'; return; }
-      emptyEl.style.display='none';
-      const frag = document.createDocumentFragment();
-      items.forEach(ad=>{
-        const card = document.createElement('article');
-        card.className='ad';
-        card.innerHTML = `
-          ${ad.image?`<img src="${ad.image}" alt="${ad.title}">`:''}
-          <div class="ad-body">
-            <h3>${ad.title}</h3>
-            <p class="tag">${ad.category||'Услуги'}</p>
-            <p>${ad.description||''}</p>
-            <p class="price">${ad.price? ad.price + ' лв.' : ''}</p>
-          </div>
-        `;
-        frag.appendChild(card);
+    document.getElementById('googleBtn').addEventListener('click', async () => {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
       });
-      adsEl.appendChild(frag);
-    }
-
-    async function loadAds(){
-      try{
-        const r = await fetch('/api/ads.json',{cache:'no-store'});
-        if(!r.ok) throw new Error('No feed');
-        const all = await r.json();
-        const filtered = (all||[]).filter(a=> (a.category||'').toLowerCase()==='услуги');
-        const fx = applyToggles(filtered);
-        renderAds(fx);
-      }catch(e){
-        const demo = [
-          {title:'Премиум услуга A (18+)', category:'Услуги', description:'Демо описание за целите на тестване.', price:120, image:'https://images.unsplash.com/photo-1545235617-9465d2a55698?q=80&w=1200&auto=format&fit=crop'},
-          {title:'Премиум услуга B (18+)', category:'Услуги', description:'Демо описание. Заменете с реални данни.', price:90, image:'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop'}
-        ];
-        const fx = applyToggles(demo);
-        renderAds(fx);
+      if (error) {
+        const el = document.getElementById('err');
+        el.textContent = error.message || 'Грешка при вход.';
+        el.classList.remove('hidden');
       }
-    }
-
-    function applyToggles(list){
-      const onlyVerified = document.getElementById('onlyVerified').checked;
-      const withPhotos = document.getElementById('withPhotos').checked;
-      let out = list;
-      if(onlyVerified) out = out.filter(a=> a.verified===true);
-      if(withPhotos) out = out.filter(a=> !!a.image);
-      return out;
-    }
-
-    document.getElementById('onlyVerified').addEventListener('change', loadAds);
-    document.getElementById('withPhotos').addEventListener('change', loadAds);
-
-    const ageGate = document.getElementById('ageGate');
-    const maxGate = document.getElementById('maxGate');
-    const ageOk = localStorage.getItem(AGE_KEY)==='1';
-    const plan = localStorage.getItem(PLAN_KEY)||'';
-
-    function open(el){el.style.display='flex'}
-    function close(el){el.style.display='none'}
-
-    if(!ageOk){open(ageGate)}
-    else if(plan!=='MAX'){open(maxGate)}
-    else{loadAds()}
-
-    document.getElementById('ageYes').onclick = ()=>{
-      localStorage.setItem(AGE_KEY,'1');
-      close(ageGate);
-      if((localStorage.getItem(PLAN_KEY)||'')!=='MAX') open(maxGate); else loadAds();
-    }
-    document.getElementById('ageNo').onclick = ()=>{
-      alert('Достъпът е отказан.');
-      location.replace('/');
-    }
-
-    if(location.hash.includes('max=1')){
-      localStorage.setItem(PLAN_KEY,'MAX');
-    }
-
-    document.getElementById('y').textContent=new Date().getFullYear();
+    });
   </script>
 </body>
 </html>
