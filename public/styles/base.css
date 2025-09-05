@@ -1,67 +1,26 @@
-/* ============================
-   Base UI cosmetics
-   ============================ */
-img{ image-rendering:-webkit-optimize-contrast; }
+/* ---- Козметики ---- */
+img { image-rendering: -webkit-optimize-contrast; }
 
-/* ============================
-   Mobile dock (embedded / sticky)
-   ============================ */
-:root{
-  /* Височина на дока (минимум) и безопасна зона за iOS */
-  --dock-h: 76px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* По желание: добавяш този клас ако искаш РЪЧНО отстъп под съдържанието.
-   (например на страници, където докът все още е fixed от стар код) */
-.pb-dock-fixed{
-  padding-bottom: calc(var(--dock-h) + var(--safe-bottom));
-}
-
-/* Вграден (embedded) док – стои вътре в потока на страницата */
-#mobileDock,
-.mobile-dock,
-[data-mobile-dock]{
-  position: sticky !important;   /* насилваме sticky, дори JS да е задал fixed */
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 45;                   /* под модалите, над съдържанието */
-  min-height: var(--dock-h);
-  padding-bottom: var(--safe-bottom);
-
-  /* леко стъклено усещане; не е задължително */
-  backdrop-filter: saturate(1.1) blur(6px);
-  -webkit-backdrop-filter: saturate(1.1) blur(6px);
-}
-
-/* Ако стар скрипт е оставил клас fixed – игнорирай го */
-#mobileDock.fixed,
-.mobile-dock.fixed,
-[data-mobile-dock].fixed{
-  position: sticky !important;
-}
-
-/* На по-широки екрани не е нужен отстъп */
-@media (min-width: 768px){
-  .pb-dock-fixed{ padding-bottom: 0; }
-}
-
-/* ============================
-   Layering: модали / оверлеи над дока
-   ============================ */
-#adModal{ z-index: 70; }      /* popup на обява */
+/* ---- Слоеве (z-index) ----
+   #nova-dock идва от shell-mobile.js
+   stickyBar > dock, но < модали/оверлеи
+*/
+#nova-dock  { z-index: 60; }  /* мобилен док (fixed) */
+#stickyBar  { z-index: 65; }  /* мобилен submit-бар в submit.html */
+#adModal    { z-index: 70; }  /* popup за обяви */
 .feature-mask{ z-index: 80; } /* PRO/GOLD overlay */
 
-/* (по избор) други глобални слоеве, ако ги имаш */
-.toast, .overlay, .drawer{ z-index: 65; }
-
-/* ============================
-   Полезни хелпъри
-   ============================ */
-
-/* Плавни скролове при anchor-и */
-html{ scroll-behavior:smooth; }
-
-/* По-малко „скачанe“ при sticky/вградени елементи */
-*{ -webkit-tap-highlight-color: rgba(0,0,0,0); }
+/* ---- По избор: отстъп за страници, които опират в дъното ----
+   Добави .pb-dock на <main> или на контейнера на страницата,
+   ако съдържанието се скрива зад дока (дълги форми/списъци).
+*/
+:root{
+  --dock-h: 64px;                          /* приблизителна височина на дока */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pb-dock{
+  padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px); /* +12px за "bottom-3" от дока */
+}
+@media (min-width: 768px){
+  .pb-dock{ padding-bottom: 0; }
+}
