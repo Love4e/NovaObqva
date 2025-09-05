@@ -574,6 +574,250 @@
     </div>
   </div>
 </footer>
+<!-- ========== SMART LAUNCH (NovaObqva) ========== -->
+<style>
+  #smartLaunch{position:fixed;right:12px;bottom:88px;z-index:62}
+  @media (min-width:768px){#smartLaunch{right:20px;bottom:24px}}
+  #smartLaunch .sl-bubble{
+    display:flex;align-items:flex-end;gap:.5rem;
+    max-width:92vw;width:min(92vw,360px);
+    background:linear-gradient(135deg,#0b1220,#111827);
+    border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+    overflow:hidden;opacity:0;transform:translateY(20px);transition:.35s ease;
+  }
+  #smartLaunch .sl-bubble.is-in{opacity:1;transform:translateY(0)}
+  #smartLaunch .sl-head{
+    padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);
+    background:
+      radial-gradient(120% 120% at -10% -10%, rgba(16,185,129,.35), transparent 60%),
+      radial-gradient(120% 120% at 120% 120%, rgba(99,102,241,.35), transparent 60%);
+    display:flex;align-items:center;justify-content:space-between;gap:8px
+  }
+  #smartLaunch .sl-title{
+    font-weight:800;letter-spacing:.01em;font-size:14.5px;
+    background:linear-gradient(90deg,#22c55e,#6366f1,#f59e0b);
+    -webkit-background-clip:text;background-clip:text;color:transparent
+  }
+  #smartLaunch .sl-x{appearance:none;background:transparent;border:0;color:#cbd5e1;
+    font-weight:700;font-size:16px;line-height:1;cursor:pointer;border-radius:8px;padding:2px 6px}
+  #smartLaunch .sl-x:hover{background:rgba(255,255,255,.08);color:#fff}
+  #smartLaunch .sl-body{padding:12px}
+  #smartLaunch .sl-msg{font-size:14px;line-height:1.35;color:#e5e7eb}
+  #smartLaunch .sl-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  #smartLaunch .sl-btn{flex:1 1 auto;min-width:84px;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+    padding:.6rem .9rem;border-radius:12px;border:1px solid rgba(255,255,255,.14);font-weight:700;cursor:pointer}
+  #smartLaunch .sl-btn-primary{
+    background:linear-gradient(90deg,#22c55e,#10b981);color:#0b1220
+  }
+  #smartLaunch .sl-btn-ghost{background:rgba(255,255,255,.06);color:#fff}
+  /* панел (стъпка 2) */
+  #smartLaunch .sl-panel{display:none}
+  #smartLaunch .sl-panel.is-open{display:block}
+  #smartLaunch .sl-field{display:grid;gap:6px;margin-top:10px}
+  #smartLaunch .sl-select, #smartLaunch .sl-plan{
+    width:100%;background:#0f172a;border:1px solid rgba(255,255,255,.14);
+    color:#e5e7eb;border-radius:12px;padding:.6rem .75rem
+  }
+  #smartLaunch .sl-plan{display:flex;gap:8px;align-items:center;justify-content:space-between;cursor:pointer}
+  #smartLaunch .sl-plan[data-active="true"]{
+    outline:2px solid #6366f1;background:linear-gradient(180deg,#0f172a,#0b1324)
+  }
+  #smartLaunch .sl-metrics{margin-top:10px;display:grid;gap:6px;
+    background:linear-gradient(180deg,rgba(34,197,94,.08),rgba(99,102,241,.08));
+    border:1px dashed rgba(255,255,255,.16);border-radius:12px;padding:.6rem .75rem;color:#d1fae5
+  }
+  #smartLaunch .sl-cta{
+    margin-top:10px;display:flex;gap:8px;flex-wrap:wrap
+  }
+  #smartLaunch .sl-note{margin-top:6px;color:#94a3b8;font-size:11.5px}
+  /* по-широко на телефон – исканото „по-широко балонче“ */
+  @media (max-width:480px){
+    #smartLaunch .sl-bubble{width:min(94vw,420px)}
+  }
+</style>
+
+<div id="smartLaunch" aria-live="polite">
+  <div class="sl-bubble" role="dialog" aria-label="NovaObqva помощник">
+    <div class="w-full">
+      <div class="sl-head">
+        <div class="sl-title">Хей! Искаш бърза обява?</div>
+        <button class="sl-x" id="slClose" aria-label="Затвори">✕</button>
+      </div>
+      <div class="sl-body">
+        <!-- Стъпка 1 -->
+        <div id="slStep1" class="sl-step">
+          <p class="sl-msg">Пусни я за минута — снимка, заглавие, цена. Да те насоча ли?</p>
+          <div class="sl-row">
+            <button class="sl-btn sl-btn-primary" id="slYes">Да</button>
+            <button class="sl-btn sl-btn-ghost" id="slNo">Не</button>
+          </div>
+          <div class="sl-note">Без посредници. Всички планове с ДДС. Публикуване след успешно плащане.</div>
+        </div>
+
+        <!-- Стъпка 2 (панел с избор/прогноза) -->
+        <div id="slStep2" class="sl-panel">
+          <div class="sl-field">
+            <label for="slCat" class="text-xs text-slate-300">Категория</label>
+            <select id="slCat" class="sl-select"></select>
+          </div>
+
+          <div class="sl-field">
+            <span class="text-xs text-slate-300">План</span>
+            <div id="slPlans" class="grid gap-2">
+              <button class="sl-plan" data-plan="starter"><span>Starter</span><strong>9.99 BGN</strong></button>
+              <button class="sl-plan" data-plan="vip"><span>VIP</span><strong>19.99 BGN</strong></button>
+              <button class="sl-plan" data-plan="gold"><span>GOLD</span><strong>39.99 BGN</strong></button>
+            </div>
+          </div>
+
+          <div class="sl-metrics" id="slMetrics">
+            <div><strong>Прогнозни виждания (24ч):</strong> <span id="slViews">—</span></div>
+            <div><strong>Препоръка:</strong> <span id="slRec">VIP за старт — 30 дни отпред</span></div>
+            <div class="text-slate-300">* Оценката е ориентировъчна и зависи от снимки, цена и търсене.</div>
+          </div>
+
+          <div class="sl-cta">
+            <button class="sl-btn sl-btn-primary" id="slStartVip">Пусни с VIP</button>
+            <a href="plans.html" class="sl-btn sl-btn-ghost">Виж планове</a>
+          </div>
+
+          <div class="sl-note">
+            Можеш да публикуваш всичко — работа, запознанства, обучения, хоби… Ние не сме посредник между потребителите; важат Общите политики.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const root = document.getElementById('smartLaunch');
+  if (!root) return;
+
+  // Не показвай 7 дни след отказ
+  try{
+    const hideUntil = localStorage.getItem('sl_hide_until');
+    if (hideUntil && Date.now() < Number(hideUntil)) return;
+  }catch(_){}
+
+  const bubble = root.querySelector('.sl-bubble');
+  requestAnimationFrame(()=> bubble.classList.add('is-in'));
+
+  // Категории (взимаме от глобалния CATEGORIES, ако го има)
+  const CATS = (window.CATEGORIES && Array.isArray(window.CATEGORIES) && window.CATEGORIES.length)
+    ? window.CATEGORIES
+    : ['Недвижими имоти','Автомобили','Работа','Услуги','Техника','Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'];
+
+  const catSel = document.getElementById('slCat');
+  catSel.innerHTML = CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  // Модел за прогноза (опростен, но убедителен)
+  const BASE = {
+    'Недвижими имоти': 220,
+    'Автомобили': 260,
+    'Работа': 180,
+    'Услуги': 140
+  };
+  const MULT = { starter: 1.0, vip: 2.2, gold: 4.0 };
+
+  function fmt(n){ try{ return new Intl.NumberFormat('bg-BG').format(Math.round(n)); }catch(_){ return Math.round(n); } }
+  function estimate(){
+    const cat = catSel.value;
+    const activeBtn = plansWrap.querySelector('.sl-plan[data-active="true"]') || plansWrap.querySelector('.sl-plan[data-plan="vip"]');
+    const plan = activeBtn?.dataset.plan || 'vip';
+    const base = BASE[cat] || 150; // дефолт базова видимост
+    const views = base * (MULT[plan] || 1);
+    viewsEl.textContent = fmt(views);
+    recEl.textContent = (plan === 'gold')
+      ? 'GOLD — макс. видимост и приоритет отпред'
+      : (plan === 'vip')
+        ? 'VIP — 30 дни на първа страница, бърз старт'
+        : 'Starter — публикувай и тествай интереса';
+  }
+
+  const step1 = document.getElementById('slStep1');
+  const step2 = document.getElementById('slStep2');
+  const yesBtn = document.getElementById('slYes');
+  const noBtn  = document.getElementById('slNo');
+  const close  = document.getElementById('slClose');
+
+  const plansWrap = document.getElementById('slPlans');
+  const viewsEl = document.getElementById('slViews');
+  const recEl   = document.getElementById('slRec');
+  const startVip= document.getElementById('slStartVip');
+
+  // Избор на план — по подразбиране VIP активен
+  plansWrap.querySelectorAll('.sl-plan').forEach(btn=>{
+    if (btn.dataset.plan === 'vip') btn.setAttribute('data-active','true');
+    btn.addEventListener('click', ()=>{
+      plansWrap.querySelectorAll('.sl-plan').forEach(b=>b.removeAttribute('data-active'));
+      btn.setAttribute('data-active','true');
+      estimate();
+    }, {passive:true});
+  });
+
+  catSel.addEventListener('change', estimate, {passive:true});
+
+  yesBtn.addEventListener('click', ()=>{
+    step1.style.display='none';
+    step2.classList.add('is-open');
+    estimate();
+  }, {passive:true});
+
+  function goAdsAndHide(){
+    try{
+      const until = Date.now() + 7*24*60*60*1000;
+      localStorage.setItem('sl_hide_until', String(until));
+    }catch(_){}
+    // към списъка с обяви
+    location.href = 'ad.html';
+  }
+
+  noBtn.addEventListener('click', goAdsAndHide, {passive:true});
+
+  // CTA – проверяваме дали има Supabase и user
+  async function goSubmitPreferred(plan){
+    const target = 'submit.html?plan=' + encodeURIComponent(plan||'vip');
+    try{
+      if (window.supabase && window.ENV){
+        const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+        const { data:{ user } } = await sb.auth.getUser();
+        if (user) { location.href = target; return; }
+      }
+    }catch(_){}
+    location.href = 'auth.html?redirectTo=' + encodeURIComponent(target);
+  }
+
+  startVip.addEventListener('click', ()=> goSubmitPreferred('vip'));
+
+  // Затваряне (✕) — запомни за 7 дни
+  function closeBubble(){
+    bubble.classList.remove('is-in');
+    setTimeout(()=> root.remove(), 200);
+    try{
+      const until = Date.now() + 7*24*60*60*1000;
+      localStorage.setItem('sl_hide_until', String(until));
+    }catch(_){}
+  }
+  close.addEventListener('click', closeBubble);
+
+  // 10s авто-подсказване, ако user стои на страницата
+  setTimeout(()=>{
+    if (!step2.classList.contains('is-open')){
+      bubble.classList.add('is-in');
+    }
+  }, 10000);
+
+  // Скрий под feature overlay (ако е отворен)
+  const feat = document.getElementById('featureLayer');
+  if (feat && !feat.classList.contains('is-hidden')){
+    root.style.zIndex = 58; // под feature-mask (70), над дока (60)
+  }
+})();
+</script>
+<!-- ========== /SMART LAUNCH ========== -->
 
 </body>
 </html>
