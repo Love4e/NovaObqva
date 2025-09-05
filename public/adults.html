@@ -55,10 +55,31 @@
     .fab{position:fixed; right:20px; bottom:20px; z-index:60; display:flex;align-items:center;gap:10px; padding:14px 16px; border-radius:999px; background:linear-gradient(135deg,var(--rose),var(--lav)); border:1px solid rgba(255,255,255,.2); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 18px 40px rgba(167,139,250,.4)}
     .fab[disabled]{opacity:.6;cursor:not-allowed}
     .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(4,3,9,.6);backdrop-filter:blur(3px);z-index:80}
-    .modal{width:min(780px,94vw); border:1px solid var(--stroke); border-radius:22px; overflow:hidden; background:linear-gradient(180deg,rgba(18,16,45,.6),rgba(18,16,45,.92))}
+
+    /* Modal with invisible scroll */
+    .modal{
+      width:min(780px,94vw);
+      max-height:88vh;               /* ограничаваме височината на модала */
+      display:flex;                  /* правим го колона */
+      flex-direction:column;
+      border:1px solid var(--stroke);
+      border-radius:22px; overflow:hidden;
+      background:linear-gradient(180deg,rgba(18,16,45,.6),rgba(18,16,45,.92))
+    }
     .m-head{padding:18px 18px 10px;background:linear-gradient(90deg, rgba(255,106,167,.2), rgba(167,139,250,.2)); border-bottom:1px solid var(--stroke); position:relative}
-    .m-head h2{margin:0;font-size:22px}.closeX{position:absolute; right:12px; top:10px; width:36px;height:36px;border-radius:12px;border:1px solid var(--stroke);background:rgba(7,6,18,.5);color:#fff;cursor:pointer}
-    .m-body{padding:16px;display:grid;gap:12px}
+    .m-head h2{margin:0;font-size:22px}
+    .closeX{position:absolute; right:12px; top:10px; width:36px;height:36px;border-radius:12px;border:1px solid var(--stroke);background:rgba(7,6,18,.5);color:#fff;cursor:pointer}
+
+    .m-body{
+      padding:16px; display:grid; gap:12px;
+      overflow:auto;                /* скрол само върху тялото */
+      -webkit-overflow-scrolling:touch; /* плавно на iOS */
+      scrollbar-width:none;         /* Firefox: невидим скролбар */
+    }
+    .m-body::-webkit-scrollbar{     /* WebKit/Blink: невидим скролбар */
+      width:0; height:0; background:transparent;
+    }
+
     label{font-size:14px;color:#dfe6ff}
     input,textarea,select{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--stroke);background:rgba(12,10,28,.9);color:#fff}
     textarea{min-height:100px;resize:vertical}
@@ -116,7 +137,7 @@
     </footer>
   </div>
 
-  <!-- Romantic Publisher Modal -->
+  <!-- CTA + Romantic Publisher Modal -->
   <button id="floatingCta" class="fab">Публикувай</button>
   <div id="publishModal" class="overlay" role="dialog" aria-modal="true">
     <div class="modal">
@@ -126,7 +147,6 @@
         <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
       </div>
       <div class="m-body">
-        <!-- honeypot -->
         <input id="hpt" type="text" style="position:absolute;left:-9999px;opacity:0" autocomplete="off" tabindex="-1" aria-hidden="true">
         <div class="row">
           <div style="flex:2;min-width:220px">
@@ -179,7 +199,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // === Config ============================================================
     const SUPABASE_URL  = "https://cmiylzpmpwqbacjoqtkx.supabase.co";
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtaXlsenBtcHdxYmFjam9xdGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODcwMDUsImV4cCI6MjA2OTU2MzAwNX0.FY2d1NSGTmw6SydxT_V0cKF7Kp2USbp91VdfO_eqZz8";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -193,7 +212,6 @@
     const disable = (el, v=true) => el.setAttribute('disabled', v), enable = (el)=> el.removeAttribute('disabled');
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // Load list (objects)
     async function loadAds(){
       const empty = $('#empty'); const list = $('#ads');
       try{
@@ -224,88 +242,70 @@
     }
     loadAds();
 
-    // Modal behaviour
-    const openModal = () => $('.overlay').style.display='flex';
-    const closeModal = () => $('.overlay').style.display='none';
-    $('#openPublish').onclick = openModal;
-    $('#floatingCta').onclick = openModal;
-    $('#closePublish').onclick = closeModal;
+    const openModal = () => $('#publishModal').style.display='flex';
+    const closeModal = () => $('#publishModal').style.display='none';
+    document.getElementById('openPublish').onclick = openModal;
+    document.getElementById('floatingCta').onclick = openModal;
+    document.getElementById('closePublish').onclick = closeModal;
     document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
-    // Plan toggle
     let plan = 'FREE', createdPid=null;
-    $('#optFree').onclick = ()=>{ plan='FREE'; $('#optFree').classList.add('active'); $('#optMax').classList.remove('active'); hide($('#upsell')); };
-    $('#optMax').onclick  = ()=>{ plan='MAX';  $('#optMax').classList.add('active');  $('#optFree').classList.remove('active'); show($('#upsell')); };
-
-    // Image preview + draft
-    const thumb = $('#thumb');
-    $('#f_image').addEventListener('input', () => {
-      const url = $('#f_image').value.trim();
+    const thumb = document.getElementById('thumb');
+    document.getElementById('f_image').addEventListener('input', () => {
+      const url = document.getElementById('f_image').value.trim();
       if(/^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url)){ thumb.src = url; thumb.style.display='block'; }
       else { thumb.style.display='none'; }
     });
-    // save draft
-    ['f_title','f_price','f_desc','f_image'].forEach(id=>{
-      const el = document.getElementById(id);
-      const key = 'astra18:' + id;
-      el.value = localStorage.getItem(key) || el.value;
-      el.addEventListener('input', ()=> localStorage.setItem(key, el.value));
-    });
 
-    // Submit -> pending_places and wire payment links
+    document.getElementById('optFree').onclick = ()=>{ plan='FREE'; document.getElementById('optFree').classList.add('active'); document.getElementById('optMax').classList.remove('active'); hide(document.getElementById('upsell')); };
+    document.getElementById('optMax').onclick  = ()=>{ plan='MAX';  document.getElementById('optMax').classList.add('active');  document.getElementById('optFree').classList.remove('active'); show(document.getElementById('upsell')); };
+
     async function submitAd(){
-      const msg = $('#msg'); msg.style.display='none'; msg.textContent='';
-      // honeypot
-      if($('#hpt').value){ return; }
+      const msg = document.getElementById('msg'); msg.style.display='none'; msg.textContent='';
+      if(document.getElementById('hpt').value){ return; } // honeypot
 
-      const title = $('#f_title').value.trim();
-      const priceRaw = $('#f_price').value.trim();
+      const title = document.getElementById('f_title').value.trim();
+      const priceRaw = document.getElementById('f_price').value.trim();
       const price = priceRaw? Number(priceRaw) : null;
-      const description = $('#f_desc').value.trim();
-      const image_url = $('#f_image').value.trim();
+      const description = document.getElementById('f_desc').value.trim();
+      const image_url = document.getElementById('f_image').value.trim();
 
       if(title.length < 3 || description.length < 20){
         msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; show(msg); return;
       }
       if(price !== null && (!isFinite(price) || price < 0)){ msg.textContent='Невалидна цена.'; show(msg); return; }
 
-      disable($('#sendAd')); disable($('#floatingCta'));
-      $('#sendAd').textContent='Изпращане...';
+      disable(document.getElementById('sendAd')); disable(document.getElementById('floatingCta'));
+      document.getElementById('sendAd').textContent='Изпращане...';
 
       try{
         const { data:{ session } } = await sb.auth.getSession();
         const user_id = session?.user?.id || null;
 
-        // ⚠️ НЕ изпращаме category (разчитаме на DEFAULT 'Услуги')
+        // Не изпращаме category (DEFAULT 'Услуги')
         const payload = { title, description, image_url, price, plan, is_max_requested: plan==='MAX', status:'pending' };
         const { data, error } = await sb.from('pending_places').insert({ ...payload, user_id }).select('id').single();
         if(error) throw error;
 
         createdPid = data.id;
-
-        // Активирай MAX линковете
         const l1 = PAY_MAX_BGN + '?ref=' + encodeURIComponent(createdPid) + '&action=approve_max&cur=BGN';
         const l2 = PAY_MAX_EUR + '?ref=' + encodeURIComponent(createdPid) + '&action=approve_max&cur=EUR';
-        const a1 = $('#btnMaxBGN'), a2 = $('#btnMaxEUR');
-        a1.href = l1; a2.href = l2;
-        a1.removeAttribute('aria-disabled'); a2.removeAttribute('aria-disabled');
+        const a1 = document.getElementById('btnMaxBGN'), a2 = document.getElementById('btnMaxEUR');
+        a1.href = l1; a2.href = l2; a1.removeAttribute('aria-disabled'); a2.removeAttribute('aria-disabled');
 
         msg.className='note';
         msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
         show(msg);
-
-        // изчисти черновата
-        ['f_title','f_price','f_desc','f_image'].forEach(id=>localStorage.removeItem('astra18:'+id));
       }catch(e){
         msg.className='err';
         msg.textContent = 'Грешка: ' + (e?.message || e);
         show(msg);
       }finally{
-        $('#sendAd').textContent='Изпрати за одобрение';
-        enable($('#sendAd')); enable($('#floatingCta'));
+        document.getElementById('sendAd').textContent='Изпрати за одобрение';
+        enable(document.getElementById('sendAd')); enable(document.getElementById('floatingCta'));
       }
     }
-    $('#sendAd').onclick = submitAd;
+    document.getElementById('sendAd').onclick = submitAd;
   </script>
 </body>
 </html>
