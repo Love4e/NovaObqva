@@ -1,32 +1,67 @@
-/* -------- Общи козметики -------- */
-img { image-rendering: -webkit-optimize-contrast; }
+/* ============================
+   Base UI cosmetics
+   ============================ */
+img{ image-rendering:-webkit-optimize-contrast; }
 
-/* ---- Mobile dock (вграден) ---- */
+/* ============================
+   Mobile dock (embedded / sticky)
+   ============================ */
 :root{
-  /* ориентировъчна височина; real-height идва от самия елемент */
+  /* Височина на дока (минимум) и безопасна зона за iOS */
   --dock-h: 76px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ако някъде си оставил .pb-dock – вече не ни трябва отстъпът */
-.pb-dock{ padding-bottom: 0 !important; }
+/* По желание: добавяш този клас ако искаш РЪЧНО отстъп под съдържанието.
+   (например на страници, където докът все още е fixed от стар код) */
+.pb-dock-fixed{
+  padding-bottom: calc(var(--dock-h) + var(--safe-bottom));
+}
 
-/* Dock-ът е STICKY, не fixed → не припокрива съдържанието */
-#mobileDock{
-  position: sticky !important;   /* override ако JS е задавал fixed */
+/* Вграден (embedded) док – стои вътре в потока на страницата */
+#mobileDock,
+.mobile-dock,
+[data-mobile-dock]{
+  position: sticky !important;   /* насилваме sticky, дори JS да е задал fixed */
   bottom: 0;
-  left: 0; right: 0;
-  z-index: 45;                   /* под модалите/оверлея */
+  left: 0;
+  right: 0;
+  z-index: 45;                   /* под модалите, над съдържанието */
   min-height: var(--dock-h);
-  padding-bottom: var(--safe-bottom);   /* за iPhone home indicator */
-  /* ако имаш фон/сенки – те остават от HTML-а на дока */
+  padding-bottom: var(--safe-bottom);
+
+  /* леко стъклено усещане; не е задължително */
+  backdrop-filter: saturate(1.1) blur(6px);
+  -webkit-backdrop-filter: saturate(1.1) blur(6px);
 }
 
-/* модали/оверлеи са над дока */
-#adModal{ z-index: 70; }
-.feature-mask{ z-index: 80; }
+/* Ако стар скрипт е оставил клас fixed – игнорирай го */
+#mobileDock.fixed,
+.mobile-dock.fixed,
+[data-mobile-dock].fixed{
+  position: sticky !important;
+}
 
-/* по-широки екрани – dock обикновено е скрит; нищо специално не е нужно */
+/* На по-широки екрани не е нужен отстъп */
 @media (min-width: 768px){
-  .pb-dock{ padding-bottom: 0 !important; }
+  .pb-dock-fixed{ padding-bottom: 0; }
 }
+
+/* ============================
+   Layering: модали / оверлеи над дока
+   ============================ */
+#adModal{ z-index: 70; }      /* popup на обява */
+.feature-mask{ z-index: 80; } /* PRO/GOLD overlay */
+
+/* (по избор) други глобални слоеве, ако ги имаш */
+.toast, .overlay, .drawer{ z-index: 65; }
+
+/* ============================
+   Полезни хелпъри
+   ============================ */
+
+/* Плавни скролове при anchor-и */
+html{ scroll-behavior:smooth; }
+
+/* По-малко „скачанe“ при sticky/вградени елементи */
+*{ -webkit-tap-highlight-color: rgba(0,0,0,0); }
