@@ -42,55 +42,47 @@
     </nav>
   </header>
 
-  <!-- Банер – показва се, ако профилът е непълен -->
-  <div id="profileAlert" class="hidden max-w-5xl mx-auto px-4 mt-4">
-    <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3">
+  <main class="max-w-5xl mx-auto p-4 md:p-6">
+    <!-- Банер за непълен профил -->
+    <div id="profileWarn" class="hidden mb-4 text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
       Попълнете име и телефон и качете снимка, за да активирате профила си.
     </div>
-  </div>
 
-  <main class="max-w-5xl mx-auto p-4 md:p-6">
-    <!-- Инфо за потребителя + редакция на профил -->
+    <!-- Инфо за потребителя -->
     <div class="bg-white rounded-2xl border p-4 md:p-6 mb-6">
-      <!-- ред 1: визуализация -->
       <div id="userInfo" class="flex items-center gap-4">
-        <div class="relative">
-          <img id="uAvatar" class="hidden w-12 h-12 rounded-full object-cover" alt="Avatar">
-          <div id="uAvatarFallback" class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 grid place-items-center text-lg font-semibold">U</div>
+        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 grid place-items-center text-lg font-semibold overflow-hidden">
+          <img id="avatarImg" alt="Avatar" class="hidden w-12 h-12 object-cover">
+          <span id="avatarInitial">U</span>
         </div>
-        <div>
-          <div class="text-lg font-semibold" id="uName">Потребител</div>
-          <div class="text-slate-600 text-sm" id="uEmail"></div>
+        <div class="min-w-0">
+          <div class="text-lg font-semibold truncate" id="uName">Потребител</div>
+          <div class="text-slate-600 text-sm truncate" id="uEmail"></div>
         </div>
         <div class="flex-1"></div>
-        <a href="/submit.html" id="btnNewAd" class="hidden px-4 py-2 rounded-xl border hover:bg-slate-50">Нова обява</a>
-        <a href="/submit.html" id="btnNewAdDisabled" class="px-4 py-2 rounded-xl border bg-slate-100 text-slate-400 cursor-not-allowed hidden"
-           title="Попълнете профила, за да публикувате">Нова обява</a>
+        <a href="/submit.html" class="hidden px-4 py-2 rounded-xl border hover:bg-slate-50" id="btnNewAd">Нова обява</a>
       </div>
 
-      <!-- ред 2: форма за профил (показва се при нов/непълен профил; достъпна и за редакция) -->
-      <div id="profileForm" class="hidden mt-4 grid gap-3 items-end md:grid-cols-[auto,1fr,1fr,auto]">
-        <!-- Аватар -->
-        <div class="flex items-center gap-3">
-          <input id="avatarFile" type="file" accept="image/*" class="hidden">
-          <button id="chooseAvatar" class="px-3 py-2 rounded-lg border hover:bg-slate-50">Избор на файл</button>
-          <span id="fileName" class="text-sm text-slate-500">Няма избран файл</span>
-          <button id="uploadAvatar" class="px-3 py-2 rounded-lg bg-slate-800 text-white hover:bg-slate-900">Качи снимка</button>
-        </div>
-        <!-- Име -->
+      <!-- Форма за профил -->
+      <div id="profileForm" class="mt-4 grid gap-3 md:grid-cols-2">
         <div>
-          <label class="block text-sm text-slate-600 mb-1">Име и фамилия</label>
-          <input id="p_name" class="w-full border rounded-lg px-3 py-2" placeholder="напр. Иван Иванов">
+          <label class="block text-sm text-slate-700 mb-1">Име и фамилия</label>
+          <input id="fullName" class="w-full border rounded-lg px-3 py-2" placeholder="напр. Иван Иванов">
         </div>
-        <!-- Телефон -->
         <div>
-          <label class="block text-sm text-slate-600 mb-1">Телефон</label>
-          <input id="p_phone" class="w-full border rounded-lg px-3 py-2" placeholder="+359...">
+          <label class="block text-sm text-slate-700 mb-1">Телефон</label>
+          <input id="phone" class="w-full border rounded-lg px-3 py-2" placeholder="+359...">
         </div>
-        <!-- Запази -->
-        <div class="flex gap-2">
-          <button id="saveProfile" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Запази профил</button>
-          <button id="logoutBtnInline" class="px-4 py-2 rounded-lg border hover:bg-slate-50">Изход</button>
+
+        <div class="md:col-span-2 flex flex-col sm:flex-row items-start sm:items-end gap-2">
+          <div>
+            <label class="block text-sm text-slate-700 mb-1">Снимка (аватар)</label>
+            <input id="avatarFile" type="file" accept="image/*" class="block">
+            <div class="text-xs text-slate-500 mt-1" id="avatarFileName">Няма избран файл</div>
+          </div>
+          <button id="btnUploadAvatar" class="px-4 py-2 rounded-lg border hover:bg-slate-50">Качи снимка</button>
+          <div class="flex-1"></div>
+          <button id="btnSaveProfile" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Запази профил</button>
         </div>
       </div>
     </div>
@@ -115,11 +107,9 @@
   </main>
 
   <script>
-    // ========= Supabase client =========
     const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
-    const AVATARS_BUCKET = 'avatars';   // <— създай bucket "avatars" (public)
 
-    // ========= ПЛАНОВЕ – fallback за pay линкове =========
+    // Fallback планове за pay линкове
     const FALLBACK_PLANS = {
       starter: {pay_url:{bgn:'https://checkout.revolut.com/payment-link/b9d03509-71b2-4c35-8d3a-43357e663650', eur:'https://checkout.revolut.com/payment-link/f776550f-0424-4656-aacb-3c1f06c6014b'}},
       pro:     {pay_url:{bgn:'https://checkout.revolut.com/payment-link/b0cc7f69-9a29-4559-8eed-a06ffc1b2604', eur:'https://checkout.revolut.com/payment-link/62ddc3ea-6192-4b5d-875b-a90d80235edf'}},
@@ -127,19 +117,20 @@
     };
     let PLAN_MAP = {}; // {id|nameLower: {pay_url:{bgn,eur}}}
 
-    // ========= Състояние =========
+    // Профилни данни в памет
     let USER=null, PROFILE=null, ADS=[], FILTER='all', SEARCH='';
 
-    // ========= UI refs =========
-    const el = id => document.getElementById(id);
-    const $profileAlert = el('profileAlert');
-    const $uName = el('uName'), $uEmail = el('uEmail'), $uAvatar = el('uAvatar'), $uAvatarFallback = el('uAvatarFallback');
-    const $btnNewAd = el('btnNewAd'), $btnNewAdDisabled = el('btnNewAdDisabled');
-    const $profileForm = el('profileForm');
-    const $p_name = el('p_name'), $p_phone = el('p_phone');
-    const $avatarFile = el('avatarFile'), $fileName = el('fileName');
+    // DOM refs (профил)
+    const elWarn = document.getElementById('profileWarn');
+    const elAvatarImg = document.getElementById('avatarImg');
+    const elAvatarInitial = document.getElementById('avatarInitial');
+    const elFullName = document.getElementById('fullName');
+    const elPhone = document.getElementById('phone');
+    const elAvatarFile = document.getElementById('avatarFile');
+    const elAvatarFileName = document.getElementById('avatarFileName');
+    const elBtnUpload = document.getElementById('btnUploadAvatar');
+    const elBtnSave = document.getElementById('btnSaveProfile');
 
-    // ========= Boot =========
     (async () => {
       // guard
       const { data:{ user } } = await sb.auth.getUser();
@@ -147,38 +138,23 @@
       USER = user;
 
       // header login state
-      el('loginBtn').classList.add('hidden');
-      el('logoutBtn').classList.remove('hidden');
-      el('mLoginBtn').classList.add('hidden');
-      el('mLogoutBtn').classList.remove('hidden');
-      const doLogout = async () => { await sb.auth.signOut(); location.replace('/'); };
-      el('logoutBtn').onclick = doLogout;
-      el('mLogoutBtn').onclick = doLogout;
-      el('logoutBtnInline').onclick = doLogout;
+      document.getElementById('loginBtn').classList.add('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
+      document.getElementById('mLoginBtn').classList.add('hidden');
+      document.getElementById('mLogoutBtn').classList.remove('hidden');
+      document.getElementById('logoutBtn').onclick = document.getElementById('mLogoutBtn').onclick = async () => { await sb.auth.signOut(); location.replace('/'); };
 
-      // потребителска шапка
+      // user info (основни)
       const meta = user.user_metadata || {};
-      $uName.textContent = meta.full_name || meta.name || 'Потребител';
-      $uEmail.textContent = user.email || '';
-      $uAvatar.classList.add('hidden');
-      $uAvatarFallback.textContent = (meta.full_name?.[0] || user.email?.[0] || 'U').toUpperCase();
+      document.getElementById('uName').textContent = meta.full_name || meta.name || 'Потребител';
+      document.getElementById('uEmail').textContent = user.email || '';
 
-      // осигури запис в profiles (1 email = 1 профил; ключ = user.id)
-      PROFILE = await ensureProfileRow(user);
+      // зареди/създай профил при нужда
+      await loadProfile();
+      renderProfileHeader();
+      validateProfileUI();
 
-      // попълни форма
-      $p_name.value = PROFILE.full_name || meta.full_name || meta.name || '';
-      $p_phone.value = PROFILE.phone || '';
-      if (PROFILE.avatar_url) {
-        $uAvatar.src = PROFILE.avatar_url;
-        $uAvatar.classList.remove('hidden');
-        $uAvatarFallback.classList.add('hidden');
-      }
-
-      // покажи/скрий форма и банер + бутон „Нова обява“
-      updateProfileCompletenessUI();
-
-      // зареди map на планове (за платени линкове)
+      // plan map (за платени линкове)
       try {
         const { data, error } = await sb.from('plans').select('id,name,pay_url');
         if (!error && data?.length) {
@@ -192,10 +168,10 @@
       } catch(_) {}
       if (Object.keys(PLAN_MAP).length===0) PLAN_MAP = FALLBACK_PLANS;
 
-      // зареди обяви
+      // обяви
       await loadAds();
 
-      // филтри
+      // filters
       document.querySelectorAll('.fbtn').forEach(b=>{
         b.addEventListener('click', ()=>{
           document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('bg-slate-100'));
@@ -206,116 +182,126 @@
       });
       document.querySelector('.fbtn[data-f="all"]').click();
 
-      // търсене
-      el('search').addEventListener('input', e => { SEARCH=e.target.value.toLowerCase(); render(); });
+      // search
+      document.getElementById('search').addEventListener('input', e => { SEARCH=e.target.value.toLowerCase(); render(); });
 
       // mobile menu
-      el('menuToggle')?.addEventListener('click', () => {
-        el('mobileMenu')?.classList.toggle('hidden');
+      document.getElementById('menuToggle')?.addEventListener('click', () => {
+        document.getElementById('mobileMenu')?.classList.toggle('hidden');
       });
 
       // realtime (по избор)
       sb.channel('user-ads')
         .on('postgres_changes',{event:'*', schema:'public', table:'ads', filter:`user_id=eq.${USER.id}`}, payload => {
-          loadAds();
+          loadAds(); // re-render
         })
         .subscribe();
     })();
 
-    // ========= Профил: помощни =========
-    function needsProfileInfo(p){
-      return !(p?.full_name && p.full_name.trim().length>=3) || !(p?.phone && p.phone.trim().length>=6) || !(p?.avatar_url);
-    }
-    function updateProfileCompletenessUI(){
-      const incomplete = needsProfileInfo(PROFILE);
-      $profileForm.classList.toggle('hidden', !incomplete);
-      $profileAlert.classList.toggle('hidden', !incomplete);
-
-      // „Нова обява“ — активна само при пълен профил
-      if (incomplete){
-        $btnNewAd.classList.add('hidden');
-        $btnNewAdDisabled.classList.remove('hidden');
-      }else{
-        $btnNewAdDisabled.classList.add('hidden');
-        $btnNewAd.classList.remove('hidden');
-      }
+    // ---- Профил: зареждане и визуализация ----
+    async function loadProfile(){
+      const { data, error } = await sb.from('profiles').select('id, full_name, phone, avatar_url').eq('id', USER.id).maybeSingle();
+      if (!error && data){ PROFILE = data; }
+      else { PROFILE = { id: USER.id, full_name: null, phone: null, avatar_url: null }; }
+      // попълни полетата
+      elFullName.value = PROFILE.full_name || '';
+      elPhone.value = PROFILE.phone || '';
+      // аватар
+      await renderAvatar(PROFILE.avatar_url, PROFILE.full_name || USER.email || 'U');
     }
 
-    async function ensureProfileRow(user){
-      // опитай да вземеш по id (= user.id). Ако няма — създай.
-      const { data:row, error } = await sb.from('profiles').select('id, email, full_name, phone, avatar_url').eq('id', user.id).maybeSingle();
-      if (row && !row.email && user.email){
-        await sb.from('profiles').update({ email: user.email }).eq('id', user.id);
-      }
-      if (row) return { ...row, email: row.email || user.email };
+    function renderProfileHeader(){
+      const name = PROFILE.full_name || USER.user_metadata?.full_name || USER.user_metadata?.name || 'Потребител';
+      document.getElementById('uName').textContent = name;
+      document.getElementById('btnNewAd').classList.toggle('hidden', !isProfileComplete(PROFILE));
+    }
 
-      // проверка: има ли запис с този email (ако таблицата не е по id)
+    function isProfileComplete(p){
+      return !!(p && p.full_name && p.phone && p.avatar_url);
+    }
+
+    function validateProfileUI(){
+      const incomplete = !isProfileComplete(PROFILE);
+      elWarn.classList.toggle('hidden', !incomplete);
+    }
+
+    async function renderAvatar(key, fallbackName){
+      if (!key){
+        // инициали
+        elAvatarImg.classList.add('hidden');
+        elAvatarInitial.classList.remove('hidden');
+        elAvatarInitial.textContent = String(fallbackName||'U').trim().charAt(0).toUpperCase() || 'U';
+        return;
+      }
       try{
-        const { data:byEmail } = await sb.from('profiles').select('id').eq('email', user.email).maybeSingle();
-        if (byEmail && byEmail.id && byEmail.id !== user.id){
-          // мигрирай: задай id = user.id за този ред (ако RLS позволява). Ако не — просто ползвай него.
-          return { id: byEmail.id, email: user.email, full_name: null, phone: null, avatar_url: null };
+        // signed URL (работи и при public bucket)
+        const { data, error } = await sb.storage.from('avatars').createSignedUrl(key, 60*60);
+        let url = data?.signedUrl;
+        if (!url){
+          // fallback public
+          const pub = sb.storage.from('avatars').getPublicUrl(key);
+          url = pub?.data?.publicUrl || '';
         }
-      }catch(_){}
-
-      const seed = {
-        id: user.id,                       // 1 имейл = 1 профил (ключ по user.id)
-        email: user.email,
-        full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-        phone: null,
-        avatar_url: null
-      };
-      await sb.from('profiles').insert(seed);
-      return seed;
+        if (url){
+          elAvatarImg.src = url;
+          elAvatarImg.classList.remove('hidden');
+          elAvatarInitial.classList.add('hidden');
+        }
+      }catch(_){
+        // показваме инициали при проблем
+        elAvatarImg.classList.add('hidden');
+        elAvatarInitial.classList.remove('hidden');
+        elAvatarInitial.textContent = String(fallbackName||'U').trim().charAt(0).toUpperCase() || 'U';
+      }
     }
 
-    // ========= Профил: UI действия =========
-    el('chooseAvatar').addEventListener('click', ()=> $avatarFile.click());
-    $avatarFile.addEventListener('change', ()=>{
-      $fileName.textContent = $avatarFile.files?.[0]?.name || 'Няма избран файл';
+    // показвай име на избрания файл
+    elAvatarFile.addEventListener('change', () => {
+      elAvatarFileName.textContent = elAvatarFile.files?.[0]?.name || 'Няма избран файл';
     });
 
-    el('uploadAvatar').addEventListener('click', async ()=>{
-      const f = $avatarFile.files?.[0];
-      if (!f){ alert('Моля, изберете изображение.'); return; }
-      if (!/^image\//.test(f.type)){ alert('Файлът трябва да е изображение.'); return; }
-      if (f.size > 5*1024*1024){ alert('Снимката е по-голяма от 5MB.'); return; }
+    // Качване на аватар (без зависимост от име/път)
+    elBtnUpload.addEventListener('click', async () => {
+      const file = elAvatarFile.files?.[0];
+      if (!file){ alert('Моля, избери файл.'); return; }
 
-      const path = `${USER.id}/${Date.now()}_${f.name}`;
-      const { error:upErr } = await sb.storage.from(AVATARS_BUCKET).upload(path, f, { cacheControl: '3600', upsert: true });
-      if (upErr){ console.error(upErr); alert('Грешка при качване на снимка.'); return; }
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const uuid = (crypto?.randomUUID?.() || String(Date.now()));
+      const fileName = `${uuid}.${ext}`; // никакви зависимости от име/папка
 
-      const { data:{ publicUrl } } = sb.storage.from(AVATARS_BUCKET).getPublicUrl(path);
-      // запази в профила
-      const { error:updErr } = await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', USER.id);
-      if (updErr){ console.error(updErr); alert('Грешка при запазване на снимката.'); return; }
+      const { error: upErr } = await sb.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
+      if (upErr){ alert('Грешка при качване на снимка: ' + upErr.message); return; }
 
-      PROFILE.avatar_url = publicUrl;
-      $uAvatar.src = publicUrl;
-      $uAvatar.classList.remove('hidden');
-      $uAvatarFallback.classList.add('hidden');
-      updateProfileCompletenessUI();
+      // запис в profiles.avatar_url (само ключа)
+      PROFILE.avatar_url = fileName;
+      await sb.from('profiles').upsert({ id: USER.id, avatar_url: fileName }, { onConflict: 'id' });
+
+      await renderAvatar(fileName, PROFILE.full_name || USER.email);
+      validateProfileUI();
+      renderProfileHeader();
       alert('Снимката е качена.');
     });
 
-    el('saveProfile').addEventListener('click', async ()=>{
-      const full_name = $p_name.value.trim();
-      const phone = $p_phone.value.trim();
+    // Запази профила
+    elBtnSave.addEventListener('click', async () => {
+      const full_name = elFullName.value.trim();
+      const phone = elPhone.value.trim();
 
-      if (full_name.length < 3){ alert('Въведете валидно име (мин. 3 знака).'); return; }
-      if (phone.length < 6){ alert('Въведете валиден телефон.'); return; }
+      if (full_name.length < 2){ alert('Въведи валидно име.'); return; }
+      if (!phone){ alert('Въведи телефон.'); return; }
 
-      const { error } = await sb.from('profiles').update({ full_name, phone }).eq('id', USER.id);
-      if (error){ console.error(error); alert('Грешка при запазване на профил.'); return; }
+      const payload = { id: USER.id, full_name, phone };
+      const { error } = await sb.from('profiles').upsert(payload, { onConflict: 'id' });
+      if (error){ alert('Грешка при запис: ' + error.message); return; }
 
       PROFILE.full_name = full_name;
       PROFILE.phone = phone;
-      $uName.textContent = full_name || 'Потребител';
-      updateProfileCompletenessUI();
-      alert('Профилът е запазен.');
+      renderProfileHeader();
+      validateProfileUI();
+      alert('Профилът е записан.');
     });
 
-    // ========= Обяви =========
+    // ---- Обяви ----
     async function loadAds(){
       const { data, error } = await sb.from('ads').select(`
         id,title,created_at,ad_status,payment_status,
@@ -324,17 +310,17 @@
       `).eq('user_id', USER.id).order('created_at', {ascending:false});
       if (error){ console.error(error); return; }
       ADS = data || [];
-      // броячи
-      el('c_all').textContent = ADS.length;
-      el('c_pending').textContent = ADS.filter(a=>a.ad_status==='pending').length;
-      el('c_approved').textContent = ADS.filter(a=>a.ad_status==='approved').length;
-      el('c_hidden').textContent = ADS.filter(a=>a.ad_status==='hidden').length;
-      el('c_unpaid').textContent = ADS.filter(a=>(a.payment_status||'unpaid')!=='paid' && (a.ad_status!=='hidden')).length;
+      // counters
+      document.getElementById('c_all').textContent = ADS.length;
+      document.getElementById('c_pending').textContent = ADS.filter(a=>a.ad_status==='pending').length;
+      document.getElementById('c_approved').textContent = ADS.filter(a=>a.ad_status==='approved').length;
+      document.getElementById('c_hidden').textContent = ADS.filter(a=>a.ad_status==='hidden').length;
+      document.getElementById('c_unpaid').textContent = ADS.filter(a=>(a.payment_status||'unpaid')!=='paid' && (a.ad_status!=='hidden')).length;
       render();
     }
 
     function render(){
-      const wrap = el('list');
+      const wrap = document.getElementById('list');
       let items = ADS.slice();
 
       // filter by status
@@ -348,7 +334,7 @@
       if (SEARCH) items = items.filter(a => (a.title||'').toLowerCase().includes(SEARCH));
 
       wrap.innerHTML = items.map(card).join('');
-      el('empty').classList.toggle('hidden', items.length>0);
+      document.getElementById('empty').classList.toggle('hidden', items.length>0);
     }
 
     function badgeStatus(s){
@@ -375,10 +361,6 @@
       const paid = (a.payment_status==='paid' || a.payment_status==='manual');
       const payLink = getPayLink(a);
 
-      // „Активна до:“ – ще се покаже само ако колоната съществува и е налична (няма да чупи, ако липсва)
-      const ex = a.expires_at ? new Date(a.expires_at) : null;
-      const exHtml = ex ? `<div class="text-xs text-slate-500 mt-1">Активна до: ${ex.toLocaleString('bg-BG')}</div>` : '';
-
       return `
         <div class="border rounded-2xl bg-white overflow-hidden">
           <div class="grid md:grid-cols-[160px_1fr_auto]">
@@ -392,7 +374,6 @@
               </div>
               <div class="text-sm text-slate-500 mt-0.5">Създадена: ${new Date(a.created_at).toLocaleString('bg-BG')}</div>
               <div class="mt-2 text-sm text-slate-700">План: ${esc(a.plan_name||'—')} · ${Number(a.plan_price||0).toFixed(2)} ${cur}</div>
-              ${exHtml}
               <div class="md:hidden mt-2 flex items-center gap-2">${badgeStatus(a.ad_status)} ${badgePay(a.payment_status)}</div>
             </div>
             <div class="p-3 md:p-4 flex flex-col items-stretch gap-2">
