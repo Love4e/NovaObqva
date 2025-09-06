@@ -6,282 +6,240 @@
   <title>NovaObqva — Чат</title>
   <link rel="icon" type="image/png" href="favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles/base.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <style>
-    .bubble{max-width:80%}
-    .scroll-snap-y{scroll-snap-type:y proximity}
-    .snap-start{scroll-snap-align:start}
+    body{background:
+      radial-gradient(1200px 600px at -10% -10%, rgba(244,114,182,.10), transparent 60%),
+      radial-gradient(1000px 600px at 120% 20%, rgba(99,102,241,.10), transparent 60%),
+      #fff;}
+    .shell{max-width:960px;margin:0 auto}
+    .bubble{max-width:80%;padding:.6rem .8rem;border-radius:14px;border:1px solid #e5e7eb;background:#fff}
+    .bubble.me{background:#f0f9ff;border-color:#bae6fd}
+    .msg-row{display:flex;gap:.5rem;margin:.35rem 0}
+    .msg-row.me{justify-content:flex-end}
+    .scroll{scroll-behavior:smooth}
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
-
-  <!-- Header -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+<body class="min-h-screen">
+  <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
+    <div class="shell px-4 py-3 flex items-center gap-3">
       <a href="/" class="flex items-center gap-2">
-        <img src="favicon.png" alt="" class="w-6 h-6 rounded"/>
-        <span class="text-xl font-bold">NovaObqva</span>
+        <img src="favicon.png" class="w-7 h-7 rounded" alt="">
+        <strong>NovaObqva</strong>
       </a>
-      <nav class="hidden md:flex items-center gap-2 ml-4">
-        <a href="index.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Обяви</a>
-        <a href="plans.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
-      </nav>
       <div class="flex-1"></div>
-      <div id="nav-auth-desktop" class="hidden md:flex items-center gap-2"></div>
+      <a href="index.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Обяви</a>
     </div>
   </header>
 
-  <!-- Main -->
-  <main class="max-w-6xl mx-auto p-4 md:p-6">
-    <div class="grid md:grid-cols-[320px,1fr] gap-4">
-      <!-- Inbox -->
-      <aside class="bg-white rounded-2xl border overflow-hidden">
-        <div class="px-4 py-3 border-b flex items-center gap-2">
-          <h2 class="font-semibold">Разговори</h2>
-          <div class="ml-auto text-xs text-slate-500">обновява се в реално време</div>
-        </div>
-        <div id="threads" class="max-h-[70vh] overflow-auto divide-y">
-          <!-- списък -->
-        </div>
-      </aside>
+  <main class="shell px-4">
+    <section id="head" class="mt-4 mb-3 rounded-xl border bg-white p-3 flex items-center justify-between">
+      <div>
+        <div id="convTitle" class="font-bold">Чат</div>
+        <div id="convMeta" class="text-sm text-slate-500">Зареждане…</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="openAd" href="#" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm hidden">Към обявата</a>
+      </div>
+    </section>
 
-      <!-- Chat pane -->
-      <section class="bg-white rounded-2xl border flex flex-col min-h-[60vh]">
-        <div id="chatHeader" class="px-4 py-3 border-b flex items-center gap-3">
-          <div class="flex-1">
-            <div id="chatTitle" class="font-semibold">Избери разговор</div>
-            <div id="chatSubtitle" class="text-xs text-slate-500"></div>
-          </div>
-          <a id="adLink" class="hidden text-sm px-3 py-1.5 rounded-lg border hover:bg-slate-50">Към обявата</a>
-        </div>
-
-        <div id="chatLog" class="flex-1 p-3 md:p-4 overflow-auto space-y-2 scroll-snap-y bg-slate-50">
-          <!-- съобщения -->
-        </div>
-
-        <form id="composer" class="p-3 md:p-4 border-t flex items-end gap-2">
-          <textarea id="msg" rows="1" placeholder="Напиши съобщение..."
-            class="flex-1 resize-none rounded-xl border px-3 py-2 focus:ring-2 focus:ring-emerald-500"></textarea>
-          <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Изпрати</button>
-        </form>
-      </section>
-    </div>
+    <section class="rounded-xl border bg-white h-[calc(100vh-260px)] md:h-[calc(100vh-240px)] flex flex-col">
+      <div id="list" class="flex-1 overflow-y-auto p-3 scroll"></div>
+      <form id="composer" class="border-t p-2 flex items-end gap-2">
+        <textarea id="msg" rows="1" placeholder="Напишете съобщение…" class="flex-1 resize-none rounded-lg border px-3 py-2"></textarea>
+        <input id="offer" type="number" step="0.01" min="0" placeholder="Оферта (лв.)" class="w-36 rounded-lg border px-3 py-2">
+        <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Изпрати</button>
+      </form>
+    </section>
   </main>
 
   <script>
-    // ===== Supabase client =====
-    const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
+    const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // ===== Auth helpers =====
-    async function ensureAuth() {
+    const elList = document.getElementById('list');
+    const elMsg  = document.getElementById('msg');
+    const elOffer= document.getElementById('offer');
+    const elTitle= document.getElementById('convTitle');
+    const elMeta = document.getElementById('convMeta');
+    const elOpenAd = document.getElementById('openAd');
+
+    const qs = new URLSearchParams(location.search);
+    const qId  = qs.get('id');    // conversation id
+    const qAd  = qs.get('ad');    // ad id
+    const qTo  = qs.get('to');    // other user id
+    const qMsg = qs.get('msg') || '';
+    const qOffer = qs.get('offer') || '';
+
+    let currentUser = null;
+    let convId = qId || null;
+    let adId = null;
+
+    function fmtTime(ts){
+      try{ return new Date(ts).toLocaleString('bg-BG'); }catch{ return ts; }
+    }
+    function esc(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    function renderMessage(m){
+      const me = (m.sender_id === currentUser?.id);
+      const row = document.createElement('div');
+      row.className = 'msg-row ' + (me ? 'me' : '');
+      const b = document.createElement('div');
+      b.className = 'bubble ' + (me ? 'me' : '');
+      b.innerHTML = `
+        <div class="text-sm">${esc(m.body || '')}${m.offer_amount? ` <span class="text-xs text-emerald-700">(оферта: ${Number(m.offer_amount).toFixed(2)} лв.)</span>`:''}</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">${fmtTime(m.created_at)}</div>
+      `;
+      row.appendChild(b);
+      elList.appendChild(row);
+    }
+
+    function scrollBottom(){ elList.scrollTop = elList.scrollHeight + 999; }
+
+    async function mustAuth(){
       const { data:{ user } } = await sb.auth.getUser();
-      if (!user) {
-        location.replace('auth.html?redirectTo=' + encodeURIComponent(location.href));
-        await new Promise(()=>{});
+      if (!user){
+        const back = encodeURIComponent(location.href);
+        location.href = `auth.html?redirectTo=${back}`;
+        return null;
       }
+      currentUser = user;
       return user;
     }
-    async function renderAuthArea(){
-      const { data:{ user } } = await sb.auth.getUser();
-      const d = document.getElementById('nav-auth-desktop');
-      const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
-      d.classList.remove('hidden');
-      d.innerHTML = user
-        ? `<a href="account.html" class="px-3 py-1.5 rounded-lg border hover:bg-slate-50 text-sm">Моят профил</a>
-           <button id="logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`
-        : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
-      document.getElementById('logout')?.addEventListener('click', async ()=>{
-        await sb.auth.signOut(); location.href='/';
-      });
-    }
 
-    // ===== Chat state =====
-    let me = null;
-    let currentConv = null;
-    let messagesSub = null;     // realtime subscription for current conversation
+    async function ensureConversationFromParams(){
+      // Ако вече имаме id → нищо
+      if (convId) return convId;
 
-    // DOM refs
-    const threadsEl = document.getElementById('threads');
-    const chatLogEl = document.getElementById('chatLog');
-    const chatTitleEl = document.getElementById('chatTitle');
-    const chatSubtitleEl = document.getElementById('chatSubtitle');
-    const adLinkEl = document.getElementById('adLink');
-    const msgInput = document.getElementById('msg');
-    const composer = document.getElementById('composer');
-
-    // ===== Utils =====
-    const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-    const fmtDate = ts => new Date(ts).toLocaleString('bg-BG');
-
-    function bubble(m){
-      const mine = m.user_id === me.id;
-      return `
-        <div class="snap-start flex ${mine?'justify-end':''}">
-          <div class="bubble rounded-2xl px-3 py-2 ${mine?'bg-emerald-600 text-white':'bg-white border'}">
-            <div class="whitespace-pre-wrap break-words">${esc(m.content)}</div>
-            <div class="mt-1 text-[11px] ${mine?'text-white/70':'text-slate-400'}">${fmtDate(m.created_at)}</div>
-          </div>
-        </div>`;
-    }
-
-    function threadItem(t){
-      const last = t._last || {};
-      const title = esc(t._ad_title || 'Разговор');
-      return `
-        <button data-conv="${t.id}" class="w-full text-left px-4 py-3 hover:bg-slate-50 ${t.id===currentConv?'bg-slate-100':''}">
-          <div class="flex items-center justify-between gap-2">
-            <div class="font-medium line-clamp-1">${title}</div>
-            <div class="text-[11px] text-slate-500">${last.created_at?fmtDate(last.created_at):''}</div>
-          </div>
-          <div class="text-sm text-slate-600 line-clamp-1">${esc(last.content || '')}</div>
-        </button>`;
-    }
-
-    async function loadThreads(){
-      // 1) моите разговори (през participants)
-      const { data: parts, error } = await sb
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', me.id);
-      if (error) { console.error(error); return; }
-      const convIds = (parts||[]).map(p=>p.conversation_id);
-      if (convIds.length===0){ threadsEl.innerHTML = `<div class="px-4 py-6 text-slate-500">Нямаш разговори.</div>`; return; }
-
-      // 2) разговорите
-      const { data: convs } = await sb
-        .from('conversations')
-        .select('id, ad_id, updated_at')
-        .in('id', convIds)
-        .order('updated_at', { ascending: false });
-
-      // 3) заглавия на обяви
-      const adIds = [...new Set((convs||[]).map(c=>c.ad_id).filter(Boolean))];
-      let adMap = {};
-      if (adIds.length){
-        const { data: ads } = await sb.from('ads').select('id,title').in('id', adIds);
-        (ads||[]).forEach(a => adMap[a.id] = a.title);
+      // Няма id, но имаме ad & to → извикваме RPC и пренасочваме
+      if (qAd && qTo){
+        try{
+          const { data, error } = await sb.rpc('ensure_conversation', { p_ad_id: qAd, p_other_user: qTo });
+          if (error) throw error;
+          const params = new URLSearchParams({ id: data });
+          if (qMsg) params.set('prefill', qMsg);
+          if (qOffer) params.set('prefOffer', qOffer);
+          location.replace('chat.html?' + params.toString());
+          return null; // execution continues on next load
+        }catch(e){
+          console.error('ensure_conversation failed:', e);
+          alert('Грешка при стартиране на разговора: ' + (e?.message || e));
+        }
+      }else{
+        elMeta.textContent = 'Липсват параметри на разговора.';
       }
-
-      // 4) взимаме последно съобщение на пакет
-      const { data: lastMsgs } = await sb
-        .from('messages')
-        .select('conversation_id, content, created_at')
-        .in('conversation_id', convIds)
-        .order('created_at', { ascending:false });
-      const lastMap = {};
-      (lastMsgs||[]).forEach(m => { if (!lastMap[m.conversation_id]) lastMap[m.conversation_id] = m; });
-
-      const rows = (convs||[]).map(c => ({ ...c, _ad_title: adMap[c.ad_id], _last: lastMap[c.id]}));
-      threadsEl.innerHTML = rows.map(threadItem).join('');
+      return null;
     }
 
-    async function openConversation(convId){
-      if (messagesSub){ sb.removeChannel(messagesSub); messagesSub=null; }
-      currentConv = convId;
+    async function loadConversationHeader(){
+      // ВЗЕМИ АД/МИНИМУМ ДАННИ ЗА ЗАГЛАВИЕТО (ако имаш view — смени тук)
+      try{
+        // ако имаш conversations.ad_id → вземи го
+        const { data:conv, error:cErr } = await sb
+          .from('conversations')
+          .select('id, ad_id, last_message_at')
+          .eq('id', convId).maybeSingle();
+        if (cErr) throw cErr;
 
-      // инфо за разговора
-      const { data: conv } = await sb.from('conversations').select('id, ad_id, updated_at').eq('id', convId).maybeSingle();
-      let adTitle = 'Разговор', adId = null;
-      if (conv?.ad_id){
-        const { data: ad } = await sb.from('ads').select('id,title').eq('id', conv.ad_id).maybeSingle();
-        if (ad){ adTitle = ad.title; adId = ad.id; }
+        adId = conv?.ad_id || null;
+
+        elTitle.textContent = 'Разговор #' + convId.slice(0,8);
+        elMeta.textContent = conv?.last_message_at
+          ? ('Последно: ' + fmtTime(conv.last_message_at))
+          : 'Стартиран разговор';
+
+        if (adId){
+          elOpenAd.classList.remove('hidden');
+          elOpenAd.href = 'ad.html?id=' + encodeURIComponent(adId);
+        }
+      }catch(e){
+        console.warn(e);
       }
-      chatTitleEl.textContent = adTitle;
-      chatSubtitleEl.textContent = conv?.updated_at ? ('Обновен: ' + fmtDate(conv.updated_at)) : '';
-      if (adId){ adLinkEl.href = 'ad.html?id='+encodeURIComponent(adId); adLinkEl.classList.remove('hidden'); }
-      else { adLinkEl.classList.add('hidden'); }
+    }
 
-      // зареди съобщения
-      const { data: msgs } = await sb
+    async function loadMessages(){
+      // СМЕНИ имената и колоните според твоята messages таблица
+      const { data, error } = await sb
         .from('messages')
-        .select('id, conversation_id, user_id, content, created_at')
+        .select('id, conversation_id, sender_id, body, offer_amount, created_at')
         .eq('conversation_id', convId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(500);
+      if (error){ console.error(error); return; }
 
-      chatLogEl.innerHTML = (msgs||[]).map(bubble).join('');
-      chatLogEl.scrollTop = chatLogEl.scrollHeight;
+      elList.innerHTML = '';
+      (data||[]).forEach(renderMessage);
+      scrollBottom();
+    }
 
-      // realtime
-      messagesSub = sb
-        .channel('room:'+convId)
+    // Realtime (Postgres Changes)
+    let channel = null;
+    function subscribeRealtime(){
+      if (channel) sb.removeChannel(channel);
+      channel = sb.channel('conv_'+convId)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
           filter: `conversation_id=eq.${convId}`
         }, payload => {
-          chatLogEl.insertAdjacentHTML('beforeend', bubble(payload.new));
-          chatLogEl.scrollTop = chatLogEl.scrollHeight;
-          // обнови inbox без да мигаш
-          loadThreads();
+          renderMessage(payload.new);
+          scrollBottom();
         })
-        .subscribe();
-
-      // маркирай активния в списъка
-      [...threadsEl.querySelectorAll('[data-conv]')].forEach(b=>{
-        b.classList.toggle('bg-slate-100', b.dataset.conv===convId);
-      });
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            // ok
+          }
+        });
     }
 
-    // изпращане
-    composer.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const text = msgInput.value.trim();
-      if (!text || !currentConv) return;
-      msgInput.value=''; msgInput.style.height='auto';
-      const { error } = await sb.from('messages').insert([{
-        conversation_id: currentConv, user_id: me.id, content: text
-      }]);
-      if (error) { console.error(error); alert('Неуспешно изпращане.'); }
-    });
-
-    // авто-растеж на textarea
-    msgInput.addEventListener('input', ()=>{
-      msgInput.style.height='auto';
-      msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
-    });
-
-    // отваряне от query: ?id=<conv> ИЛИ ?ad=<ad_id>&to=<user_id>
-    async function maybeStartFromQuery(){
-      const u = new URL(location.href);
-      const convId = u.searchParams.get('id');
-      const adId   = u.searchParams.get('ad');
-      const toUser = u.searchParams.get('to');
-      if (convId){ await openConversation(convId); return; }
-      if (adId && toUser){
-        // RPC: гарантира нишка и връща id
-        const { data, error } = await sb.rpc('ensure_conversation', {
-          p_ad_id: adId,
-          p_other_user: toUser
-        });
-        if (!error && data){ await loadThreads(); await openConversation(data); }
+    async function sendMessage(body, offerAmount){
+      if (!body && !offerAmount) return;
+      // СМЕНИ имената/колоните според твоята messages таблица
+      const { error } = await sb.from('messages').insert({
+        conversation_id: convId,
+        sender_id: currentUser.id,
+        body: body || null,
+        offer_amount: offerAmount ? Number(offerAmount) : null
+      });
+      if (error){
+        console.error(error);
+        alert('Неуспешно изпращане: ' + (error.message || error));
+      }else{
+        elMsg.value = '';
+        elOffer.value = '';
       }
     }
 
-    // клик на нишка
-    threadsEl.addEventListener('click', async (e)=>{
-      const btn = e.target.closest('[data-conv]');
-      if (!btn) return;
-      const id = btn.getAttribute('data-conv');
-      await openConversation(id);
+    // Адаптивен composer (auto-resize)
+    elMsg.addEventListener('input', ()=>{
+      elMsg.style.height = 'auto';
+      elMsg.style.height = Math.min(elMsg.scrollHeight, 160) + 'px';
     });
 
-    // boot
-    (async ()=>{
-      me = await ensureAuth();
-      await renderAuthArea();
-      await loadThreads();
-      await maybeStartFromQuery();
+    document.getElementById('composer').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      sendMessage(elMsg.value.trim(), elOffer.value.trim());
+    });
 
-      // realtime за обновяване на inbox при нови съобщения (в която и да е нишка)
-      sb.channel('inbox:'+me.id)
-        .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload=>{
-          // ако съобщението е в нишка, в която участвам → рефреш списъка
-          loadThreads();
-        })
-        .subscribe();
+    // -------- ИНИТ --------
+    (async () => {
+      const me = await mustAuth();
+      if (!me) return;
+
+      const ensured = await ensureConversationFromParams();
+      if (ensured === null && !qId) return; // ще се зареди след redirect
+      convId = ensured || qId;
+
+      await loadConversationHeader();
+      await loadMessages();
+      subscribeRealtime();
+
+      // Prefill ако идваме след redirect
+      const prefill = new URLSearchParams(location.search).get('prefill');
+      const prefOffer = new URLSearchParams(location.search).get('prefOffer');
+      if (prefill){ elMsg.value = prefill; }
+      if (prefOffer){ elOffer.value = prefOffer; }
     })();
   </script>
 </body>
