@@ -117,8 +117,9 @@
     };
     let PLAN_MAP = {}; // {id|nameLower: {pay_url:{bgn,eur}}}
 
-    // Профилни данни в памет
+    // Профилни данни
     let USER=null, PROFILE=null, ADS=[], FILTER='all', SEARCH='';
+    let PROFILE_PK='id'; // автоматично ще се детекне: 'id' или 'user_id'
 
     // DOM refs (профил)
     const elWarn = document.getElementById('profileWarn');
@@ -149,12 +150,15 @@
       document.getElementById('uName').textContent = meta.full_name || meta.name || 'Потребител';
       document.getElementById('uEmail').textContent = user.email || '';
 
+      // детектни първичен ключ на profiles (id или user_id)
+      await detectProfilePk();
+
       // зареди/създай профил при нужда
       await loadProfile();
       renderProfileHeader();
       validateProfileUI();
 
-      // plan map (за платени линкове)
+      // plan map
       try {
         const { data, error } = await sb.from('plans').select('id,name,pay_url');
         if (!error && data?.length) {
@@ -193,20 +197,39 @@
       // realtime (по избор)
       sb.channel('user-ads')
         .on('postgres_changes',{event:'*', schema:'public', table:'ads', filter:`user_id=eq.${USER.id}`}, payload => {
-          loadAds(); // re-render
+          loadAds();
         })
         .subscribe();
     })();
 
-    // ---- Профил: зареждане и визуализация ----
+    // ---- Детекция на PK за profiles ----
+    async function detectProfilePk(){
+      // пробваме "id"
+      let test = await sb.from('profiles').select('id').limit(1);
+      if (test.error) {
+        // пробваме "user_id"
+        let test2 = await sb.from('profiles').select('user_id').limit(1);
+        if (test2.error) {
+          alert('Таблицата profiles няма колони id / user_id. Моля, провери схемата.');
+          throw test2.error;
+        } else {
+          PROFILE_PK = 'user_id';
+        }
+      } else {
+        PROFILE_PK = 'id';
+      }
+    }
+
+    // ---- Профил: зареждане/визуализация ----
     async function loadProfile(){
-      const { data, error } = await sb.from('profiles').select('id, full_name, phone, avatar_url').eq('id', USER.id).maybeSingle();
+      let selCols = PROFILE_PK + ', full_name, phone, avatar_url';
+      let q = sb.from('profiles').select(selCols).eq(PROFILE_PK, USER.id).maybeSingle();
+      const { data, error } = await q;
       if (!error && data){ PROFILE = data; }
-      else { PROFILE = { id: USER.id, full_name: null, phone: null, avatar_url: null }; }
+      else { PROFILE = { [PROFILE_PK]: USER.id, full_name: null, phone: null, avatar_url: null }; }
       // попълни полетата
       elFullName.value = PROFILE.full_name || '';
       elPhone.value = PROFILE.phone || '';
-      // аватар
       await renderAvatar(PROFILE.avatar_url, PROFILE.full_name || USER.email || 'U');
     }
 
@@ -227,18 +250,15 @@
 
     async function renderAvatar(key, fallbackName){
       if (!key){
-        // инициали
         elAvatarImg.classList.add('hidden');
         elAvatarInitial.classList.remove('hidden');
         elAvatarInitial.textContent = String(fallbackName||'U').trim().charAt(0).toUpperCase() || 'U';
         return;
       }
       try{
-        // signed URL (работи и при public bucket)
         const { data, error } = await sb.storage.from('avatars').createSignedUrl(key, 60*60);
         let url = data?.signedUrl;
         if (!url){
-          // fallback public
           const pub = sb.storage.from('avatars').getPublicUrl(key);
           url = pub?.data?.publicUrl || '';
         }
@@ -248,7 +268,6 @@
           elAvatarInitial.classList.add('hidden');
         }
       }catch(_){
-        // показваме инициали при проблем
         elAvatarImg.classList.add('hidden');
         elAvatarInitial.classList.remove('hidden');
         elAvatarInitial.textContent = String(fallbackName||'U').trim().charAt(0).toUpperCase() || 'U';
@@ -260,21 +279,22 @@
       elAvatarFileName.textContent = elAvatarFile.files?.[0]?.name || 'Няма избран файл';
     });
 
-    // Качване на аватар (без зависимост от име/път)
+    // Качване на аватар (UUID име; без зависимост от име/път)
     elBtnUpload.addEventListener('click', async () => {
       const file = elAvatarFile.files?.[0];
       if (!file){ alert('Моля, избери файл.'); return; }
 
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
       const uuid = (crypto?.randomUUID?.() || String(Date.now()));
-      const fileName = `${uuid}.${ext}`; // никакви зависимости от име/папка
+      const fileName = `${uuid}.${ext}`;
 
       const { error: upErr } = await sb.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
       if (upErr){ alert('Грешка при качване на снимка: ' + upErr.message); return; }
 
-      // запис в profiles.avatar_url (само ключа)
+      // запис в profiles.avatar_url (само ключа; правилния PK)
       PROFILE.avatar_url = fileName;
-      await sb.from('profiles').upsert({ id: USER.id, avatar_url: fileName }, { onConflict: 'id' });
+      const payload = { [PROFILE_PK]: USER.id, avatar_url: fileName };
+      await sb.from('profiles').upsert(payload, { onConflict: PROFILE_PK });
 
       await renderAvatar(fileName, PROFILE.full_name || USER.email);
       validateProfileUI();
@@ -290,8 +310,8 @@
       if (full_name.length < 2){ alert('Въведи валидно име.'); return; }
       if (!phone){ alert('Въведи телефон.'); return; }
 
-      const payload = { id: USER.id, full_name, phone };
-      const { error } = await sb.from('profiles').upsert(payload, { onConflict: 'id' });
+      const payload = { [PROFILE_PK]: USER.id, full_name, phone };
+      const { error } = await sb.from('profiles').upsert(payload, { onConflict: PROFILE_PK });
       if (error){ alert('Грешка при запис: ' + error.message); return; }
 
       PROFILE.full_name = full_name;
@@ -310,7 +330,6 @@
       `).eq('user_id', USER.id).order('created_at', {ascending:false});
       if (error){ console.error(error); return; }
       ADS = data || [];
-      // counters
       document.getElementById('c_all').textContent = ADS.length;
       document.getElementById('c_pending').textContent = ADS.filter(a=>a.ad_status==='pending').length;
       document.getElementById('c_approved').textContent = ADS.filter(a=>a.ad_status==='approved').length;
@@ -323,14 +342,12 @@
       const wrap = document.getElementById('list');
       let items = ADS.slice();
 
-      // filter by status
       items = items.filter(a=>{
         if (FILTER==='all') return true;
         if (FILTER==='unpaid') return (a.payment_status||'unpaid')!=='paid' && (a.ad_status!=='hidden');
         return a.ad_status===FILTER;
       });
 
-      // search by title
       if (SEARCH) items = items.filter(a => (a.title||'').toLowerCase().includes(SEARCH));
 
       wrap.innerHTML = items.map(card).join('');
