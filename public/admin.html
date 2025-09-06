@@ -25,22 +25,21 @@
     <h1 class="text-2xl font-bold mb-4">Админ панел</h1>
 
     <div class="grid lg:grid-cols-3 gap-6">
-      <!-- Pending from pending_places (RPC) -->
+      <!-- Pending 18+ -->
       <section class="lg:col-span-2 bg-white rounded-2xl border p-4">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-semibold">Чакащи заявки (18+)</h2>
-          <div class="text-sm text-slate-500">източник: <code>pending_places</code></div>
+          <h2 class="font-semibold">Чакащи 18+ <span class="ml-2 text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700">възрастово ограничено</span></h2>
+          <input id="searchEmail" placeholder="търси по имейл…" class="border rounded-lg px-3 py-1.5 text-sm">
         </div>
         <div id="adsPending" class="space-y-3">
-          <div class="animate-pulse h-24 bg-slate-100 rounded-xl"></div>
           <div class="animate-pulse h-24 bg-slate-100 rounded-xl"></div>
         </div>
       </section>
 
-      <!-- Approved from objects -->
+      <!-- Approved 18+ -->
       <section class="bg-white rounded-2xl border p-4">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-semibold">Последно одобрени</h2>
+          <h2 class="font-semibold">Одобрени 18+</h2>
           <select id="approvedLimit" class="border rounded-lg px-2 py-1 text-sm">
             <option value="10">Последни 10</option>
             <option value="25">25</option>
@@ -48,7 +47,6 @@
           </select>
         </div>
         <div id="adsApproved" class="space-y-3">
-          <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
           <div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>
         </div>
       </section>
@@ -60,7 +58,7 @@
     <div class="absolute inset-0 bg-black/40"></div>
     <div class="relative bg-white max-w-3xl w-[90%] rounded-2xl border shadow-lg overflow-hidden">
       <div class="flex items-center justify-between p-4 border-b">
-        <div class="font-semibold" id="mTitle">Преглед</div>
+        <div class="font-semibold" id="mTitle">Преглед 18+</div>
         <button id="mClose" class="p-2 rounded-md hover:bg-slate-100">✕</button>
       </div>
       <div class="p-4 grid md:grid-cols-3 gap-4">
@@ -72,13 +70,21 @@
         </div>
         <aside class="space-y-3">
           <div class="rounded-xl border p-3">
-            <div class="text-sm text-slate-500 mb-2">План / MAX</div>
+            <div class="text-sm text-slate-500 mb-2">План / Плащане</div>
             <div id="mPlan" class="font-medium"></div>
-            <div class="mt-3 flex gap-2">
+            <div class="mt-2">
+              <span id="mPayStatus" class="inline-block text-xs px-2 py-1 rounded bg-slate-100"></span>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
               <button id="mApproveFree" class="px-3 py-2 bg-emerald-600 text-white rounded-lg">Одобри (FREE)</button>
               <button id="mApproveMax" class="px-3 py-2 bg-fuchsia-600 text-white rounded-lg">Одобри (MAX)</button>
               <button id="mReject" class="px-3 py-2 bg-rose-600 text-white rounded-lg">Откажи</button>
             </div>
+          </div>
+
+          <div class="rounded-xl border p-3">
+            <div class="text-sm text-slate-500 mb-2">Контакти</div>
+            <div id="mContact" class="space-y-1 text-slate-700"></div>
           </div>
         </aside>
       </div>
@@ -87,7 +93,7 @@
 
   <script>
     // ====== CONFIG ======
-    const ADMIN_EMAIL = 'uzunov.ange@gmail.com'; // UI guard; реалните права са в БД (app_admins)
+    const ADMIN_EMAIL = 'uzunov.ange@gmail.com';
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
     // ====== INIT / GUARD ======
@@ -100,12 +106,14 @@
       await loadPending();
       await loadApproved();
 
+      document.getElementById('searchEmail').addEventListener('input', () => loadPending());
       document.getElementById('approvedLimit').addEventListener('change', () => loadApproved());
 
-      // realtime
-      sb.channel('rt-admin')
-        .on('postgres_changes', { event:'*', schema:'public', table:'pending_places' }, loadPending)
-        .on('postgres_changes', { event:'*', schema:'public', table:'objects' },       loadApproved)
+      // realtime от ads
+      sb.channel('rt-ads')
+        .on('postgres_changes', { event:'*', schema:'public', table:'ads' }, async () => {
+          await loadPending(); await loadApproved();
+        })
         .subscribe();
     })();
 
@@ -113,46 +121,71 @@
     async function loadPending(){
       const wrap = document.getElementById('adsPending');
       wrap.innerHTML = '<div class="animate-pulse h-24 bg-slate-100 rounded-xl"></div>';
-      const { data, error } = await sb.rpc('admin_list_pending');
-      if (error) { console.error(error); wrap.innerHTML = '<p class="text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">Грешка или нямаш админ достъп.</p>'; return; }
-      wrap.innerHTML = (data||[]).map(r => cardPending(r)).join('') || '<p class="text-slate-500">Няма чакащи.</p>';
+
+      const qEmail = document.getElementById('searchEmail').value.trim().toLowerCase();
+      let q = sb.from('ads').select(`
+          id,title,description,price,city,category,created_at,
+          images,cover_image,
+          plan_name,plan_price,plan_currency,
+          contact_name,contact_phone,contact_email,posted_by_email,
+          payment_status
+        `)
+        .eq('ad_status','pending')
+        .eq('is_adult', true)
+        .order('created_at', { ascending: true });
+
+      if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
+
+      const { data, error } = await q;
+      if (error) { console.error(error); wrap.innerHTML = '<p class="text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">Грешка при зареждане на чакащи.</p>'; return; }
+      wrap.innerHTML = (data||[]).map(r => cardPending(r)).join('') || '<p class="text-slate-500">Няма 18+ чакащи.</p>';
     }
 
     async function loadApproved(){
+      const wrap = document.getElementById('adsApproved');
+      wrap.innerHTML = '<div class="animate-pulse h-14 bg-slate-100 rounded-xl"></div>';
+
       const limit = Number(document.getElementById('approvedLimit').value || 10);
       const { data, error } = await sb
-        .from('objects')
-        .select('id,title,price,category,is_max,priority,approved_at,image_url,description')
+        .from('ads')
+        .select('id,title,price,category,approved_at,plan_name,images,cover_image,description')
+        .eq('ad_status','approved')
+        .eq('is_adult', true)
         .order('approved_at',{ascending:false})
         .limit(limit);
-      if (error) { console.error(error); return; }
-      const wrap = document.getElementById('adsApproved');
+      if (error) { console.error(error); wrap.innerHTML = '<p class="text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">Грешка при зареждане.</p>'; return; }
       wrap.innerHTML = (data||[]).map(r => cardApproved(r)).join('') || '<p class="text-slate-500">Още няма.</p>';
     }
 
     // ====== CARDS ======
     function esc(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
     function fmtBGN(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} лв.`; } }
+    function pillPaid(status){
+      const paid = status === 'paid' || status === 'manual';
+      return `<span class="ml-2 text-xs px-2 py-0.5 rounded ${paid?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${esc(status||'unpaid')}</span>`;
+    }
 
     function cardPending(r){
       const created = r.created_at ? new Date(r.created_at).toLocaleString('bg-BG') : '—';
+      const img = Array.isArray(r.images) && r.images[0] ? r.images[0] : r.cover_image || '';
       return `
       <div class="border rounded-xl p-4">
         <div class="flex items-start justify-between gap-4">
-          <div>
-            <div class="font-semibold text-lg mb-0.5">${esc(r.title||'Без заглавие')}</div>
+          <div class="min-w-0">
+            <div class="font-semibold text-lg mb-0.5 truncate">${esc(r.title||'Без заглавие')}</div>
             <div class="text-sm text-slate-500">Създадена: ${created}</div>
-            <div class="text-sm text-slate-500">Категория: ${esc(r.category||'Услуги')}</div>
-            <div class="mt-1 text-slate-700">${esc(r.description||'')}</div>
+            <div class="text-sm text-slate-500">Потребител: ${esc(r.contact_name||'—')} · ${esc(r.contact_email||r.posted_by_email||'—')} · ${esc(r.contact_phone||'—')}</div>
+            <div class="text-sm text-slate-500">Категория: ${esc(r.category||'Услуги 18+')} · План: ${esc(r.plan_name||'FREE')} ${pillPaid(r.payment_status)}</div>
           </div>
           <div class="flex flex-col items-end gap-2">
             <div class="flex gap-2">
-              <button class="px-4 py-2 bg-emerald-600 text-white rounded-xl" onclick="approvePending('${r.id}', false)">Одобри (FREE)</button>
-              <button class="px-4 py-2 bg-fuchsia-600 text-white rounded-xl" onclick="approvePending('${r.id}', true)">Одобри (MAX)</button>
-              <button class="px-4 py-2 rounded-xl border" onclick="openPreview('${r.id}')">Виж</button>
-              <button class="px-4 py-2 bg-rose-600 text-white rounded-xl" onclick="rejectPending('${r.id}')">Откажи</button>
+              <button class="px-4 py-2 bg-emerald-600 text-white rounded-xl" onclick="approveAd('${r.id}', false)">Одобри (FREE)</button>
+              <button class="px-4 py-2 bg-fuchsia-600 text-white rounded-xl" onclick="approveAd('${r.id}', true)">Одобри (MAX)</button>
+              <button class="px-4 py-2 rounded-xl border" onclick="preview('${r.id}')">Виж</button>
+              <button class="px-4 py-2 bg-rose-600 text-white rounded-xl" onclick="rejectAd('${r.id}')">Откажи</button>
             </div>
             <div class="text-emerald-700 font-bold">${r.price!=null ? fmtBGN(r.price) : ''}</div>
+            ${img ? `<img src="${img}" class="w-28 h-16 object-cover rounded border">` : ''}
           </div>
         </div>
       </div>`;
@@ -160,63 +193,85 @@
 
     function cardApproved(r){
       const when = r.approved_at ? new Date(r.approved_at).toLocaleString('bg-BG') : '—';
+      const isMax = String(r.plan_name||'').toUpperCase()==='MAX';
       return `
       <div class="border rounded-xl p-3">
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-medium">${esc(r.title)}</div>
-            <div class="text-xs text-slate-500">Одобрена: ${when}
-              ${r.is_max ? ' · <span class="text-fuchsia-600 font-semibold">MAX</span>' : ''}
-              · Категория: ${esc(r.category||'—')}
-              · Приоритет: ${r.priority ?? 0}
-            </div>
+            <div class="text-xs text-slate-500">Одобрена: ${when} · ${esc(r.category||'—')} · План: ${esc(r.plan_name||'FREE')}</div>
           </div>
           <div class="flex gap-2">
-            <a class="px-3 py-1.5 rounded-lg border hover:bg-slate-50" href="ad.html?id=${encodeURIComponent(r.id)}" target="_blank">Преглед</a>
+            ${isMax?'<span class="px-2 py-1 rounded bg-fuchsia-100 text-fuchsia-700 text-xs self-start">MAX</span>':''}
+            <button class="px-3 py-1.5 rounded-lg border hover:bg-slate-50" onclick="preview('${r.id}')">Преглед</button>
+            <button class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700" onclick="hideAd('${r.id}')">Премахни</button>
           </div>
         </div>
       </div>`;
     }
 
-    // ====== ACTIONS (RPC) ======
-    async function approvePending(id, makeMax){
-      const { error } = await sb.rpc('admin_approve_pending', { p_id: id, make_max: !!makeMax });
-      if (error) { alert('Грешка при одобряване (провери RPC/права).'); console.error(error); return; }
+    // ====== ACTIONS ======
+    async function approveAd(id, makeMax){
+      const patch = {
+        ad_status: 'approved',
+        approved_at: new Date().toISOString(),
+        plan_name: makeMax ? 'MAX' : 'FREE'
+      };
+      const { error } = await sb.from('ads').update(patch).eq('id', id);
+      if (error) { alert('Грешка при одобряване.'); console.error(error); return; }
       await loadPending(); await loadApproved();
     }
-    async function rejectPending(id){
-      if (!confirm('Сигурни ли сте, че отказвате заявката?')) return;
-      const { error } = await sb.rpc('admin_reject_pending', { p_id: id });
+    async function rejectAd(id){
+      if (!confirm('Скриване/отказ на заявката?')) return;
+      const { error } = await sb.from('ads').update({ ad_status:'hidden' }).eq('id', id);
       if (error) { alert('Грешка при отказ.'); console.error(error); return; }
       await loadPending();
     }
-    window.approvePending = approvePending;
-    window.rejectPending = rejectPending;
+    async function hideAd(id){
+      const { error } = await sb.from('ads').update({ ad_status:'hidden' }).eq('id', id);
+      if (error){ alert('Неуспешно премахване.'); console.error(error); return; }
+      await loadApproved();
+    }
+    window.approveAd = approveAd;
+    window.rejectAd = rejectAd;
+    window.hideAd = hideAd;
 
     // ====== PREVIEW ======
-    async function openPreview(id){
-      const { data, error } = await sb.rpc('admin_list_pending');
-      if (error){ return; }
-      const r = (data||[]).find(x => x.id === id);
-      if (!r){ return; }
-      document.getElementById('mAdTitle').textContent = r.title || '';
-      const created = r.created_at ? new Date(r.created_at).toLocaleString('bg-BG') : '—';
-      document.getElementById('mMeta').textContent = `${r.category||'Услуги'} · ${created}`;
-      document.getElementById('mDesc').textContent = r.description || '';
-      document.getElementById('mImages').innerHTML = r.image_url ? `
-        <a href="${r.image_url}" target="_blank"><img src="${r.image_url}" class="w-full h-28 object-cover rounded-lg border"></a>
-      ` : '<div class="text-slate-500 text-sm">Няма снимка</div>';
-      document.getElementById('mPlan').textContent = (r.is_max_requested ? 'MAX (по заявка)' : 'FREE');
+    async function preview(id){
+      const { data, error } = await sb.from('ads').select('*').eq('id', id).single();
+      if (error) return;
+
+      document.getElementById('mAdTitle').textContent = data.title || '';
+      document.getElementById('mMeta').textContent = `${data.category||'Услуги 18+'} · ${new Date(data.created_at).toLocaleString('bg-BG')}`;
+      document.getElementById('mDesc').textContent = data.description || '';
+      const imgs = Array.isArray(data.images) ? data.images : [];
+      const mImgs = document.getElementById('mImages');
+      mImgs.innerHTML = (imgs.length ? imgs : [data.cover_image]).filter(Boolean).map(u => `
+        <a href="${u}" target="_blank" class="block"><img src="${u}" class="w-full h-28 object-cover rounded-lg border"></a>
+      `).join('') || '<div class="text-slate-500 text-sm">Няма снимки</div>';
+
+      document.getElementById('mPlan').textContent = data.plan_name || 'FREE';
+      const pill = document.getElementById('mPayStatus');
+      const paid = data.payment_status === 'paid' || data.payment_status === 'manual';
+      pill.textContent = data.payment_status || 'unpaid';
+      pill.className = 'inline-block text-xs px-2 py-1 rounded ' + (paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800');
+
+      document.getElementById('mContact').innerHTML = `
+        <div><span class="text-slate-500 text-sm">Име:</span> ${esc(data.contact_name||'—')}</div>
+        <div><span class="text-slate-500 text-sm">Тел.:</span> ${esc(data.contact_phone||'—')}</div>
+        <div><span class="text-slate-500 text-sm">Email:</span> ${esc(data.contact_email||data.posted_by_email||'—')}</div>
+      `;
 
       const m = document.getElementById('modal');
       m.classList.remove('hidden'); m.classList.add('flex');
       document.getElementById('mClose').onclick = () => { m.classList.add('hidden'); m.classList.remove('flex'); };
-      document.getElementById('mApproveFree').onclick = () => approvePending(id,false);
-      document.getElementById('mApproveMax').onclick  = () => approvePending(id,true);
-      document.getElementById('mReject').onclick      = () => rejectPending(id);
-      m.querySelector('.absolute.inset-0').onclick    = () => { m.classList.add('hidden'); m.classList.remove('flex'); };
+      m.querySelector('.absolute.inset-0').onclick = () => { m.classList.add('hidden'); m.classList.remove('flex'); };
+
+      document.getElementById('mApproveFree').onclick = () => approveAd(data.id, false);
+      document.getElementById('mApproveMax').onclick  = () => approveAd(data.id, true);
+      document.getElementById('mReject').onclick      = () => rejectAd(data.id);
     }
-    window.openPreview = openPreview;
+    window.preview = preview;
   </script>
 </body>
 </html>
