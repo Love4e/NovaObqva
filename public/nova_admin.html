@@ -25,7 +25,7 @@
     <h1 class="text-2xl font-bold mb-4">Админ панел</h1>
 
     <div class="grid lg:grid-cols-3 gap-6">
-      <!-- Pending -->
+      <!-- Pending (18-) -->
       <section class="lg:col-span-2 bg-white rounded-2xl border p-4">
         <div class="flex items-center justify-between mb-3">
           <h2 class="font-semibold">Чакащи обяви</h2>
@@ -34,7 +34,7 @@
         <div id="adsPending" class="space-y-3"></div>
       </section>
 
-      <!-- Approved (published) with Edit/Delete -->
+      <!-- Approved -->
       <section class="bg-white rounded-2xl border p-4">
         <div class="flex items-center justify-between mb-3">
           <h2 class="font-semibold">Публикувани</h2>
@@ -47,6 +47,18 @@
         <div id="adsApproved" class="space-y-3"></div>
       </section>
     </div>
+
+    <!-- 18+ Pending -->
+    <section class="mt-6 bg-white rounded-2xl border p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold flex items-center gap-2">
+          18+ чакащи
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">възрастово ограничено</span>
+        </h2>
+        <input id="searchEmailAdult" placeholder="търси по имейл…" class="border rounded-lg px-3 py-1.5 text-sm">
+      </div>
+      <div id="adsAdultPending" class="space-y-3"></div>
+    </section>
   </main>
 
   <!-- Preview modal -->
@@ -54,7 +66,10 @@
     <div class="absolute inset-0 bg-black/40"></div>
     <div class="relative bg-white max-w-3xl w-[90%] rounded-2xl border shadow-lg overflow-hidden">
       <div class="flex items-center justify-between p-4 border-b">
-        <div class="font-semibold" id="mTitle">Преглед</div>
+        <div class="font-semibold flex items-center gap-2" id="mTitle">
+          Преглед
+          <span id="mAdultBadge" class="hidden text-[11px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">18+</span>
+        </div>
         <button id="mClose" class="p-2 rounded-md hover:bg-slate-100">✕</button>
       </div>
       <div class="p-4 grid md:grid-cols-3 gap-4">
@@ -167,7 +182,6 @@
     ];
     let PLAN_MAP = {};
 
-    // Форматиране на две валути
     function fmtBGN(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} лв.`; } }
     function fmtEUR(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'EUR'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} €`; } }
     function dual(amount, currency){
@@ -185,7 +199,7 @@
 
       document.getElementById('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.href='/'; };
 
-      // Plans map (за линкове към плащане)
+      // Plans map
       try {
         const { data, error } = await sb.from('plans').select('id,name,pay_url,price_bgn,price_eur');
         if (!error && data?.length) {
@@ -205,32 +219,76 @@
 
       await loadPending();
       await loadApproved();
+      await loadAdultPending();
 
       document.getElementById('searchEmail').addEventListener('input', () => loadPending());
       document.getElementById('approvedLimit').addEventListener('change', () => loadApproved());
+      document.getElementById('searchEmailAdult').addEventListener('input', () => loadAdultPending());
     })();
 
     // ====== LOADERS ======
     async function loadPending(){
       const qEmail = document.getElementById('searchEmail').value.trim().toLowerCase();
-      let query = sb.from('ads').select(`
+      // основен филтър: ad_status=pending И (is_adult=false или null)
+      let data = [], error = null;
+      try {
+        let q = sb.from('ads').select(`
+          id,title,price,city,category,created_at,is_adult,
+          contact_name,contact_phone,contact_email,posted_by_email,
+          plan_name,plan_currency,plan_price,payment_status
+        `).eq('ad_status','pending').or('is_adult.is.false,is_adult.is.null').order('created_at',{ascending:true});
+        if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
+        ({ data, error } = await q);
+        if (error) throw error;
+      } catch(e) {
+        // fallback: няма is_adult колона -> филтрираме по категория без да разделяме
+        let q = sb.from('ads').select(`
           id,title,price,city,category,created_at,
           contact_name,contact_phone,contact_email,posted_by_email,
           plan_name,plan_currency,plan_price,payment_status
         `).eq('ad_status','pending').order('created_at',{ascending:true});
-      if (qEmail) query = query.ilike('posted_by_email','%' + qEmail + '%');
-      const { data, error } = await query;
-      if (error) { console.error(error); alert('Грешка при зареждане на чакащи.'); return; }
+        if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
+        const res = await q;
+        data = (res.data||[]).filter(r => !/18\+|adult|erot/i.test(r.category||''));
+      }
 
       const wrap = document.getElementById('adsPending');
       wrap.innerHTML = (data||[]).map(r => cardPending(r)).join('') || '<p class="text-slate-500">Няма чакащи.</p>';
+    }
+
+    async function loadAdultPending(){
+      const qEmail = document.getElementById('searchEmailAdult').value.trim().toLowerCase();
+      let data = [], error = null;
+      try {
+        let q = sb.from('ads').select(`
+          id,title,price,city,category,created_at,is_adult,
+          contact_name,contact_phone,contact_email,posted_by_email,
+          plan_name,plan_currency,plan_price,payment_status
+        `).eq('ad_status','pending').eq('is_adult', true).order('created_at',{ascending:true});
+        if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
+        ({ data, error } = await q);
+        if (error) throw error;
+      } catch(e) {
+        // fallback: търсим по категория 18+
+        let q = sb.from('ads').select(`
+          id,title,price,city,category,created_at,
+          contact_name,contact_phone,contact_email,posted_by_email,
+          plan_name,plan_currency,plan_price,payment_status
+        `).eq('ad_status','pending').order('created_at',{ascending:true});
+        if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
+        const res = await q;
+        data = (res.data||[]).filter(r => /18\+|adult|erot/i.test(r.category||''));
+      }
+
+      const wrap = document.getElementById('adsAdultPending');
+      wrap.innerHTML = (data||[]).map(r => cardPending(r, true)).join('') || '<p class="text-slate-500">Няма 18+ чакащи.</p>';
     }
 
     async function loadApproved(){
       const limit = Number(document.getElementById('approvedLimit').value || 10);
       const { data, error } = await sb
         .from('ads')
-        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description')
+        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description,is_adult')
         .eq('ad_status','approved')
         .order('approved_at',{ascending:false})
         .limit(limit);
@@ -246,13 +304,22 @@
       return `<span class="ml-2 text-xs px-2 py-0.5 rounded ${paid?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${esc(status||'unpaid')}</span>`;
     }
 
-    function cardPending(r){
+    function adultBadge(r, compact=false){
+      const isAdult = r?.is_adult === true || /18\+|adult|erot/i.test(r?.category||'');
+      if (!isAdult) return '';
+      return `<span class="${compact?'text-[10px] px-1.5 py-0.5':'text-[11px] px-2 py-0.5'} rounded-full bg-rose-100 text-rose-800 border border-rose-200">18+</span>`;
+    }
+
+    function cardPending(r, forceAdult=false){
       const currency = (r.plan_currency||'BGN').toUpperCase();
+      const isAdult = forceAdult || r?.is_adult === true || /18\+|adult|erot/i.test(r?.category||'');
       return `
-      <div class="border rounded-xl p-4">
+      <div class="border rounded-xl p-4 ${isAdult?'ring-1 ring-rose-200':''}">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <div class="font-semibold text-lg mb-0.5">${esc(r.title)}</div>
+            <div class="font-semibold text-lg mb-0.5 flex items-center gap-2">
+              ${esc(r.title)} ${adultBadge(r)}
+            </div>
             <div class="text-sm text-slate-500">Създадена: ${new Date(r.created_at).toLocaleString('bg-BG')}</div>
             <div class="text-sm text-slate-500">Потребител: ${esc(r.contact_name||'—')} · ${esc(r.contact_email||r.posted_by_email||'—')} · ${esc(r.contact_phone||'—')}</div>
             <div class="text-sm text-slate-500">Категория: ${esc(r.category||'—')} · Град: ${esc(r.city||'—')}</div>
@@ -277,10 +344,10 @@
       const cur = (r.plan_currency||'BGN').toUpperCase();
       const when = r.approved_at ? new Date(r.approved_at).toLocaleString('bg-BG') : '—';
       return `
-      <div class="border rounded-xl p-3">
+      <div class="border rounded-xl p-3 ${r?.is_adult ? 'ring-1 ring-rose-200' : ''}">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="font-medium">${esc(r.title)}</div>
+            <div class="font-medium flex items-center gap-2">${esc(r.title)} ${adultBadge(r,true)}</div>
             <div class="text-xs text-slate-500">Одобрена: ${when} · ${esc(r.city||'—')} · ${esc(r.category||'—')} · План: ${esc(r.plan_name||'—')} ${cur}</div>
           </div>
           <div class="flex gap-2">
@@ -292,19 +359,18 @@
       </div>`;
     }
 
-    // ====== ACTIONS (approve/reject) ======
+    // ====== ACTIONS ======
     async function approve(id, payStatus){
-      // ако държиш да изисква платено предварително, разкоментирай:
       // if (payStatus !== 'paid' && !confirm('Тази обява не е маркирана като платена. Да продължа с одобрение?')) return;
       const { error } = await sb.from('ads').update({ ad_status:'approved', approved_at: new Date().toISOString() }).eq('id', id);
       if (error) { alert('Отказано от сървъра. Нямаш права или грешка.'); console.error(error); return; }
-      await loadPending(); await loadApproved();
+      await loadPending(); await loadAdultPending(); await loadApproved();
     }
     async function rejectAd(id){
       if (!confirm('Сигурни ли сте, че отказвате обявата?')) return;
       const { error } = await sb.from('ads').update({ ad_status:'hidden' }).eq('id', id);
       if (error) { alert('Отказано от сървъра. Нямаш права или грешка.'); console.error(error); return; }
-      await loadPending();
+      await loadPending(); await loadAdultPending();
     }
     window.approve = approve; window.rejectAd = rejectAd;
 
@@ -312,7 +378,7 @@
     async function preview(id){
       const { data, error } = await sb.from('ads').select(`
         id,title,description,price,city,category,created_at,
-        images,cover_image,
+        images,cover_image,is_adult,
         plan_name,plan_price,plan_currency,plan_id,
         contact_name,contact_phone,contact_email,posted_by_email,
         payment_status,paid_at,payment_checked_at
@@ -344,6 +410,10 @@
       `;
       document.getElementById('mContact').innerHTML = contactHTML;
 
+      // Adult badge
+      const isAdult = data?.is_adult === true || /18\+|adult|erot/i.test(data?.category||'');
+      document.getElementById('mAdultBadge').classList.toggle('hidden', !isAdult);
+
       // pay link
       let p = PLAN_MAP[data.plan_id] || PLAN_MAP[(data.plan_name||'').toLowerCase()] || null;
       const payUrl = p?.pay_url?.[(data.plan_currency||'bgn').toLowerCase()] || '#';
@@ -359,7 +429,8 @@
       btnPaid.textContent = paid ? 'Платено' : 'Маркирай „платено“';
       btnPaid.onclick = async () => {
         await markPaid(data.id, pill, btnPaid);
-        await loadPending(); // обнови списъка ако е бил pending
+        await loadPending();
+        await loadAdultPending();
       };
 
       // approve / reject от модал
@@ -374,12 +445,11 @@
     }
     window.preview = preview;
 
-    // ====== MARK PAID (RPC + fallback) ======
+    // ====== MARK PAID ======
     async function markPaid(adId, pillEl, btnEl){
       try{
         btnEl.disabled = true;
         btnEl.textContent = 'Маркирам...';
-        // Вариант A: RPC (ако е създадено mark_ad_paid)
         let rpcErr = null;
         try{
           const { error } = await sb.rpc('mark_ad_paid', { p_ad_id: adId });
@@ -387,7 +457,6 @@
         }catch(e){ rpcErr = e; }
 
         if (rpcErr){
-          // Вариант B: директен update (ако RLS ти позволява като админ)
           const { error: upErr } = await sb
             .from('ads')
             .update({ payment_status:'paid', paid_at: new Date().toISOString() })
@@ -395,7 +464,6 @@
           if (upErr) throw upErr;
         }
 
-        // UI update
         pillEl.textContent = 'paid';
         pillEl.className = 'inline-block text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-800';
         btnEl.textContent = 'Платено';
@@ -406,12 +474,11 @@
       }
     }
 
-    // ====== EDIT ======
+    // ====== EDIT / HIDE ======
     async function openEdit(id){
       const { data, error } = await sb.from('ads').select('*').eq('id', id).single();
       if (error) { alert('Грешка при зареждане.'); return; }
 
-      // populate
       byId('eId').value = data.id;
       byId('eTitle').value = data.title || '';
       byId('ePrice').value = Number(data.price||0);
@@ -421,15 +488,12 @@
       byId('ePlan').value = data.plan_name || '';
       byId('ePlanCur').value = (data.plan_currency||'').toUpperCase();
 
-      // show
       const eM = byId('editModal');
       eM.classList.remove('hidden'); eM.classList.add('flex');
 
-      // close handlers
       byId('eClose').onclick = () => { eM.classList.add('hidden'); eM.classList.remove('flex'); };
       eM.querySelector('.absolute.inset-0').onclick = () => { eM.classList.add('hidden'); eM.classList.remove('flex'); };
 
-      // submit
       byId('editForm').onsubmit = async (ev) => {
         ev.preventDefault();
         const payload = {
@@ -447,7 +511,6 @@
         await loadApproved();
       };
 
-      // hide from edit modal
       byId('eHide').onclick = async () => {
         if (!confirm('Скриване на обявата от сайта?')) return;
         await hideAd(id);
@@ -456,17 +519,10 @@
     }
     window.openEdit = openEdit;
 
-    // Премахване (по подразбиране = скриване)
     async function hideAd(id){
       const { error } = await sb.from('ads').update({ ad_status:'hidden' }).eq('id', id);
       if (error){ alert('Неуспешно премахване.'); console.error(error); return; }
       await loadApproved();
-
-      /* HARD DELETE (АКТИВИРАЙ САМО АКО RLS ПОЛИЦИТЕ ГО ПОЗВОЛЯВАТ)
-      const { error:delErr } = await sb.from('ads').delete().eq('id', id);
-      if (delErr){ alert('Неуспешно изтриване.'); console.error(delErr); return; }
-      await loadApproved();
-      */
     }
     window.hideAd = hideAd;
 
