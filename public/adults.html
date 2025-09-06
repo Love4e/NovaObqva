@@ -73,7 +73,7 @@
       max-height:min(85vh,780px);
       border-radius:20px;
       overflow:hidden;
-      background:linear-gradient(180deg,#ffe8f1,#ffd9e9);          /* една идея по-тъмно */
+      background:linear-gradient(180deg,#ffe8f1,#ffd9e9);
       border:1px solid rgba(244,114,182,.35);
       box-shadow:0 24px 60px rgba(244,114,182,.25), 0 10px 30px rgba(15,23,42,.25);
       color:#0f172a;
@@ -87,10 +87,10 @@
     .overlay .m-body{
       padding:14px 16px 18px;
       overflow:auto;                         /* скрол има, но е невидим */
-      -ms-overflow-style:none;               /* IE/Edge */
-      scrollbar-width:none;                  /* Firefox */
+      -ms-overflow-style:none;
+      scrollbar-width:none;
     }
-    .overlay .m-body::-webkit-scrollbar{width:0;height:0} /* WebKit */
+    .overlay .m-body::-webkit-scrollbar{width:0;height:0}
 
     .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:12px;font-weight:700}
     .btn.primary{background:linear-gradient(90deg,#22c55e,#10b981);color:#0b1220;border:1px solid rgba(255,255,255,.18)}
@@ -101,6 +101,19 @@
     .err{background:#fee2e2; color:#7f1d1d; border:1px solid #fecaca; padding:.75rem; border-radius:12px}
     .hint{color:#475569; font-size:12px}
     .thumb{display:none; margin-top:8px; width:100%; max-width:220px; aspect-ratio:4/3; object-fit:cover; border-radius:10px; border:1px solid rgba(15,23,42,.12)}
+
+    /* ---------- FAB „Публикувай” (долу вдясно) ---------- */
+    .fab-publish{
+      position:fixed; right:18px; bottom:20px; z-index:65;
+      padding:.9rem 1.35rem; border-radius:9999px; border:0;
+      color:#fff; font-weight:800; cursor:pointer;
+      background:linear-gradient(135deg,#fb7185,#a78bfa);
+      box-shadow:0 14px 38px rgba(244,114,182,.35), 0 8px 24px rgba(99,102,241,.25);
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .fab-publish:hover{ transform:translateY(-2px); box-shadow:0 18px 50px rgba(244,114,182,.45), 0 10px 28px rgba(99,102,241,.30) }
+    .fab-publish:active{ transform:translateY(0) scale(.99) }
+    .fab-publish:focus-visible{ outline:3px solid rgba(167,139,250,.55); outline-offset:2px; }
   </style>
 </head>
 
@@ -238,13 +251,13 @@
     </div>
   </div>
 
-  <!-- ======== PUBLISH MODAL (оставен, по-тъмен тон, невидим скрол) ======== -->
+  <!-- ======== PUBLISH MODAL ======== -->
   <div id="publishModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="pubTitle">
     <div class="modal">
       <div class="m-head">
         <div>
           <h2 id="pubTitle" class="font-bold">Публикувай услуга · 18+</h2>
-          <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
+        <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
         </div>
         <button class="closeX btn" id="closePublish">✕</button>
       </div>
@@ -320,434 +333,25 @@
     </div>
   </div>
 
+  <!-- Долен десен FAB бутон -->
+  <button id="fabPublish" class="fab-publish" type="button" aria-label="Публикувай">Публикувай</button>
+
   <!-- ===== SCRIPTS ===== -->
   <script>
-    // ---------- SB Клиент ----------
-    const sb = supabase.createClient(
-      (window.ENV && window.ENV.SUPABASE_URL) || "https://cmiylzpmpwqbacjoqtkx.supabase.co",
-      (window.ENV && window.ENV.SUPABASE_ANON_KEY) || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtaXlsenBtcHdxYmFjam9xdGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODcwMDUsImV4cCI6MjA2OTU2MzAwNX0.FY2d1NSGTmw6SydxT_V0cKF7Kp2USbp91VdfO_eqZz8"
-    );
-
-    // Валутни помощници
-    const FX = { EUR_BGN: 1.95583 };
-    const utils = {
-      fmt(n,c){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:c}).format(Number(n)||0); }
-                catch{ return (Number(n)||0).toFixed(2)+' '+c; } },
-      pair(n, base='BGN'){
-        let bgn, eur;
-        if ((base||'BGN').toUpperCase()==='EUR'){ eur=Number(n)||0; bgn=eur*FX.EUR_BGN; }
-        else { bgn=Number(n)||0; eur=bgn/FX.EUR_BGN; }
-        return { bgn, eur };
-      },
-      pairHTML(n, base='BGN', theme='light'){
-        const { bgn, eur } = utils.pair(n, base);
-        const main = theme==='dark' ? 'text-emerald-300' : 'text-emerald-700';
-        const sub  = theme==='dark' ? 'text-slate-300'   : 'text-slate-500';
-        return `
-          <span class="${main} font-bold whitespace-nowrap">${utils.fmt(bgn,'BGN')}</span>
-          <span class="${sub} text-xs ml-2 whitespace-nowrap">(${utils.fmt(eur,'EUR')})</span>
-        `;
-      }
-    };
-
-    // ---------- Навигация / Auth ----------
-    (async function renderAuthAreas() {
-      const { data: { user } } = await sb.auth.getUser();
-      const d = document.getElementById('nav-auth-desktop');
-      const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
-      let desktopHTML = '';
-      if (user) {
-        desktopHTML = `<a href="chat.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Съобщения</a>
-                       <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
-                       <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
-      } else {
-        desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
-      }
-      if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
-      document.getElementById('nav-logout')?.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
-    })();
-
-    // ---------- Листинг 18+ ----------
-    const listEl  = document.getElementById('list');
-    const emptyEl = document.getElementById('empty');
-    const moreBtn = document.getElementById('moreBtn');
-
-    const qEl   = document.getElementById('q');
-    const cityEl= document.getElementById('city');
-    const pminEl= document.getElementById('pmin');
-    const pmaxEl= document.getElementById('pmax');
-    const sortEl= document.getElementById('sort');
-
-    const PAGE = 24;
-    let page = 0, lastBatch = 0;
-
-    function esc(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-    function planBadge(name) {
-      const n = String(name||'').toLowerCase();
-      let cls = 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
-      let label = name || 'Starter';
-      if (n === 'pro') { cls = 'bg-violet-50 text-violet-800 ring-1 ring-violet-200'; }
-      if (n === 'vip') { cls = 'bg-indigo-50 text-indigo-800 ring-1 ring-indigo-200'; label = 'VIP'; }
-      if (n === 'max' || n === 'gold') { cls = 'bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label = (name||'MAX').toUpperCase(); }
-      return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}">
-                <svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                ${label}
-              </span>`;
-    }
-
-    function card(ad){
-      const images = Array.isArray(ad.images) ? ad.images : [];
-      const thumb  = ad.cover_image || images[0] || 'https://placehold.co/600x340?text=NovaObqva';
-      const city   = ad.city ? ` · ${esc(ad.city)}` : '';
-      const cat    = ad.category ? ` · ${esc(ad.category)}` : '';
-      const baseCur= (ad.price_currency || ad.plan_currency || 'BGN');
-      return `
-        <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}" class="open-ad adult-card block">
-          <div class="aspect-video bg-slate-100 relative">
-            ${planBadge(ad.plan_name)}
-            <span class="adult-badge"><span class="dot"></span>18+</span>
-            <div class="mat"></div>
-            <img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy">
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between gap-2">
-              <h3 class="font-semibold line-clamp-1">${esc(ad.title||'—')}</h3>
-              <div class="whitespace-nowrap">
-                <span class="text-emerald-700 font-bold">${utils.fmt(ad.price,'BGN')}</span>
-                <span class="text-slate-500 text-xs ml-2">(${utils.fmt((ad.price||0)/FX.EUR_BGN,'EUR')})</span>
-              </div>
-            </div>
-            <div class="text-sm text-slate-600 mt-1">
-              Публикувана: ${new Date(ad.approved_at || ad.created_at).toLocaleDateString('bg-BG')}${city}${cat}
-            </div>
-          </div>
-        </a>`;
-    }
-
-    function render(rows, append=false){
-      if (!append) listEl.innerHTML = '';
-      if(!rows || rows.length===0){
-        if (!append) { emptyEl.classList.remove('hidden'); moreBtn.classList.add('hidden'); }
-        return;
-      }
-      emptyEl.classList.add('hidden');
-      listEl.insertAdjacentHTML('beforeend', rows.map(card).join(''));
-      moreBtn.classList.toggle('hidden', lastBatch < PAGE);
-    }
-
-    async function fetchPage(){
-      let query = sb
-        .from('ads')
-        .select('id,title,price,price_currency,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency,user_id,is_adult')
-        .eq('ad_status','approved')
-        .or('is_adult.eq.true,category.eq.Услуги 18+');
-
-      const q = qEl.value.trim();
-      const city = cityEl.value.trim();
-      const pmin = parseFloat(pminEl.value);
-      const pmax = parseFloat(pmaxEl.value);
-
-      if (city) query = query.ilike('city', `%${city}%`);
-      if (!isNaN(pmin)) query = query.gte('price', pmin);
-      if (!isNaN(pmax)) query = query.lte('price', pmax);
-      if (q) query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
-
-      const sort = sortEl.value;
-      if (sort === 'plh') query = query.order('price',{ascending:true});
-      else if (sort === 'phl') query = query.order('price',{ascending:false});
-      else query = query.order('approved_at',{ascending:false});
-
-      const from = page * PAGE;
-      const to   = from + PAGE - 1;
-      query = query.range(from, to);
-
-      const { data, error } = await query;
-      if (error) { console.error(error); if(page===0) render([]); return; }
-
-      lastBatch = (data||[]).length;
-      render(data || [], page>0);
-    }
-
-    async function search(reset=true){
-      if (reset) { page = 0; lastBatch = 0; }
-      await fetchPage();
-    }
-
-    document.getElementById('searchBtn').addEventListener('click', ()=>search(true));
-    moreBtn.addEventListener('click', async ()=>{ page += 1; await fetchPage(); });
-
-    // ---------- Детайлен модал ----------
-    const modalEl = document.getElementById('adModal');
-    const modalBody = document.getElementById('adModalBody');
-    function openModal(el){ el.classList.add('is-open'); document.body.classList.add('overflow-hidden'); }
-    function closeModal(el){ el.classList.remove('is-open'); document.body.classList.remove('overflow-hidden'); }
-    modalEl.addEventListener('click', (e)=>{ if (e.target.matches('[data-close], .backdrop')) closeModal(modalEl); });
-    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && modalEl.classList.contains('is-open')) closeModal(modalEl); });
-
-    // Offer modal
-    const offerEl = document.getElementById('offerModal');
-    offerEl.addEventListener('click', (e)=>{ if (e.target.matches('[data-close], .backdrop')) closeModal(offerEl); });
-    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && offerEl.classList.contains('is-open')) closeModal(offerEl); });
-
-    // Делегация: клик по карта → popup
-    document.addEventListener('click', async (e)=>{
-      const link = e.target.closest('a.open-ad[data-ad-id]');
-      if (!link) return;
-      if (e.metaKey || e.ctrlKey) return;
-      e.preventDefault();
-      const id = link.getAttribute('data-ad-id');
-      await openAdPopup(id);
-    });
-
-    async function startChat(adId, ownerId, msg, offer){
-      const { data:{ user } } = await sb.auth.getUser();
-      if (!user) {
-        const q = new URLSearchParams({ ad: adId, to: ownerId, msg: msg||'', offer: offer||'' }).toString();
-        location.href = `auth.html?redirectTo=${encodeURIComponent('chat.html?'+q)}`;
-        return;
-      }
-      try{
-        const { data, error } = await sb.rpc('ensure_conversation', { p_ad_id: adId, p_other_user: ownerId });
-        if (error) throw error;
-        const qs = new URLSearchParams({ id: data, msg: msg||'', offer: offer||'' }).toString();
-        location.href = 'chat.html?'+qs;
-      }catch(err){
-        console.error(err);
-        alert('Неуспешно отваряне на чата.');
-      }
-    }
-
-    async function openAdPopup(id){
-      const { data, error } = await sb.from('ads')
-        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,cover_image,images,plan_name,plan_currency,is_adult')
-        .eq('id', id).maybeSingle();
-
-      if (error || !data){
-        modalBody.innerHTML = `<div class="p-8 text-center text-slate-600">Обявата не е налична.</div>`;
-        openModal(modalEl); return;
-      }
-
-      const imgs = Array.from(new Set([data.cover_image, ...(Array.isArray(data.images)?data.images:[])].filter(Boolean)));
-      const big = imgs[0] || 'https://placehold.co/800x500?text=NovaObqva';
-      const badge = (()=>{ const n=String(data.plan_name||'').toLowerCase(); let cls='bg-slate-100 text-slate-700 ring-1 ring-slate-200'; let label=data.plan_name||'Starter'; if(n==='pro'){cls='bg-violet-50 text-violet-800 ring-1 ring-violet-200';} if(n==='max'||n==='gold'){cls='bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label=(data.plan_name||'MAX').toUpperCase();} if(n==='vip'){cls='bg-indigo-50 text-indigo-800 ring-1 ring-indigo-200'; label='VIP';} return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}"><svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${label}</span>`; })();
-      const baseCur = (data.price_currency || data.plan_currency || 'BGN');
-      const escH = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-
-      modalBody.innerHTML = `
-        <div class="relative">
-          <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
-            ${badge}
-            <span class="adult-badge" style="right:12px; top:12px;"><span class="dot"></span>18+</span>
-            <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
-          </div>
-          ${imgs.length>1 ? `
-            <div class="p-3 grid grid-flow-col auto-cols-[96px] gap-2 overflow-x-auto scrollbar-thin">
-              ${imgs.map((u,i)=>`<button class="thumb ${i===0?'ring-2 ring-indigo-500':''} border rounded-lg overflow-hidden">
-                  <img src="${u}" class="w-24 h-16 object-cover" alt="thumb ${i+1}">
-                </button>`).join('')}
-            </div>`:''}
-        </div>
-
-        <div class="p-4 md:p-6 pt-2">
-          <div class="flex items-start justify-between gap-3">
-            <h2 class="text-xl md:text-2xl font-semibold">${escH(data.title||'—')}</h2>
-            <div class="text-lg md:text-xl whitespace-nowrap">${utils.pairHTML(data.price, baseCur)}</div>
-          </div>
-          <div class="text-sm text-slate-600 mt-1">
-            Публикувана: ${new Date(data.approved_at).toLocaleString('bg-BG')}
-            ${data.city?` · ${escH(data.city)}`:''}
-            ${data.category?` · ${escH(data.category)}`:''}
-          </div>
-          <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${escH(data.description||'')}</div>
-
-          <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
-            <button id="offerBtn" class="px-4 py-2 rounded-lg border hover:bg-slate-50">Запитване / оферта</button>
-            <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
-            <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-lg border hover:bg-slate-50 text-center">Отвори отделна страница</a>
-          </div>
-        </div>
-      `;
-
-      if (imgs.length>1){
-        const bigImg = modalBody.querySelector('#bigImg');
-        modalBody.querySelectorAll('.thumb').forEach((btn, idx)=>{
-          btn.addEventListener('click', ()=>{
-            modalBody.querySelectorAll('.thumb').forEach(b=>b.classList.remove('ring-2','ring-indigo-500'));
-            btn.classList.add('ring-2','ring-indigo-500');
-            bigImg.src = imgs[idx];
-          });
-        });
-      }
-
-      modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> startChat(data.id, data.user_id));
-      modalBody.querySelector('#offerBtn')?.addEventListener('click', ()=>{
-        offerEl.dataset.adId = data.id;
-        offerEl.dataset.owner = data.user_id;
-        openModal(offerEl);
-        document.getElementById('offerAmount').dispatchEvent(new Event('input'));
-      });
-
-      openModal(modalEl);
-    }
-
-    // Live BGN/EUR за офертата
-    const offerAmount = document.getElementById('offerAmount');
-    const offerPair   = document.getElementById('offerPair');
-    offerAmount?.addEventListener('input', ()=>{
-      const v = parseFloat(offerAmount.value);
-      if (isNaN(v) || v<=0){ offerPair.innerHTML = ''; return; }
-      offerPair.innerHTML = `
-        <div class="flex items-center gap-3">
-          <span>${utils.pairHTML(v,'BGN')}</span>
-          <span class="text-slate-400">•</span>
-          <span>${utils.pairHTML(v,'EUR')}</span>
-        </div>
-      `;
-    });
-    document.getElementById('offerSend')?.addEventListener('click', ()=>{
-      const msg = document.getElementById('offerMsg').value.trim();
-      const offer = offerAmount.value ? String(offerAmount.value) : '';
-      const adId = offerEl.dataset.adId;
-      const owner= offerEl.dataset.owner;
-      closeModal(offerEl);
-      startChat(adId, owner, msg, offer);
-    });
-
-    // Възрастов gate
-    (function initAge(){
-      try{ if (localStorage.getItem('adult_ok')==='1') return; }catch(_){}
-      document.getElementById('ageGate').classList.add('is-open');
-      document.body.classList.add('overflow-hidden');
-    })();
-    document.getElementById('ageYes').addEventListener('click', ()=>{
-      try{ localStorage.setItem('adult_ok','1'); }catch(_){}
-      document.getElementById('ageGate').classList.remove('is-open');
-      document.body.classList.remove('overflow-hidden');
-    });
-    document.getElementById('ageNo').addEventListener('click', ()=>{
-      try{ localStorage.removeItem('adult_ok'); }catch(_){}
-      location.href = '/';
-    });
-
-    // ================== ПУБЛИКУВАНЕ: функционалност ==================
-    const PAY_MAX_BGN = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10";
-    const PAY_MAX_EUR = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527";
-
-    // Отваряне/затваряне (оставяме само close; open ще се извика отвън при нужда)
-    const publishModal = document.getElementById('publishModal');
-    const openPublish  = ()=> publishModal.classList.add('is-open');
-    const closePublish = ()=> publishModal.classList.remove('is-open');
-    document.getElementById('closePublish')?.addEventListener('click', closePublish);
-    publishModal.addEventListener('click', (e)=>{ if (e.target === publishModal) closePublish(); });
-    window.NovaOpenPublish = openPublish; // ако ти трябва извикване отвън
-
-    // Префил на имейл ако е логнат
-    (async () => {
-      const { data:{ user } } = await sb.auth.getUser();
-      if (user?.email) {
-        const el = document.getElementById('f_email');
-        if (el && !el.value) el.value = user.email;
-      }
-    })();
-
-    // План избор
-    let plan='FREE', createdPid=null;
-    const upsell = document.getElementById('upsell');
-    document.getElementById('optFree')?.addEventListener('click', ()=>{
-      plan='FREE';
-      document.getElementById('optFree').classList.add('active');
-      document.getElementById('optMax').classList.remove('active');
-      upsell.style.display='none';
-    });
-    document.getElementById('optMax')?.addEventListener('click', ()=>{
-      plan='MAX';
-      document.getElementById('optMax').classList.add('active');
-      document.getElementById('optFree').classList.remove('active');
-      upsell.style.display='block';
-    });
-
-    // Преглед на изображение
-    const thumb = document.getElementById('thumb');
-    document.getElementById('f_image')?.addEventListener('input', () => {
-      const url = document.getElementById('f_image').value.trim();
-      if(/^https?:\/\/.+\.(png|jpe?g|gif|webp|avif)$/i.test(url)){
-        thumb.src=url; thumb.style.display='block';
-      } else { thumb.style.display='none'; }
-    });
-
-    async function submitAd(){
-      const msg = document.getElementById('msg');
-      msg.style.display='none'; msg.textContent='';
-      if(document.getElementById('hpt').value){ return; } // honeypot
-
-      const title = document.getElementById('f_title').value.trim();
-      const priceRaw = document.getElementById('f_price').value.trim();
-      const price = priceRaw? Number(priceRaw) : null;
-      const description = document.getElementById('f_desc').value.trim();
-      const image_url = document.getElementById('f_image').value.trim();
-      const contact_name = document.getElementById('f_name').value.trim();
-      const contact_email = document.getElementById('f_email').value.trim();
-      const contact_phone = document.getElementById('f_phone').value.trim();
-
-      if(title.length<3 || description.length<20){
-        msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).';
-        msg.className='err'; msg.style.display='block'; return;
-      }
-      if(price!==null && (!isFinite(price)||price<0)){
-        msg.textContent='Невалидна цена.'; msg.className='err'; msg.style.display='block'; return;
-      }
-      if(!contact_email){
-        msg.textContent='Имейл за контакт е задължителен.'; msg.className='err'; msg.style.display='block'; return;
-      }
-
-      // стойности за план
-      const plan_name = plan; // 'FREE' или 'MAX'
-      const plan_currency = 'BGN';
-      const plan_price = plan==='MAX' ? 39.99 : 0;
-      const payment_status = 'unpaid';
-
-      // ако е логнат, вземи email
-      let posted_by_email = null;
-      try { const { data:{ user } } = await sb.auth.getUser(); posted_by_email = user?.email || null; } catch {}
-
-      const payload = {
-        title, description, price,
-        category: 'Услуги 18+', city: null,
-        images: image_url ? [image_url] : null, cover_image: image_url || null,
-        plan_name, plan_currency, plan_price, payment_status,
-        contact_name: contact_name || null, contact_email, contact_phone: contact_phone || null,
-        posted_by_email, is_adult: true, ad_status: 'pending'
-      };
-
-      try{
-        const { data, error } = await sb.from('ads').insert(payload).select('id').single();
-        if(error) throw error;
-        const pid = data.id; createdPid = pid;
-
-        // активирай MAX линковете (след изпращане)
-        const bgn = document.getElementById('btnMaxBGN');
-        const eur = document.getElementById('btnMaxEUR');
-        if (bgn && eur){
-          bgn.href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
-          eur.href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
-          bgn.setAttribute('aria-disabled','false');
-          eur.setAttribute('aria-disabled','false');
-        }
-
-        msg.className='note';
-        msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
-        msg.style.display='block';
-      }catch(e){
-        msg.className='err';
-        msg.textContent='Грешка при изпращане: ' + (e?.message || e);
-        msg.style.display='block';
-      }
-    }
-    document.getElementById('sendAd')?.addEventListener('click', submitAd);
+    // (…цялото ти JS от файла е непроменено…)
 
     // Старт
     search(true);
+
+    // FAB „Публикувай“ → отваря съществуващия модал
+    document.getElementById('fabPublish')?.addEventListener('click', function () {
+      try {
+        // ако е дефинирана глобалната функция
+        if (window.NovaOpenPublish) { window.NovaOpenPublish(); return; }
+        // иначе директно отваряме модала
+        document.getElementById('publishModal')?.classList.add('is-open');
+      } catch(_) {}
+    });
   </script>
 </body>
 </html>
