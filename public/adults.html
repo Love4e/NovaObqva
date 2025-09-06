@@ -85,7 +85,9 @@
       max-height:min(100vh - 24px,92vh);
       border-radius:20px;overflow:auto;
       box-shadow:0 20px 60px rgba(244,114,182,.22);
+      -ms-overflow-style:none;scrollbar-width:none;
     }
+    .overlay .modal::-webkit-scrollbar{width:0;height:0}
     .overlay .m-head{
       padding:14px 16px;border-bottom:1px solid rgba(244,114,182,.25);
       background:linear-gradient(180deg,#fff5f8,rgba(255,255,255,.6));
@@ -110,10 +112,6 @@
     .overlay .note{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#ecfdf5;border:1px dashed #86efac;color:#065f46}
     .overlay .err{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#fff1f2;border:1px dashed #fecdd3;color:#b91c1c}
     .thumb{display:none;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-top:6px;border:1px solid #e5e7eb}
-
-    /* невидим вертикален скрол в модала */
-    .overlay .modal{-ms-overflow-style:none;scrollbar-width:none}
-    .overlay .modal::-webkit-scrollbar{width:0;height:0}
 
     /* FAB */
     .fab{position:fixed;right:16px;bottom:18px;z-index:65;padding:.8rem 1.1rem;border-radius:9999px;
@@ -154,7 +152,7 @@
             </div>
             <div class="flex items-center gap-3">
               <button id="openPublish" class="cta-publish">Публикувай</button>
-              <!-- Премахнат „горен десен бутон“ (иконата) -->
+              <!-- Премахнат десен бутон/иконка -->
             </div>
           </div>
         </div>
@@ -162,7 +160,7 @@
     </section>
 
     <!-- MAIN (филтри + резултати) -->
-    <main class="max-w-6xl mx-auto px-4 pb-10">
+    <main class="max-w-6xl mx_auto px-4 pb-10">
       <div class="grid sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end mb-5">
         <input id="q" placeholder="Търси в заглавие/описание" class="lg:col-span-2 w-full px-4 py-2 rounded-xl border" />
         <input id="city" placeholder="Град" class="w-full px-4 py-2 rounded-xl border" />
@@ -203,7 +201,7 @@
     </div>
   </div>
 
-  <!-- Modal: Запитване/Оферта (BGN/EUR live) -->
+  <!-- Modal: Запитване/Оферта -->
   <div id="offerModal" class="modal" aria-hidden="true">
     <div class="backdrop" data-close></div>
     <div class="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
@@ -409,8 +407,6 @@
               </span>`;
     }
 
-    const isAdultAd = (ad)=> !!(ad?.is_adult || ad?.category==='Услуги 18+');
-
     function card(ad){
       const images = Array.isArray(ad.images) ? ad.images : [];
       const thumb  = ad.cover_image || images[0] || 'https://placehold.co/600x340?text=NovaObqva';
@@ -512,22 +508,12 @@
       await openAdPopup(id);
     });
 
-    async function startChat(adId, ownerId, msg, offer){
-      const { data:{ user } } = await sb.auth.getUser();
-      if (!user) {
-        const q = new URLSearchParams({ ad: adId, to: ownerId, msg: msg||'', offer: offer||'' }).toString();
-        location.href = `auth.html?redirectTo=${encodeURIComponent('chat.html?'+q)}`;
-        return;
-      }
-      try{
-        const { data, error } = await sb.rpc('ensure_conversation', { p_ad_id: adId, p_other_user: ownerId });
-        if (error) throw error;
-        const qs = new URLSearchParams({ id: data, msg: msg||'', offer: offer||'' }).toString();
-        location.href = 'chat.html?'+qs;
-      }catch(err){
-        console.error(err);
-        alert('Неуспешно отваряне на чата.');
-      }
+    // --- НОВО: директна връзка към chat.html, без RPC от тази страница ---
+    function goChat(adId, ownerId, msg='', offer=''){
+      const q = new URLSearchParams({ ad: adId, to: ownerId });
+      if (msg)   q.set('msg', msg);
+      if (offer) q.set('offer', offer);
+      location.href = 'chat.html?' + q.toString();
     }
 
     async function openAdPopup(id){
@@ -592,7 +578,8 @@
         });
       }
 
-      modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> startChat(data.id, data.user_id));
+      // към чата (без RPC тук)
+      modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> goChat(data.id, data.user_id));
       modalBody.querySelector('#offerBtn')?.addEventListener('click', ()=>{
         offerEl.dataset.adId = data.id;
         offerEl.dataset.owner = data.user_id;
@@ -623,7 +610,7 @@
       const adId = offerEl.dataset.adId;
       const owner= offerEl.dataset.owner;
       closeModal(offerEl);
-      startChat(adId, owner, msg, offer);
+      goChat(adId, owner, msg, offer);
     });
 
     // ---------- Възрастов gate ----------
@@ -646,7 +633,7 @@
     const closeModalPub= ()=> pubModal.classList.remove('show');
 
     document.getElementById('openPublish')?.addEventListener('click', openModalPub);
-    document.getElementById('openPublish2')?.addEventListener?.('click', openModalPub); // безопасно, ако някъде съществува
+    document.getElementById('openPublish2')?.addEventListener?.('click', openModalPub);
     document.getElementById('floatingCta')?.addEventListener('click', openModalPub);
     document.getElementById('closePublish')?.addEventListener('click', closeModalPub);
     pubModal.addEventListener('click', (e)=>{ if(e.target===pubModal) closeModalPub(); });
