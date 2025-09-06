@@ -244,7 +244,7 @@
       msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
     });
 
-    // ——— Т.3: автоматично изпращане на първо съобщение от ?msg / ?offer ———
+    // ——— Авто-първо съобщение от ?msg / ?offer ———
     async function maybeSendInitial(convId, initialMsg, offerRaw){
       const key = `sent_init_${convId}_${me.id}`;
       if ((!initialMsg && !offerRaw) || sessionStorage.getItem(key)==='1') return;
