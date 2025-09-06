@@ -92,9 +92,7 @@
         ? `<a href="account.html" class="px-3 py-1.5 rounded-lg border hover:bg-slate-50 text-sm">Моят профил</a>
            <button id="logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`
         : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
-      document.getElementById('logout')?.addEventListener('click', async ()=>{
-        await sb.auth.signOut(); location.href='/';
-      });
+      document.getElementById('logout')?.addEventListener('click', async ()=>{ await sb.auth.signOut(); location.href='/'; });
     }
 
     // ===== Chat state =====
@@ -214,7 +212,6 @@
         }, payload => {
           chatLogEl.insertAdjacentHTML('beforeend', bubble(payload.new));
           chatLogEl.scrollTop = chatLogEl.scrollHeight;
-          // обнови inbox без да мигаш
           loadThreads();
         })
         .subscribe();
@@ -243,20 +240,58 @@
       msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
     });
 
-    // отваряне от query: ?id=<conv> ИЛИ ?ad=<ad_id>&to=<user_id>
+    // ——— Т.3: автоматично изпращане на първо съобщение от ?msg / ?offer ———
+    async function maybeSendInitial(convId, initialMsg, offerRaw){
+      const key = `sent_init_${convId}_${me.id}`;
+      if ((!initialMsg && !offerRaw) || sessionStorage.getItem(key)==='1') return;
+
+      let text = (initialMsg || '').trim();
+      if (offerRaw){
+        const v = parseFloat(offerRaw);
+        const offerText = Number.isFinite(v) ? `Оферта: ${v.toFixed(2)} лв.` : `Оферта: ${offerRaw}`;
+        text = text ? `${text}\n\n${offerText}` : offerText;
+      }
+      if (!text) return;
+
+      const { error } = await sb.from('messages').insert([{ conversation_id: convId, user_id: me.id, content: text }]);
+      if (!error) sessionStorage.setItem(key,'1');
+    }
+
+    // отваряне от query: ?id=<conv> ИЛИ ?ad=<ad_id>&to=<user_id> (+ msg/offer по желание)
     async function maybeStartFromQuery(){
       const u = new URL(location.href);
       const convId = u.searchParams.get('id');
       const adId   = u.searchParams.get('ad');
       const toUser = u.searchParams.get('to');
-      if (convId){ await openConversation(convId); return; }
+      const initialMsg = (u.searchParams.get('msg')||'').trim();
+      const offer      = (u.searchParams.get('offer')||'').trim();
+
+      if (convId){
+        await openConversation(convId);
+        await maybeSendInitial(convId, initialMsg, offer);
+        if (!sessionStorage.getItem(`sent_init_${convId}_${me.id}`) && initialMsg){
+          msgInput.value = initialMsg;
+          msgInput.dispatchEvent(new Event('input'));
+        }
+        return;
+      }
       if (adId && toUser){
-        // RPC: гарантира нишка и връща id
         const { data, error } = await sb.rpc('ensure_conversation', {
           p_ad_id: adId,
           p_other_user: toUser
         });
-        if (!error && data){ await loadThreads(); await openConversation(data); }
+        if (!error && data){
+          await loadThreads();
+          await openConversation(data);
+          await maybeSendInitial(data, initialMsg, offer);
+          if (!sessionStorage.getItem(`sent_init_${data}_${me.id}`) && initialMsg){
+            msgInput.value = initialMsg;
+            msgInput.dispatchEvent(new Event('input'));
+          }
+        } else if (error){
+          console.error(error);
+          alert('Неуспешно отваряне на чата.');
+        }
       }
     }
 
@@ -278,7 +313,6 @@
       // realtime за обновяване на inbox при нови съобщения (в която и да е нишка)
       sb.channel('inbox:'+me.id)
         .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload=>{
-          // ако съобщението е в нишка, в която участвам → рефреш списъка
           loadThreads();
         })
         .subscribe();
