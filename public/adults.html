@@ -19,6 +19,7 @@
     .rose-pill{background:linear-gradient(90deg,#fb7185,#f472b6); color:#fff;}
     .rose-soft{background:linear-gradient(180deg,#fff,#fff5f8);}
     .glass{background:rgba(255,255,255,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
+    .ring-rose-soft{box-shadow:0 0 0 1px rgba(244,114,182,.35) inset}
 
     /* CTA в хедъра */
     .cta-publish{
@@ -45,7 +46,7 @@
     .adult-card .mat{
       position:absolute; inset:0; pointer-events:none;
       background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,.0), rgba(255,182,193,.18)),
-                  linear-gradient(180deg, rgba(255,255,255,.0), rgba(0,0,0,.10));
+                  linear-gradient(180deg, rgba(255,255,255,.0), rgba(0,0,0,.08));
     }
     .adult-badge{
       position:absolute; top:10px; right:10px; z-index:10;
@@ -61,6 +62,8 @@
     .modal.is-open{display:block}
     .modal .backdrop{position:absolute; inset:0; background:rgba(15,23,42,.6); backdrop-filter: blur(2px)}
     .modal-card{position:relative; z-index:1}
+
+    /* видим тънък скрол за галерии */
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
@@ -69,39 +72,52 @@
     #ageGate{display:none}
     #ageGate.is-open{display:block}
 
-    /* ---------- КОСМЕТИКА ---------- */
-    .ring-rose-soft{box-shadow:0 0 0 1px rgba(244,114,182,.35) inset}
     .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:12px;font-weight:700}
     .btn-ghost{background:rgba(255,255,255,.8);border:1px solid rgba(15,23,42,.08)}
 
-    /* ---------- ПУБЛИКАТОР (от подадения частичен код) ---------- */
+    /* ---------- ПУБЛИКАТОР (нова светла визия + невидим вертикален скрол) ---------- */
     .overlay{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center}
     .overlay.show{display:flex}
-    .overlay .modal{display:block;position:relative;background:#0b1220;color:#e5e7eb;border:1px solid rgba(255,255,255,.08);
-      width:min(100vw - 24px,1100px);max-height:min(100vh - 24px,92vh);border-radius:20px;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.45)}
-    .overlay .m-head{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);
-      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0))}
+    .overlay .modal{
+      display:block;position:relative;background:#ffffff;color:#0f172a;
+      border:1px solid rgba(244,114,182,.25);
+      width:min(100vw - 24px,1100px);
+      max-height:min(100vh - 24px,92vh);
+      border-radius:20px;overflow:auto;
+      box-shadow:0 20px 60px rgba(244,114,182,.22);
+    }
+    .overlay .m-head{
+      padding:14px 16px;border-bottom:1px solid rgba(244,114,182,.25);
+      background:linear-gradient(180deg,#fff5f8,rgba(255,255,255,.6));
+      position:sticky;top:0;z-index:2;
+      display:flex;align-items:center;gap:.75rem;
+    }
+    .overlay .m-head h2{font-weight:800;font-size:1.05rem}
+    .overlay .m-head .hint{color:#64748b;font-size:.8rem}
     .overlay .m-body{padding:16px}
     .overlay .row{display:flex;gap:10px;flex-wrap:wrap}
-    .overlay label{font-size:.9rem;color:#cbd5e1}
+    .overlay label{font-size:.9rem;color:#0f172a}
     .overlay input,.overlay textarea,.overlay select{
-      width:100%;background:#0f172a;border:1px solid rgba(255,255,255,.14);color:#e5e7eb;border-radius:12px;padding:.6rem .75rem}
+      width:100%;background:#fff;border:1px solid #e5e7eb;color:#0f172a;border-radius:12px;padding:.6rem .75rem
+    }
     .overlay textarea{min-height:120px}
-    .overlay .btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#fff;cursor:pointer}
-    .overlay .btn.primary{background:linear-gradient(90deg,#22c55e,#10b981);color:#0b1220;border:1px solid rgba(255,255,255,.18)}
-    .overlay .closeX{appearance:none;background:transparent;border:0;color:#cbd5e1;font-weight:800;font-size:16px;border-radius:10px;padding:6px 10px}
-    .overlay .closeX:hover{background:rgba(255,255,255,.08);color:#fff}
-    .overlay .opt{flex:1 1 200px;padding:10px;border:1px dashed rgba(255,255,255,.2);border-radius:12px;cursor:pointer}
-    .overlay .opt.active{outline:2px solid #6366f1;background:linear-gradient(180deg,#0f172a,#0b1324)}
-    .overlay .note{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:rgba(34,197,94,.08);border:1px dashed rgba(34,197,94,.35);color:#d1fae5}
-    .overlay .err{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:rgba(244,63,94,.08);border:1px dashed rgba(244,63,94,.35);color:#fecaca}
-    .thumb{display:none;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-top:6px;border:1px solid rgba(255,255,255,.14)}
+    .overlay .btn{background:#fff;border:1px solid #e5e7eb;color:#0f172a;cursor:pointer}
+    .overlay .btn.primary{background:linear-gradient(90deg,#fb7185,#f472b6);color:#fff;border:1px solid rgba(251,113,133,.5)}
+    .overlay .closeX{appearance:none;background:transparent;border:0;color:#0f172a;font-weight:800;font-size:16px;border-radius:10px;padding:6px 10px;margin-right:.25rem}
+    .overlay .closeX:hover{background:#f8fafc}
+    .overlay .opt{flex:1 1 200px;padding:12px;border:1px dashed #e5e7eb;border-radius:12px;cursor:pointer;background:#fff}
+    .overlay .opt.active{outline:2px solid #f472b6;background:linear-gradient(180deg,#fff,#fff7fb)}
+    .overlay .note{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#ecfdf5;border:1px dashed #86efac;color:#065f46}
+    .overlay .err{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#fff1f2;border:1px dashed #fecdd3;color:#b91c1c}
+    .thumb{display:none;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-top:6px;border:1px solid #e5e7eb}
+
+    /* невидим вертикален скрол в модала */
+    .overlay .modal{-ms-overflow-style:none;scrollbar-width:none}
+    .overlay .modal::-webkit-scrollbar{width:0;height:0}
+
+    /* FAB */
     .fab{position:fixed;right:16px;bottom:18px;z-index:65;padding:.8rem 1.1rem;border-radius:9999px;
-      background:linear-gradient(135deg,#fb7185,#a78bfa);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 30px rgba(0,0,0,.35);font-weight:800}
-    .glass.pad{max-width:1100px;margin:0 auto 36px;display:block;padding:14px;border:1px solid rgba(244,114,182,.25);border-radius:16px}
-    .sec{font-weight:900}
-    .muted{opacity:.8}
-    .pill{padding:.35rem .7rem;border-radius:9999px;background:#fff;border:1px solid #e5e7eb}
+      background:linear-gradient(135deg,#fb7185,#a78bfa);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 30px rgba(0,0,0,.25);font-weight:800}
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -138,7 +154,7 @@
             </div>
             <div class="flex items-center gap-3">
               <button id="openPublish" class="cta-publish">Публикувай</button>
-              <img src="favicon.png" class="w-9 h-9 rounded ring-rose-soft" alt="">
+              <!-- Премахнат „горен десен бутон“ (иконата) -->
             </div>
           </div>
         </div>
@@ -167,15 +183,8 @@
       </div>
     </main>
 
-    <!-- Как работи MAX (от частичния блок) -->
-    <aside class="glass pad">
-      <h3 class="sec">Как работи MAX</h3>
-      <p class="muted">Публикуваш → избираш план → плащаш по външен линк (BGN/EUR) → админът одобрява → твоята обява с <b>MAX</b> излиза най-отгоре. Всяка нова MAX измества предишната.</p>
-      <div class="row" style="margin-top:10px">
-        <button id="openPublish2" class="btn primary">💖 Публикувай 18+ услуга</button>
-        <a class="btn" href="/auth.html?next=/adults.html">Вход/Регистрация</a>
-      </div>
-    </aside>
+    <!-- Премахнато: aside „Как работи MAX“ -->
+
   </div>
 
   <!-- FAB -->
@@ -249,13 +258,15 @@
     </div>
   </div>
 
-  <!-- ---------- ПУБЛИКУВАЙ МОДАЛ (от частичния код) ---------- -->
+  <!-- ---------- ПУБЛИКУВАЙ МОДАЛ ---------- -->
   <div id="publishModal" class="overlay" role="dialog" aria-modal="true">
     <div class="modal">
       <div class="m-head">
         <button class="closeX" id="closePublish">✕</button>
-        <h2>Публикувай услуга · 18+</h2>
-        <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
+        <div>
+          <h2>Публикувай услуга · 18+</h2>
+          <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
+        </div>
       </div>
       <div class="m-body">
         <input id="hpt" type="text" style="position:absolute;left:-9999px;opacity:0" autocomplete="off" tabindex="-1" aria-hidden="true">
@@ -303,8 +314,8 @@
 
         <label>План</label>
         <div class="row">
-          <div id="optFree" class="opt active"><b>FREE</b><br><small class="muted">Стандартна позиция (след одобрение)</small></div>
-          <div id="optMax" class="opt"><b>MAX</b><br><small class="muted">Най-предни позиции (след плащане и одобрение)</small></div>
+          <div id="optFree" class="opt active"><b>FREE</b><br><small class="text-slate-500">Стандартна позиция (след одобрение)</small></div>
+          <div id="optMax" class="opt"><b>MAX</b><br><small class="text-slate-500">Най-предни позиции (след плащане и одобрение)</small></div>
         </div>
 
         <div id="upsell" class="note" style="display:none">
@@ -313,7 +324,7 @@
             <a id="btnMaxBGN" class="btn" aria-disabled="true">Купи MAX (BGN)</a>
             <a id="btnMaxEUR" class="btn" aria-disabled="true">Купи MAX (EUR)</a>
           </div>
-          <small class="muted">Линкът ще съдържа <code>ref=PID</code> за бързо одобрение.</small>
+          <small class="text-slate-500">Линкът ще съдържа <code>ref=PID</code> за бързо одобрение.</small>
         </div>
 
         <div id="msg" class="err" style="display:none"></div>
@@ -326,10 +337,10 @@
   </div>
 
   <script>
-    // ---------- Supabase клиент (ползваме ENV от env.js) ----------
+    // ---------- Supabase клиент ----------
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // ---------- Валутни помощници за офертата ----------
+    // ---------- Валутни помощници ----------
     const FX = { EUR_BGN: 1.95583 };
     const utils = {
       fmt(n,c){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:c}).format(Number(n)||0); }
@@ -634,10 +645,10 @@
     const openModalPub = ()=> pubModal.classList.add('show');
     const closeModalPub= ()=> pubModal.classList.remove('show');
 
-    document.getElementById('openPublish').addEventListener('click', openModalPub);
-    document.getElementById('openPublish2').addEventListener('click', openModalPub);
-    document.getElementById('floatingCta').addEventListener('click', openModalPub);
-    document.getElementById('closePublish').addEventListener('click', closeModalPub);
+    document.getElementById('openPublish')?.addEventListener('click', openModalPub);
+    document.getElementById('openPublish2')?.addEventListener?.('click', openModalPub); // безопасно, ако някъде съществува
+    document.getElementById('floatingCta')?.addEventListener('click', openModalPub);
+    document.getElementById('closePublish')?.addEventListener('click', closeModalPub);
     pubModal.addEventListener('click', (e)=>{ if(e.target===pubModal) closeModalPub(); });
     window.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && pubModal.classList.contains('show')) closeModalPub(); });
 
@@ -720,9 +731,11 @@
         // активирай MAX линковете
         const bgn = document.getElementById('btnMaxBGN');
         const eur = document.getElementById('btnMaxEUR');
-        bgn.href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
-        eur.href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
-        bgn.setAttribute('aria-disabled','false'); eur.setAttribute('aria-disabled','false');
+        if (bgn && eur){
+          bgn.href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
+          eur.href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
+          bgn.setAttribute('aria-disabled','false'); eur.setAttribute('aria-disabled','false');
+        }
 
         msg.className='note';
         msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
