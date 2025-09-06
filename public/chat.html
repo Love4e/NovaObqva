@@ -136,7 +136,6 @@
 
     // =============== Data loading ===============
     async function loadThreads(filter=''){
-      // моите разговори
       const { data: parts, error } = await sb
         .from('conversation_participants')
         .select('conversation_id')
@@ -148,15 +147,13 @@
         return;
       }
 
-      let q = sb.from('conversations')
+      const { data: convs, error: convErr } = await sb
+        .from('conversations')
         .select('id, ad_id, updated_at')
         .in('id', convIds)
         .order('updated_at', { ascending: false });
-
-      const { data: convs, error: convErr } = await q;
       if (convErr){ console.error(convErr); return; }
 
-      // заглавия на обяви
       const adIds = [...new Set((convs||[]).map(c=>c.ad_id).filter(Boolean))];
       let adMap = {};
       if (adIds.length){
@@ -164,7 +161,6 @@
         (ads||[]).forEach(a => adMap[a.id] = a.title);
       }
 
-      // последно съобщение
       const { data: lastMsgs } = await sb
         .from('messages')
         .select('conversation_id, content, created_at')
@@ -224,7 +220,6 @@
         })
         .subscribe();
 
-      // маркирай активната нишка
       [...threadsEl.querySelectorAll('[data-conv]')].forEach(b=>{
         b.classList.toggle('bg-slate-100', b.dataset.conv===convId);
       });
@@ -250,49 +245,78 @@
       msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
     });
 
+    // ===== helper: гарантира, че даден user е участник (required=true за мен; false за другия) =====
+    async function ensureParticipant(convId, userId, required=false){
+      const { data: exists } = await sb
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('conversation_id', convId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (exists) return true;
+
+      const { error } = await sb
+        .from('conversation_participants')
+        .insert([{ conversation_id: convId, user_id: userId }]);
+      if (error){
+        console.warn('ensureParticipant error', { convId, userId, error });
+        if (required) throw error; // за мен е задължително
+        return false;
+      }
+      return true;
+    }
+
     // =============== New conversation (client-side, без RPC) ===============
     async function ensureConversationClient(adId, otherUserId) {
       if (!isUUID(adId) || !isUUID(otherUserId)) throw new Error('Невалиден UUID параметър.');
 
-      // потърси разговор за тази обява, където УЧАСТВАМ
-      const { data: myConvs } = await sb
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', me.id);
+      // 1) Потърси всички разговори за тази обява
+      const { data: convs, error: cErr } = await sb
+        .from('conversations')
+        .select('id')
+        .eq('ad_id', adId);
+      if (cErr) throw cErr;
 
-      const myConvIds = (myConvs||[]).map(r=>r.conversation_id);
-      let existing = null;
+      if (convs?.length){
+        const ids = convs.map(c=>c.id);
 
-      if (myConvIds.length){
-        // от тях – тези за конкретната обява
-        const { data: convs } = await sb
-          .from('conversations')
-          .select('id')
-          .in('id', myConvIds)
-          .eq('ad_id', adId);
+        // 1.1) Зареди участниците за тези разговори
+        const { data: parts, error: pErr } = await sb
+          .from('conversation_participants')
+          .select('conversation_id, user_id')
+          .in('conversation_id', ids);
+        if (pErr) throw pErr;
 
-        const ids = (convs||[]).map(c=>c.id);
-        if (ids.length){
-          // виж дали другият участник е вътре (можем да виждаме участниците, защото сме част от разговора)
-          const { data: parts } = await sb
-            .from('conversation_participants')
-            .select('conversation_id, user_id')
-            .in('conversation_id', ids);
+        const byConv = new Map();
+        (parts||[]).forEach(p=>{
+          if(!byConv.has(p.conversation_id)) byConv.set(p.conversation_id, new Set());
+          byConv.get(p.conversation_id).add(p.user_id);
+        });
 
-          const byConv = new Map();
-          (parts||[]).forEach(p=>{
-            if (!byConv.has(p.conversation_id)) byConv.set(p.conversation_id, new Set());
-            byConv.get(p.conversation_id).add(p.user_id);
-          });
-          for (const id of ids){
-            const set = byConv.get(id) || new Set();
-            if (set.has(me.id) && set.has(otherUserId)){ existing = id; break; }
+        // a) ако има нишка с двамата → върни я
+        for (const id of ids){
+          const set = byConv.get(id) || new Set();
+          if (set.has(me.id) && set.has(otherUserId)) return id;
+        }
+        // b) ако има нишка с другия, но без теб → добави теб и върни
+        for (const id of ids){
+          const set = byConv.get(id) || new Set();
+          if (set.has(otherUserId) && !set.has(me.id)){
+            await ensureParticipant(id, me.id, true);
+            return id;
+          }
+        }
+        // c) ако има нишка с теб, но без другия → опитай да добавиш другия и върни
+        for (const id of ids){
+          const set = byConv.get(id) || new Set();
+          if (set.has(me.id) && !set.has(otherUserId)){
+            await ensureParticipant(id, otherUserId, false); // опит, но не блокира
+            return id;
           }
         }
       }
-      if (existing) return existing;
 
-      // няма – създай нова нишка и добави двамата
+      // 2) Няма подходяща нишка → създай нова
       const { data: created, error: createErr } = await sb
         .from('conversations')
         .insert([{ ad_id: adId }])
@@ -301,13 +325,10 @@
       if (createErr) throw createErr;
 
       const convId = created.id;
-      const { error: partErr } = await sb
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: convId, user_id: me.id },
-          { conversation_id: convId, user_id: otherUserId }
-        ]);
-      if (partErr) throw partErr;
+
+      // 3) Добави участниците поотделно (мен – задължително; другия – best effort)
+      await ensureParticipant(convId, me.id, true);
+      await ensureParticipant(convId, otherUserId, false);
 
       return convId;
     }
@@ -365,7 +386,7 @@
       await loadThreads();
       await maybeStartFromQuery();
 
-      // realtime обновяване на inbox при нови съобщения (в която и да е нишка)
+      // realtime обновяване на inbox при нови съобщения
       sb.channel('inbox:'+Math.random().toString(36).slice(2))
         .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, ()=>loadThreads(threadSearch.value.trim()))
         .subscribe();
