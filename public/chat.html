@@ -42,9 +42,7 @@
           <h2 class="font-semibold">Разговори</h2>
           <div class="ml-auto text-xs text-slate-500">обновява се в реално време</div>
         </div>
-        <div id="threads" class="max-h-[70vh] overflow-auto divide-y">
-          <!-- списък -->
-        </div>
+        <div id="threads" class="max-h-[70vh] overflow-auto divide-y"></div>
       </aside>
 
       <!-- Chat pane -->
@@ -57,9 +55,7 @@
           <a id="adLink" class="hidden text-sm px-3 py-1.5 rounded-lg border hover:bg-slate-50">Към обявата</a>
         </div>
 
-        <div id="chatLog" class="flex-1 p-3 md:p-4 overflow-auto space-y-2 scroll-snap-y bg-slate-50">
-          <!-- съобщения -->
-        </div>
+        <div id="chatLog" class="flex-1 p-3 md:p-4 overflow-auto space-y-2 scroll-snap-y bg-slate-50"></div>
 
         <form id="composer" class="p-3 md:p-4 border-t flex items-end gap-2">
           <textarea id="msg" rows="1" placeholder="Напиши съобщение..."
@@ -92,9 +88,7 @@
         ? `<a href="account.html" class="px-3 py-1.5 rounded-lg border hover:bg-slate-50 text-sm">Моят профил</a>
            <button id="logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`
         : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
-      document.getElementById('logout')?.addEventListener('click', async ()=>{
-        await sb.auth.signOut(); location.href='/';
-      });
+      document.getElementById('logout')?.addEventListener('click', async ()=>{ await sb.auth.signOut(); location.href='/'; });
     }
 
     // ===== Chat state =====
@@ -140,7 +134,6 @@
     }
 
     async function loadThreads(){
-      // 1) моите разговори (през participants)
       const { data: parts, error } = await sb
         .from('conversation_participants')
         .select('conversation_id')
@@ -149,14 +142,12 @@
       const convIds = (parts||[]).map(p=>p.conversation_id);
       if (convIds.length===0){ threadsEl.innerHTML = `<div class="px-4 py-6 text-slate-500">Нямаш разговори.</div>`; return; }
 
-      // 2) разговорите
       const { data: convs } = await sb
         .from('conversations')
         .select('id, ad_id, updated_at')
         .in('id', convIds)
         .order('updated_at', { ascending: false });
 
-      // 3) заглавия на обяви
       const adIds = [...new Set((convs||[]).map(c=>c.ad_id).filter(Boolean))];
       let adMap = {};
       if (adIds.length){
@@ -164,7 +155,6 @@
         (ads||[]).forEach(a => adMap[a.id] = a.title);
       }
 
-      // 4) взимаме последно съобщение на пакет
       const { data: lastMsgs } = await sb
         .from('messages')
         .select('conversation_id, content, created_at')
@@ -181,7 +171,6 @@
       if (messagesSub){ sb.removeChannel(messagesSub); messagesSub=null; }
       currentConv = convId;
 
-      // инфо за разговора
       const { data: conv } = await sb.from('conversations').select('id, ad_id, updated_at').eq('id', convId).maybeSingle();
       let adTitle = 'Разговор', adId = null;
       if (conv?.ad_id){
@@ -193,7 +182,6 @@
       if (adId){ adLinkEl.href = 'ad.html?id='+encodeURIComponent(adId); adLinkEl.classList.remove('hidden'); }
       else { adLinkEl.classList.add('hidden'); }
 
-      // зареди съобщения
       const { data: msgs } = await sb
         .from('messages')
         .select('id, conversation_id, user_id, content, created_at')
@@ -203,7 +191,6 @@
       chatLogEl.innerHTML = (msgs||[]).map(bubble).join('');
       chatLogEl.scrollTop = chatLogEl.scrollHeight;
 
-      // realtime
       messagesSub = sb
         .channel('room:'+convId)
         .on('postgres_changes', {
@@ -214,12 +201,10 @@
         }, payload => {
           chatLogEl.insertAdjacentHTML('beforeend', bubble(payload.new));
           chatLogEl.scrollTop = chatLogEl.scrollHeight;
-          // обнови inbox без да мигаш
           loadThreads();
         })
         .subscribe();
 
-      // маркирай активния в списъка
       [...threadsEl.querySelectorAll('[data-conv]')].forEach(b=>{
         b.classList.toggle('bg-slate-100', b.dataset.conv===convId);
       });
@@ -243,20 +228,115 @@
       msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
     });
 
-    // отваряне от query: ?id=<conv> ИЛИ ?ad=<ad_id>&to=<user_id>
+    // ——— Т.3: автоматично изпращане на първо съобщение от ?msg / ?offer ———
+    async function maybeSendInitial(convId, initialMsg, offerRaw){
+      const key = `sent_init_${convId}_${me.id}`;
+      if ((!initialMsg && !offerRaw) || sessionStorage.getItem(key)==='1') return;
+
+      let text = (initialMsg || '').trim();
+      if (offerRaw){
+        const v = parseFloat(offerRaw);
+        const offerText = Number.isFinite(v) ? `Оферта: ${v.toFixed(2)} лв.` : `Оферта: ${offerRaw}`;
+        text = text ? `${text}\n\n${offerText}` : offerText;
+      }
+      if (!text) return;
+
+      const { error } = await sb.from('messages').insert([{ conversation_id: convId, user_id: me.id, content: text }]);
+      if (!error) sessionStorage.setItem(key,'1');
+    }
+
+    // ——— Fallback: намиране/създаване на разговор от клиента, ако RPC-то е двусмислено ———
+    async function ensureConversationClient(adId, otherUserId) {
+      // 1) Потърси съществуващи разговори за тази обява
+      const { data: convs, error: convErr } = await sb
+        .from('conversations')
+        .select('id')
+        .eq('ad_id', adId);
+      if (convErr) throw convErr;
+
+      if (convs?.length) {
+        const convIds = convs.map(c => c.id);
+        const { data: parts } = await sb
+          .from('conversation_participants')
+          .select('conversation_id, user_id')
+          .in('conversation_id', convIds);
+
+        const byConv = new Map();
+        (parts || []).forEach(p => {
+          if (!byConv.has(p.conversation_id)) byConv.set(p.conversation_id, new Set());
+          byConv.get(p.conversation_id).add(p.user_id);
+        });
+
+        for (const id of convIds) {
+          const set = byConv.get(id) || new Set();
+          if (set.has(me.id) && set.has(otherUserId)) return id;
+        }
+      }
+
+      // 2) Няма – създай нов
+      const { data: created, error: createErr } = await sb
+        .from('conversations')
+        .insert([{ ad_id: adId }])
+        .select('id')
+        .single();
+      if (createErr) throw createErr;
+      const convId = created.id;
+
+      // 3) Добави участниците
+      const { error: partErr } = await sb
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: convId, user_id: me.id },
+          { conversation_id: convId, user_id: otherUserId }
+        ]);
+      if (partErr) throw partErr;
+
+      return convId;
+    }
+
+    // отваряне от query: ?id=<conv> ИЛИ ?ad=<ad_id>&to=<user_id> (+ msg/offer по желание)
     async function maybeStartFromQuery(){
       const u = new URL(location.href);
       const convId = u.searchParams.get('id');
       const adId   = u.searchParams.get('ad');
       const toUser = u.searchParams.get('to');
-      if (convId){ await openConversation(convId); return; }
+      const initialMsg = (u.searchParams.get('msg')||'').trim();
+      const offer      = (u.searchParams.get('offer')||'').trim();
+
+      if (convId){
+        await openConversation(convId);
+        await maybeSendInitial(convId, initialMsg, offer);
+        if (!sessionStorage.getItem(`sent_init_${convId}_${me.id}`) && initialMsg){
+          msgInput.value = initialMsg;
+          msgInput.dispatchEvent(new Event('input'));
+        }
+        return;
+      }
+
       if (adId && toUser){
-        // RPC: гарантира нишка и връща id
-        const { data, error } = await sb.rpc('ensure_conversation', {
-          p_ad_id: adId,
-          p_other_user: toUser
-        });
-        if (!error && data){ await loadThreads(); await openConversation(data); }
+        // 1) Опитай RPC
+        let conv;
+        const rpc = await sb.rpc('ensure_conversation', { p_ad_id: adId, p_other_user: toUser });
+        if (!rpc.error && rpc.data) {
+          conv = rpc.data;
+        } else {
+          console.warn('RPC ambiguous, using client fallback:', rpc.error);
+          try {
+            conv = await ensureConversationClient(adId, toUser);
+          } catch (e) {
+            console.error(e);
+            alert('Неуспешно отваряне на чата.');
+            return;
+          }
+        }
+
+        await loadThreads();
+        await openConversation(conv);
+        await maybeSendInitial(conv, initialMsg, offer);
+        if (!sessionStorage.getItem(`sent_init_${conv}_${me.id}`) && initialMsg){
+          msgInput.value = initialMsg;
+          msgInput.dispatchEvent(new Event('input'));
+        }
       }
     }
 
@@ -275,10 +355,9 @@
       await loadThreads();
       await maybeStartFromQuery();
 
-      // realtime за обновяване на inbox при нови съобщения (в която и да е нишка)
+      // realtime за обновяване на inbox при нови съобщения
       sb.channel('inbox:'+me.id)
-        .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload=>{
-          // ако съобщението е в нишка, в която участвам → рефреш списъка
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, ()=>{
           loadThreads();
         })
         .subscribe();
