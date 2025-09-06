@@ -93,7 +93,7 @@
     </footer>
   </div>
 
-  <!-- CTA + Romantic Publisher Modal -->
+  <!-- CTA + Publisher Modal -->
   <button id="floatingCta" class="fab">Публикувай</button>
   <div id="publishModal" class="overlay" role="dialog" aria-modal="true">
     <div class="modal">
@@ -126,7 +126,7 @@
           </div>
           <div style="flex:1;min-width:180px">
             <label>Категория</label>
-            <select id="f_cat" disabled><option selected>Услуги</option></select>
+            <select id="f_cat" disabled><option selected>Услуги 18+</option></select>
           </div>
         </div>
 
@@ -155,10 +155,12 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // === Supabase (същият проект като админ панела) ===
     const SUPABASE_URL  = "https://cmiylzpmpwqbacjoqtkx.supabase.co";
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtaXlsenBtcHdxYmFjam9xdGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODcwMDUsImV4cCI6MjA2OTU2MzAwNX0.FY2d1NSGTmw6SydxT_V0cKF7Kp2USbp91VdfO_eqZz8";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+    // Плащания за MAX
     const PAY_MAX_BGN = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10";
     const PAY_MAX_EUR = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527";
 
@@ -167,35 +169,39 @@
     const hide = el => el.style.display='none';
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // Витрина
+    // === Витрина: чете от ads (одобрени + 18+) ===
     async function loadAds(){
       const empty = $('#empty'); const list = $('#ads');
       try{
         const { data, error } = await sb
-          .from('objects')
-          .select('id,title,description,image_url,price,is_max,priority,created_at,category')
-          .eq('category','Услуги')
-          .order('is_max',{ascending:false})
-          .order('priority',{ascending:false})
-          .order('created_at',{ascending:false});
+          .from('ads')
+          .select('id,title,description,images,cover_image,price,plan_name,is_adult,approved_at')
+          .eq('ad_status','approved')
+          .eq('is_adult', true)
+          .order('plan_name', { ascending:false })     // MAX над FREE (M идва пред F)
+          .order('approved_at', { ascending:false });
         if(error) throw error;
         if(!data?.length){ show(empty); list.innerHTML=''; return; }
         hide(empty);
-        list.innerHTML = data.map(ad => `
+        list.innerHTML = data.map(ad => {
+          const img = (Array.isArray(ad.images) && ad.images[0]) || ad.cover_image || '';
+          const isMax = String(ad.plan_name||'').toUpperCase()==='MAX';
+          return `
           <article class="ad">
-            ${ad.is_max ? '<div class="ribbon">MAX</div>' : ''}
-            ${ad.image_url ? `<img src="${ad.image_url}" alt="">` : ''}
+            ${isMax ? '<div class="ribbon">MAX</div>' : ''}
+            ${img ? `<img src="${img}" alt="">` : ''}
             <div class="ad-body">
               <h3>${ad.title||''}</h3>
               <p>${ad.description||''}</p>
-              <p class="price">${ad.price ? ad.price + ' лв.' : ''}</p>
+              <p class="price">${ad.price ? (ad.price + ' лв.') : ''}</p>
             </div>
-          </article>`).join('');
+          </article>`;
+        }).join('');
       }catch{ show(empty); }
     }
     loadAds();
 
-    // Модал
+    // === Модал ===
     const openModal = () => document.getElementById('publishModal').style.display='flex';
     const closeModal = () => document.getElementById('publishModal').style.display='none';
     document.getElementById('openPublish').onclick = openModal;
@@ -203,19 +209,30 @@
     document.getElementById('closePublish').onclick = closeModal;
     document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
-    // UI план (само визуално)
+    // === Избор на план (UI) ===
     let plan='FREE', createdPid=null;
-    document.getElementById('optFree').onclick = ()=>{ plan='FREE'; document.getElementById('optFree').classList.add('active'); document.getElementById('optMax').classList.remove('active'); hide(document.getElementById('upsell')); };
-    document.getElementById('optMax').onclick  = ()=>{ plan='MAX';  document.getElementById('optMax').classList.add('active');  document.getElementById('optFree').classList.remove('active'); show(document.getElementById('upsell')); };
+    const upsell = document.getElementById('upsell');
+    document.getElementById('optFree').onclick = ()=>{
+      plan='FREE';
+      document.getElementById('optFree').classList.add('active');
+      document.getElementById('optMax').classList.remove('active');
+      hide(upsell);
+    };
+    document.getElementById('optMax').onclick  = ()=>{
+      plan='MAX';
+      document.getElementById('optMax').classList.add('active');
+      document.getElementById('optFree').classList.remove('active');
+      show(upsell);
+    };
 
     // Преглед на изображение
     const thumb = document.getElementById('thumb');
     document.getElementById('f_image').addEventListener('input', () => {
       const url = document.getElementById('f_image').value.trim();
-      if(/^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url)){ thumb.src=url; thumb.style.display='block'; } else { thumb.style.display='none'; }
+      if(/^https?:\/\/.+\.(png|jpe?g|gif|webp|avif)$/i.test(url)){ thumb.src=url; thumb.style.display='block'; } else { thumb.style.display='none'; }
     });
 
-    // Брониран insert: без user_id, без спорни колони
+    // === Изпращане към таблица ads (pending + is_adult) ===
     async function submitAd(){
       const msg = document.getElementById('msg'); msg.style.display='none'; msg.textContent='';
       if(document.getElementById('hpt').value){ return; } // honeypot
@@ -226,36 +243,61 @@
       const description = document.getElementById('f_desc').value.trim();
       const image_url = document.getElementById('f_image').value.trim();
 
-      if(title.length<3 || description.length<20){ msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; show(msg); return; }
-      if(price!==null && (!isFinite(price)||price<0)){ msg.textContent='Невалидна цена.'; show(msg); return; }
-
-      const attempts = [
-        { title, description, image_url, status:'pending', price },
-        { title, description, image_url, status:'pending' },
-        { title, description, image_url },
-        { title, description }
-      ];
-
-      let pid=null, lastError=null;
-      for (const payload of attempts){
-        try{
-          const { data, error } = await sb.from('pending_places').insert(payload).select('id').single();
-          if(error) throw error;
-          pid = data.id; break;
-        }catch(e){ lastError = e; }
+      if(title.length<3 || description.length<20){
+        msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).';
+        msg.className='err'; show(msg); return;
+      }
+      if(price!==null && (!isFinite(price)||price<0)){
+        msg.textContent='Невалидна цена.'; msg.className='err'; show(msg); return;
       }
 
-      if(!pid){
-        msg.className='err'; msg.textContent='Грешка: ' + (lastError?.message || lastError || 'insert failed'); show(msg); return;
+      // стойности за план
+      const plan_name = plan;                          // 'FREE' или 'MAX'
+      const plan_currency = 'BGN';
+      const plan_price = plan==='MAX' ? 39.99 : 0;     // може да промениш по желание
+      const payment_status = 'unpaid';
+
+      // payload към ads
+      const payload = {
+        title,
+        description,
+        price,
+        category: 'Услуги 18+',
+        city: null,
+        images: image_url ? [image_url] : null,
+        cover_image: image_url || null,
+
+        plan_name,
+        plan_currency,
+        plan_price,
+        payment_status,
+
+        is_adult: true,
+        ad_status: 'pending'
+      };
+
+      try{
+        const { data, error } = await sb.from('ads').insert(payload).select('id').single();
+        if(error) throw error;
+
+        const pid = data.id;
+        createdPid = pid;
+
+        // активирай MAX линковете (след изпращане)
+        document.getElementById('btnMaxBGN').href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
+        document.getElementById('btnMaxEUR').href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
+        document.getElementById('btnMaxBGN').setAttribute('aria-disabled','false');
+        document.getElementById('btnMaxEUR').setAttribute('aria-disabled','false');
+
+        msg.className='note';
+        msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
+        show(msg);
+        // по желание: closeModal() след 2–3 сек
+      }catch(e){
+        msg.className='err';
+        msg.textContent='Грешка при изпращане: ' + (e?.message || e);
+        show(msg);
       }
-
-      createdPid = pid;
-      document.getElementById('btnMaxBGN').href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
-      document.getElementById('btnMaxEUR').href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
-
-      msg.className='note';
-      msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
-      show(msg);
     }
     document.getElementById('sendAd').onclick = submitAd;
   </script>
