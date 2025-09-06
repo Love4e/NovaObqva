@@ -104,6 +104,7 @@
       </div>
       <div class="m-body">
         <input id="hpt" type="text" style="position:absolute;left:-9999px;opacity:0" autocomplete="off" tabindex="-1" aria-hidden="true">
+
         <div class="row">
           <div style="flex:2;min-width:220px">
             <label>Заглавие <span class="hint">(до 80 знака)</span></label>
@@ -127,6 +128,22 @@
           <div style="flex:1;min-width:180px">
             <label>Категория</label>
             <select id="f_cat" disabled><option selected>Услуги 18+</option></select>
+          </div>
+        </div>
+
+        <!-- Контакти -->
+        <div class="row">
+          <div style="flex:1;min-width:200px">
+            <label>Име за контакт</label>
+            <input id="f_name" placeholder="Вашето име" />
+          </div>
+          <div style="flex:1;min-width:220px">
+            <label>Имейл за контакт</label>
+            <input id="f_email" type="email" placeholder="you@example.com" />
+          </div>
+          <div style="flex:1;min-width:180px">
+            <label>Телефон</label>
+            <input id="f_phone" placeholder="+359..." />
           </div>
         </div>
 
@@ -169,6 +186,15 @@
     const hide = el => el.style.display='none';
     document.getElementById('y').textContent = new Date().getFullYear();
 
+    // === Префил на имейл, ако е логнат
+    (async () => {
+      const { data:{ user } } = await sb.auth.getUser();
+      if (user?.email) {
+        const el = document.getElementById('f_email');
+        if (!el.value) el.value = user.email;
+      }
+    })();
+
     // === Витрина: чете от ads (одобрени + 18+) ===
     async function loadAds(){
       const empty = $('#empty'); const list = $('#ads');
@@ -178,7 +204,7 @@
           .select('id,title,description,images,cover_image,price,plan_name,is_adult,approved_at')
           .eq('ad_status','approved')
           .eq('is_adult', true)
-          .order('plan_name', { ascending:false })     // MAX над FREE (M идва пред F)
+          .order('plan_name', { ascending:false })
           .order('approved_at', { ascending:false });
         if(error) throw error;
         if(!data?.length){ show(empty); list.innerHTML=''; return; }
@@ -243,6 +269,10 @@
       const description = document.getElementById('f_desc').value.trim();
       const image_url = document.getElementById('f_image').value.trim();
 
+      const contact_name = document.getElementById('f_name').value.trim();
+      const contact_email = document.getElementById('f_email').value.trim();
+      const contact_phone = document.getElementById('f_phone').value.trim();
+
       if(title.length<3 || description.length<20){
         msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).';
         msg.className='err'; show(msg); return;
@@ -250,12 +280,22 @@
       if(price!==null && (!isFinite(price)||price<0)){
         msg.textContent='Невалидна цена.'; msg.className='err'; show(msg); return;
       }
+      if(!contact_email){
+        msg.textContent='Имейл за контакт е задължителен.'; msg.className='err'; show(msg); return;
+      }
 
       // стойности за план
       const plan_name = plan;                          // 'FREE' или 'MAX'
       const plan_currency = 'BGN';
-      const plan_price = plan==='MAX' ? 39.99 : 0;     // може да промениш по желание
+      const plan_price = plan==='MAX' ? 39.99 : 0;
       const payment_status = 'unpaid';
+
+      // ако е логнат, ще вземем email
+      let posted_by_email = null;
+      try {
+        const { data:{ user } } = await sb.auth.getUser();
+        posted_by_email = user?.email || null;
+      } catch {}
 
       // payload към ads
       const payload = {
@@ -271,6 +311,11 @@
         plan_currency,
         plan_price,
         payment_status,
+
+        contact_name: contact_name || null,
+        contact_email,
+        contact_phone: contact_phone || null,
+        posted_by_email,
 
         is_adult: true,
         ad_status: 'pending'
@@ -292,7 +337,6 @@
         msg.className='note';
         msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
         show(msg);
-        // по желание: closeModal() след 2–3 сек
       }catch(e){
         msg.className='err';
         msg.textContent='Грешка при изпращане: ' + (e?.message || e);
