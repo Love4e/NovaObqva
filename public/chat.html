@@ -222,16 +222,20 @@
       });
     }
 
-    // изпращане
+    // изпращане (без user_id – попълва се от тригъра в БД)
     composer.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const text = msgInput.value.trim();
       if (!text || !currentConv) return;
       msgInput.value=''; msgInput.style.height='auto';
       const { error } = await sb.from('messages').insert([{
-        conversation_id: currentConv, user_id: me.id, content: text
+        conversation_id: currentConv,
+        content: text
       }]);
-      if (error) { console.error(error); alert('Неуспешно изпращане.'); }
+      if (error) {
+        console.error('Send error:', error);
+        alert('Грешка при изпращане: ' + (error.message || 'неуспешна заявка'));
+      }
     });
 
     // авто-растеж на textarea
@@ -253,8 +257,16 @@
       }
       if (!text) return;
 
-      const { error } = await sb.from('messages').insert([{ conversation_id: convId, user_id: me.id, content: text }]);
-      if (!error) sessionStorage.setItem(key,'1');
+      const { error } = await sb.from('messages').insert([{
+        conversation_id: convId,
+        content: text
+      }]); // user_id се попълва от тригъра
+      if (error) {
+        console.error('Init send error:', error);
+        alert('Грешка при изпращане: ' + (error.message || 'неуспешна заявка'));
+        return;
+      }
+      sessionStorage.setItem(key,'1');
     }
 
     // отваряне от query: ?id=<conv> ИЛИ ?ad=<ad_id>&to=<user_id> (+ msg/offer по желание)
@@ -289,8 +301,8 @@
             msgInput.dispatchEvent(new Event('input'));
           }
         } else if (error){
-          console.error(error);
-          alert('Неуспешно отваряне на чата.');
+          console.error('ensure_conversation error:', error);
+          alert('Неуспешно отваряне на чата: ' + (error.message || 'неизвестна грешка'));
         }
       }
     }
