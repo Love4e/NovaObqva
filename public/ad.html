@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="bg">
 <head>
   <meta charset="utf-8" />
@@ -13,11 +13,39 @@
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+
+    /* ===== Мат стил за 18+ карти ===== */
+    .adult-card .aspect-video img{
+      filter: grayscale(.85) brightness(.86) saturate(.8) contrast(.95);
+      transform: scale(1.02);
+    }
+    .adult-card .adult-overlay{
+      position:absolute; inset:0;
+      background: radial-gradient(60% 60% at 50% 40%, rgba(0,0,0,.15), rgba(0,0,0,.45));
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      pointer-events:none;
+    }
+    .adult-card .adult-badge{
+      position:absolute; top:10px; right:10px; z-index:10;
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(239,68,68,.92); color:#fff; font-weight:800; font-size:12px;
+      box-shadow:0 8px 22px rgba(239,68,68,.35), inset 0 0 0 1px rgba(255,255,255,.18);
+    }
+    .adult-card .adult-badge .dot{
+      width:8px; height:8px; border-radius:999px; background:#fff;
+      box-shadow:0 0 0 2px rgba(255,255,255,.25);
+    }
+
+    /* ===== Възрастов pop-up ===== */
+    #ageGate{display:none}
+    #ageGate.is-open{display:block}
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-  <!-- HEADER (мобилното горно меню е ПРЕМАХНАТО) -->
+  <!-- HEADER -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
       <a href="/" class="flex items-center gap-2">
@@ -73,6 +101,29 @@
           <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M18.3 5.71 12 12l6.3 6.29-1.41 1.41L10.59 13.4 4.3 19.7 2.89 18.29 9.17 12 2.89 5.71 4.3 4.3l6.29 6.29 6.29-6.29z"/></svg>
         </button>
         <div id="adModalBody" class="p-4 md:p-6"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: възрастово потвърждение -->
+  <div id="ageGate" class="fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
+      <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border overflow-hidden">
+        <div class="px-5 py-4 border-b bg-rose-600 text-white flex items-center justify-between">
+          <strong class="tracking-wide">Съдържание 18+</strong>
+          <span class="inline-flex items-center gap-2 text-xs opacity-90">
+            <span class="w-2 h-2 rounded-full bg-white"></span> Внимание
+          </span>
+        </div>
+        <div class="p-5">
+          <p class="text-slate-700">Тази обява съдържа съдържание за пълнолетни. Навършени ли са Ви 18 години?</p>
+          <div class="mt-5 flex flex-col sm:flex-row gap-2 justify-end">
+            <button id="ageNo"  class="px-4 py-2 rounded-lg border hover:bg-slate-50">НЕ</button>
+            <button id="ageYes" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">ДА</button>
+          </div>
+          <p class="mt-3 text-xs text-slate-500">При „НЕ“ ще бъдете върнати на началната страница.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -155,17 +206,24 @@
               </span>`;
     }
 
+    // === 18+ детекция
+    const ADULT_CATEGORY = 'Услуги 18+';
+    const isAdultAd = (ad) => !!(ad?.is_adult || (ad?.category === ADULT_CATEGORY));
+
     function card(ad){
+      const adult = isAdultAd(ad);
       const images = Array.isArray(ad.images) ? ad.images : [];
       const thumb  = ad.cover_image || images[0] || 'https://placehold.co/600x340?text=NovaObqva';
       const city   = ad.city ? ` · ${esc(ad.city)}` : '';
       const cat    = ad.category ? ` · ${esc(ad.category)}` : '';
       const baseCur= (ad.price_currency || ad.plan_currency || 'BGN');
       return `
-        <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}"
-           class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative">
+        <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}" data-adult="${adult?1:0}"
+           class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative${adult?' adult-card':''}">
           <div class="aspect-video bg-slate-100 relative">
             ${planBadge(ad.plan_name)}
+            ${adult ? `<span class="adult-badge"><span class="dot"></span>18+</span>` : ''}
+            ${adult ? `<div class="adult-overlay"></div>` : ''}
             <img src="${thumb}" alt="" class="w-full h-full object-cover" loading="lazy">
           </div>
           <div class="p-4">
@@ -194,7 +252,7 @@
     async function fetchPage(){
       let query = sb
         .from('ads')
-        .select('id,title,price,price_currency,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency,user_id')
+        .select('id,title,price,price_currency,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency,user_id,is_adult') // + is_adult
         .eq('ad_status','approved');
 
       const q = qEl.value.trim();
@@ -237,7 +295,7 @@
     });
     moreBtn.addEventListener('click', async ()=>{ page += 1; await fetchPage(); });
 
-    // ---------- POPUP ----------
+    // ---------- POPUP (детайли) ----------
     const modalEl = document.getElementById('adModal');
     const modalBody = document.getElementById('adModalBody');
 
@@ -247,12 +305,43 @@
     modalEl?.addEventListener('click', (e)=>{ if (e.target.matches('[data-close]')) closeModal(); });
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && !modalEl.classList.contains('hidden')) closeModal(); });
 
+    // ---------- Age Gate ----------
+    const ageGateEl = document.getElementById('ageGate');
+    const ageYesBtn = document.getElementById('ageYes');
+    const ageNoBtn  = document.getElementById('ageNo');
+    let _pendingAdultAdId = null;
+
+    function openAgeGate(adId){
+      _pendingAdultAdId = adId;
+      ageGateEl.classList.add('is-open');
+      document.body.classList.add('overflow-hidden');
+    }
+    function closeAgeGate(){
+      ageGateEl.classList.remove('is-open');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    ageYesBtn.addEventListener('click', async ()=>{
+      const id = _pendingAdultAdId;
+      closeAgeGate();
+      if (id) { await openAdPopup(id); }
+      _pendingAdultAdId = null;
+    });
+    ageNoBtn.addEventListener('click', ()=>{
+      _pendingAdultAdId = null;
+      closeAgeGate();
+      location.href = '/';
+    });
+
+    // Делегация: клик по карта → age gate (ако е 18+) или директно popup
     document.addEventListener('click', async (e)=>{
       const link = e.target.closest('a.open-ad[data-ad-id]');
       if (!link) return;
-      if (e.metaKey || e.ctrlKey) return;
+      if (e.metaKey || e.ctrlKey) return; // не променяме поведението за Ctrl/⌘
       e.preventDefault();
       const id = link.getAttribute('data-ad-id');
+      const isAdult = link.getAttribute('data-adult') === '1';
+      if (isAdult){ openAgeGate(id); return; }
       await openAdPopup(id);
     });
 
@@ -275,7 +364,7 @@
 
     async function openAdPopup(id){
       const { data, error } = await sb.from('ads')
-        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,cover_image,images,plan_name,plan_currency')
+        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,cover_image,images,plan_name,plan_currency,is_adult')
         .eq('id', id).maybeSingle();
 
       if (error || !data){
@@ -287,7 +376,6 @@
       const big = imgs[0] || 'https://placehold.co/800x500?text=NovaObqva';
       const badge = (()=>{ const n=String(data.plan_name||'').toLowerCase(); let cls='bg-slate-100 text-slate-700 ring-1 ring-slate-200'; let label=data.plan_name||'Starter'; if(n==='pro'){cls='bg-violet-50 text-violet-800 ring-1 ring-violet-200';} if(n==='max'||n==='gold'){cls='bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label=(data.plan_name||'MAX').toUpperCase();} return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}"><svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${label}</span>`; })();
       const baseCur = (data.price_currency || data.plan_currency || 'BGN');
-
       const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
       modalBody.innerHTML = `
