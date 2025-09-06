@@ -604,17 +604,30 @@
       const plan_price = plan==='MAX' ? 39.99 : 0;
       const payment_status = 'unpaid';
 
-      let posted_by_email = null;
-      try{ const { data:{ user } } = await sb.auth.getUser(); posted_by_email = user?.email || null; }catch(_){}
+      let ownerId = null, posted_by_email = null;
+try {
+  const { data:{ user } } = await sb.auth.getUser();
+  if (user) { ownerId = user.id; posted_by_email = user.email; }
+} catch(_) {}
 
-      const payload = {
-        title, description, price,
-        category: 'Услуги 18+', city: null,
-        images: image_url ? [image_url] : null,
-        cover_image: image_url || null,
-        plan_name, plan_currency, plan_price, payment_status,
-        contact_name: contact_name || null, contact_email, contact_phone: contact_phone || null,
-        posted_by_email, is_adult: true, ad_status: 'pending'
+const payload = {
+  title, description, price,
+  category: 'Услуги 18+', city: null,
+  images: image_url ? [image_url] : null,
+  cover_image: image_url || null,
+
+  // план/плащане
+  plan_name, plan_currency, plan_price, payment_status,
+
+  // контакти + собственик
+  contact_name: contact_name || null,
+  contact_email,
+  contact_phone: contact_phone || null,
+  posted_by_email,
+  user_id: ownerId,        // ✅ добавено
+
+  is_adult: true,
+  ad_status: 'pending'
       };
 
       try{
