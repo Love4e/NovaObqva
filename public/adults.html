@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.png">
   <meta name="theme-color" content="#0e061a">
   <style>
-    :root{--bg:#0a0614;--fg:#e9ecf8;--muted:#aab0c8;--card:rgba(18,16,45,.45);--stroke:rgba(255,255,255,.15);--rose:#ff6aa7;--lav:#a78bfa;--sun:#f9c74f;--sea:#22d3ee;--mint:#10b981;--danger:#ef4444}
+    :root{--bg:#0a0614;--fg:#e9ecf8;--muted:#aab0c8;--card:rgba(18,16,45,.45);--stroke:rgba(255,255,255,.15);--rose:#ff6aa7;--lav:#a78bfa;--sun:#f9c74f;--sea:#22d3ee;--mint:#10b981}
     *{box-sizing:border-box}html,body{height:100%}
     body{margin:0;color:var(--fg);background:radial-gradient(1200px 600px at 65% -10%,rgba(167,139,250,.25),transparent),radial-gradient(1000px 500px at -10% 10%,rgba(34,211,238,.18),transparent),#0a0614;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;overflow-x:hidden}
     .space,.noise{position:fixed;inset:0;pointer-events:none;z-index:-1}
@@ -32,14 +32,11 @@
     .ribbon{position:absolute;top:10px;left:-12px;padding:6px 14px;border-radius:10px;background:linear-gradient(135deg,var(--rose),var(--lav));color:#fff;transform:rotate(-6deg);box-shadow:0 8px 20px rgba(255,106,167,.25)}
     .fab{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:999px;background:linear-gradient(135deg,var(--rose),var(--lav));border:1px solid rgba(255,255,255,.2);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 18px 40px rgba(167,139,250,.4)}
     .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(4,3,9,.6);backdrop-filter:blur(3px);z-index:80}
-
-    /* Modal with invisible scroll */
     .modal{width:min(780px,94vw);max-height:88vh;display:flex;flex-direction:column;border:1px solid var(--stroke);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(18,16,45,.6),rgba(18,16,45,.92))}
     .m-head{padding:18px 18px 10px;background:linear-gradient(90deg,rgba(255,106,167,.2),rgba(167,139,250,.2));border-bottom:1px solid var(--stroke);position:relative}
     .m-head h2{margin:0;font-size:22px}.closeX{position:absolute;right:12px;top:10px;width:36px;height:36px;border-radius:12px;border:1px solid var(--stroke);background:rgba(7,6,18,.5);color:#fff;cursor:pointer}
     .m-body{padding:16px;display:grid;gap:12px;overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .m-body::-webkit-scrollbar{width:0;height:0;background:transparent}
-
     label{font-size:14px;color:#dfe6ff}
     input,textarea,select{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--stroke);background:rgba(12,10,28,.9);color:#fff}
     textarea{min-height:100px;resize:vertical}
@@ -170,7 +167,6 @@
     const hide = el => el.style.display='none';
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // Витрина
     async function loadAds(){
       const empty = $('#empty'); const list = $('#ads');
       try{
@@ -198,7 +194,6 @@
     }
     loadAds();
 
-    // Модал
     const openModal = () => document.getElementById('publishModal').style.display='flex';
     const closeModal = () => document.getElementById('publishModal').style.display='none';
     document.getElementById('openPublish').onclick = openModal;
@@ -206,7 +201,7 @@
     document.getElementById('closePublish').onclick = closeModal;
     document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
-    // План (само UI; не го пращаме към БД)
+    // UI план (не се праща към БД)
     let plan='FREE', createdPid=null;
     document.getElementById('optFree').onclick = ()=>{ plan='FREE'; document.getElementById('optFree').classList.add('active'); document.getElementById('optMax').classList.remove('active'); hide(document.getElementById('upsell')); };
     document.getElementById('optMax').onclick  = ()=>{ plan='MAX';  document.getElementById('optMax').classList.add('active');  document.getElementById('optFree').classList.remove('active'); show(document.getElementById('upsell')); };
@@ -218,7 +213,7 @@
       if(/^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url)){ thumb.src=url; thumb.style.display='block'; } else { thumb.style.display='none'; }
     });
 
-    // Изпращане (без category, is_max_requested, plan)
+    // „Брониран“ insert с автоматичен fallback
     async function submitAd(){
       const msg = document.getElementById('msg'); msg.style.display='none'; msg.textContent='';
       if(document.getElementById('hpt').value){ return; } // honeypot
@@ -231,26 +226,37 @@
       if(title.length<3 || description.length<20){ msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; show(msg); return; }
       if(price!==null && (!isFinite(price)||price<0)){ msg.textContent='Невалидна цена.'; show(msg); return; }
 
-      try{
-        const { data:{ session } } = await sb.auth.getSession();
-        const user_id = session?.user?.id || null;
+      const { data:{ session } } = await sb.auth.getSession();
+      const user_id = session?.user?.id || null;
 
-        // КЛЮЧОВО: пращаме само сигурните полета
-        const payload = { title, description, image_url, price, status:'pending' };
-        const { data, error } = await sb.from('pending_places').insert({ ...payload, user_id }).select('id').single();
-        if(error) throw error;
-        createdPid = data.id;
+      // Опити: най-пълен -> минимален (заобикаля кеша)
+      const attempts = [
+        { title, description, image_url, status:'pending', price },     // пълен
+        { title, description, image_url, status:'pending' },            // без price
+        { title, description, image_url },                              // без status
+        { title, description }                                          // минимален
+      ];
 
-        // MAX бутони с PID (UI изборът plan само влияе кои бутони показваме)
-        document.getElementById('btnMaxBGN').href = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10?ref="+encodeURIComponent(createdPid)+"&action=approve_max&cur=BGN";
-        document.getElementById('btnMaxEUR').href = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527?ref="+encodeURIComponent(createdPid)+"&action=approve_max&cur=EUR";
-
-        msg.className='note';
-        msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
-        show(msg);
-      }catch(e){
-        msg.className='err'; msg.textContent='Грешка: '+(e?.message||e); show(msg);
+      let pid=null, lastError=null;
+      for (const payload of attempts){
+        try{
+          const { data, error } = await sb.from('pending_places').insert({ ...payload, user_id }).select('id').single();
+          if(error) throw error;
+          pid = data.id; break;
+        }catch(e){ lastError = e; }
       }
+
+      if(!pid){
+        msg.className='err'; msg.textContent='Грешка: ' + (lastError?.message || lastError || 'insert failed'); show(msg); return;
+      }
+
+      createdPid = pid;
+      document.getElementById('btnMaxBGN').href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
+      document.getElementById('btnMaxEUR').href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
+
+      msg.className='note';
+      msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
+      show(msg);
     }
     document.getElementById('sendAd').onclick = submitAd;
   </script>
