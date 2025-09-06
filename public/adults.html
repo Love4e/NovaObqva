@@ -106,7 +106,6 @@
         <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
       </div>
       <div class="m-body">
-        <!-- honeypot -->
         <input id="hpt" type="text" style="position:absolute;left:-9999px;opacity:0" autocomplete="off" tabindex="-1" aria-hidden="true">
         <div class="row">
           <div style="flex:2;min-width:220px">
@@ -169,7 +168,6 @@
     const $ = s => document.querySelector(s);
     const show = el => el.style.display='block';
     const hide = el => el.style.display='none';
-
     document.getElementById('y').textContent = new Date().getFullYear();
 
     // Витрина
@@ -201,14 +199,14 @@
     loadAds();
 
     // Модал
-    const openModal = () => $('#publishModal').style.display='flex';
-    const closeModal = () => $('#publishModal').style.display='none';
+    const openModal = () => document.getElementById('publishModal').style.display='flex';
+    const closeModal = () => document.getElementById('publishModal').style.display='none';
     document.getElementById('openPublish').onclick = openModal;
     document.getElementById('floatingCta').onclick = openModal;
     document.getElementById('closePublish').onclick = closeModal;
     document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
-    // План
+    // План (само UI; не го пращаме към БД)
     let plan='FREE', createdPid=null;
     document.getElementById('optFree').onclick = ()=>{ plan='FREE'; document.getElementById('optFree').classList.add('active'); document.getElementById('optMax').classList.remove('active'); hide(document.getElementById('upsell')); };
     document.getElementById('optMax').onclick  = ()=>{ plan='MAX';  document.getElementById('optMax').classList.add('active');  document.getElementById('optFree').classList.remove('active'); show(document.getElementById('upsell')); };
@@ -220,7 +218,7 @@
       if(/^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url)){ thumb.src=url; thumb.style.display='block'; } else { thumb.style.display='none'; }
     });
 
-    // Изпращане (без category и без is_max_requested)
+    // Изпращане (без category, is_max_requested, plan)
     async function submitAd(){
       const msg = document.getElementById('msg'); msg.style.display='none'; msg.textContent='';
       if(document.getElementById('hpt').value){ return; } // honeypot
@@ -237,13 +235,13 @@
         const { data:{ session } } = await sb.auth.getSession();
         const user_id = session?.user?.id || null;
 
-        // <-- ключовото: не включваме category и is_max_requested
-        const payload = { title, description, image_url, price, plan, status:'pending' };
+        // КЛЮЧОВО: пращаме само сигурните полета
+        const payload = { title, description, image_url, price, status:'pending' };
         const { data, error } = await sb.from('pending_places').insert({ ...payload, user_id }).select('id').single();
         if(error) throw error;
         createdPid = data.id;
 
-        // MAX бутони с референт
+        // MAX бутони с PID (UI изборът plan само влияе кои бутони показваме)
         document.getElementById('btnMaxBGN').href = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10?ref="+encodeURIComponent(createdPid)+"&action=approve_max&cur=BGN";
         document.getElementById('btnMaxEUR').href = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527?ref="+encodeURIComponent(createdPid)+"&action=approve_max&cur=EUR";
 
