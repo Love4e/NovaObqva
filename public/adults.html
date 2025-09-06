@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="bg">
 <head>
   <meta charset="utf-8" />
@@ -7,6 +7,8 @@
   <meta name="description" content="Astra18 — уникално 18+ изживяване с MAX позиции, стъклени карти, неонови орбити и романтичен pop-up.">
   <link rel="icon" href="/favicon.png">
   <meta name="theme-color" content="#0e061a">
+  <!-- Зареди общата конфигурация (същата като в админ панела) -->
+  <script src="env.js"></script>
   <style>
     :root{--bg:#0a0614;--fg:#e9ecf8;--muted:#aab0c8;--card:rgba(18,16,45,.45);--stroke:rgba(255,255,255,.15);--rose:#ff6aa7;--lav:#a78bfa;--sun:#f9c74f;--sea:#22d3ee;--mint:#10b981}
     *{box-sizing:border-box}html,body{height:100%}
@@ -170,11 +172,12 @@
     </div>
   </div>
 
+  <!-- Libs -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // === Supabase (същият проект като админ панела) ===
-    const SUPABASE_URL  = "https://cmiylzpmpwqbacjoqtkx.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtaXlsenBtcHdxYmFjam9xdGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODcwMDUsImV4cCI6MjA2OTU2MzAwNX0.FY2d1NSGTmw6SydxT_V0cKF7Kp2USbp91VdfO_eqZz8";
+    // === Supabase клиент: env.js → fallback към cmiylzpmpwqbacjoqtkx ===
+    const SUPABASE_URL  = (window.ENV && window.ENV.SUPABASE_URL)      || "https://cmiylzpmpwqbacjoqtkx.supabase.co";
+    const SUPABASE_ANON = (window.ENV && window.ENV.SUPABASE_ANON_KEY)  || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtaXlsenBtcHdxYmFjam9xdGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODcwMDUsImV4cCI6MjA2OTU2MzAwNX0.FY2d1NSGTmw6SydxT_V0cKF7Kp2USbp91VdfO_eqZz8";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
     // Плащания за MAX
@@ -290,7 +293,7 @@
       const plan_price = plan==='MAX' ? 39.99 : 0;
       const payment_status = 'unpaid';
 
-      // ако е логнат, ще вземем email
+      // ако е логнат, вземи email
       let posted_by_email = null;
       try {
         const { data:{ user } } = await sb.auth.getUser();
