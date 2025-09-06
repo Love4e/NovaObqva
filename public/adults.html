@@ -167,6 +167,7 @@
     const hide = el => el.style.display='none';
     document.getElementById('y').textContent = new Date().getFullYear();
 
+    // Витрина
     async function loadAds(){
       const empty = $('#empty'); const list = $('#ads');
       try{
@@ -194,6 +195,7 @@
     }
     loadAds();
 
+    // Модал
     const openModal = () => document.getElementById('publishModal').style.display='flex';
     const closeModal = () => document.getElementById('publishModal').style.display='none';
     document.getElementById('openPublish').onclick = openModal;
@@ -201,19 +203,19 @@
     document.getElementById('closePublish').onclick = closeModal;
     document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
-    // UI план (не се праща към БД)
+    // UI план (само визуално)
     let plan='FREE', createdPid=null;
     document.getElementById('optFree').onclick = ()=>{ plan='FREE'; document.getElementById('optFree').classList.add('active'); document.getElementById('optMax').classList.remove('active'); hide(document.getElementById('upsell')); };
     document.getElementById('optMax').onclick  = ()=>{ plan='MAX';  document.getElementById('optMax').classList.add('active');  document.getElementById('optFree').classList.remove('active'); show(document.getElementById('upsell')); };
 
-    // Мини преглед на изображение
+    // Преглед на изображение
     const thumb = document.getElementById('thumb');
     document.getElementById('f_image').addEventListener('input', () => {
       const url = document.getElementById('f_image').value.trim();
       if(/^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url)){ thumb.src=url; thumb.style.display='block'; } else { thumb.style.display='none'; }
     });
 
-    // „Брониран“ insert с автоматичен fallback
+    // Брониран insert: без user_id, без спорни колони
     async function submitAd(){
       const msg = document.getElementById('msg'); msg.style.display='none'; msg.textContent='';
       if(document.getElementById('hpt').value){ return; } // honeypot
@@ -223,24 +225,21 @@
       const price = priceRaw? Number(priceRaw) : null;
       const description = document.getElementById('f_desc').value.trim();
       const image_url = document.getElementById('f_image').value.trim();
+
       if(title.length<3 || description.length<20){ msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; show(msg); return; }
       if(price!==null && (!isFinite(price)||price<0)){ msg.textContent='Невалидна цена.'; show(msg); return; }
 
-      const { data:{ session } } = await sb.auth.getSession();
-      const user_id = session?.user?.id || null;
-
-      // Опити: най-пълен -> минимален (заобикаля кеша)
       const attempts = [
-        { title, description, image_url, status:'pending', price },     // пълен
-        { title, description, image_url, status:'pending' },            // без price
-        { title, description, image_url },                              // без status
-        { title, description }                                          // минимален
+        { title, description, image_url, status:'pending', price },
+        { title, description, image_url, status:'pending' },
+        { title, description, image_url },
+        { title, description }
       ];
 
       let pid=null, lastError=null;
       for (const payload of attempts){
         try{
-          const { data, error } = await sb.from('pending_places').insert({ ...payload, user_id }).select('id').single();
+          const { data, error } = await sb.from('pending_places').insert(payload).select('id').single();
           if(error) throw error;
           pid = data.id; break;
         }catch(e){ lastError = e; }
