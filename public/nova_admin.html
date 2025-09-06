@@ -67,8 +67,7 @@
     <div class="relative bg-white max-w-3xl w-[90%] rounded-2xl border shadow-lg overflow-hidden">
       <div class="flex items-center justify-between p-4 border-b">
         <div class="font-semibold flex items-center gap-2" id="mTitle">
-          Преглед
-          <span id="mAdultBadge" class="hidden text-[11px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">18+</span>
+          Преглед <span id="mAdultBadge" class="hidden text-[11px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">18+</span>
         </div>
         <button id="mClose" class="p-2 rounded-md hover:bg-slate-100">✕</button>
       </div>
@@ -182,6 +181,7 @@
     ];
     let PLAN_MAP = {};
 
+    // Форматиране на две валути
     function fmtBGN(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} лв.`; } }
     function fmtEUR(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'EUR'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} €`; } }
     function dual(amount, currency){
@@ -191,6 +191,9 @@
       return `${fmtBGN(val)}  ·  ${fmtEUR(val/EXRATE_EUR_BGN)}`;
     }
 
+    // Ключови думи за 18+ (fallback)
+    const ADULT_RE = /(18\+|18\+\s*обява|адалт|adult|ерот|интим|секс|only\s*fans|компаньон|еротичен|erot)/i;
+
     // ====== INIT / GUARD ======
     (async () => {
       const { data:{ user } } = await sb.auth.getUser();
@@ -199,7 +202,7 @@
 
       document.getElementById('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.href='/'; };
 
-      // Plans map
+      // Plans map (за линкове към плащане)
       try {
         const { data, error } = await sb.from('plans').select('id,name,pay_url,price_bgn,price_eur');
         if (!error && data?.length) {
@@ -229,59 +232,59 @@
     // ====== LOADERS ======
     async function loadPending(){
       const qEmail = document.getElementById('searchEmail').value.trim().toLowerCase();
-      // основен филтър: ad_status=pending И (is_adult=false или null)
-      let data = [], error = null;
+      let data = [];
       try {
+        // Използваме is_adult ако колоната съществува
         let q = sb.from('ads').select(`
-          id,title,price,city,category,created_at,is_adult,
+          id,title,price,city,category,created_at,is_adult,description,
           contact_name,contact_phone,contact_email,posted_by_email,
           plan_name,plan_currency,plan_price,payment_status
         `).eq('ad_status','pending').or('is_adult.is.false,is_adult.is.null').order('created_at',{ascending:true});
         if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
-        ({ data, error } = await q);
-        if (error) throw error;
+        const res = await q; if (res.error) throw res.error;
+        data = res.data;
       } catch(e) {
-        // fallback: няма is_adult колона -> филтрираме по категория без да разделяме
+        // Fallback: без is_adult -> махаме 18+ по ключови думи
         let q = sb.from('ads').select(`
-          id,title,price,city,category,created_at,
+          id,title,price,city,category,created_at,description,
           contact_name,contact_phone,contact_email,posted_by_email,
           plan_name,plan_currency,plan_price,payment_status
         `).eq('ad_status','pending').order('created_at',{ascending:true});
         if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
         const res = await q;
-        data = (res.data||[]).filter(r => !/18\+|adult|erot/i.test(r.category||''));
+        data = (res.data||[]).filter(r => !ADULT_RE.test(`${r.category||''} ${r.title||''} ${r.description||''}`));
       }
 
-      const wrap = document.getElementById('adsPending');
-      wrap.innerHTML = (data||[]).map(r => cardPending(r)).join('') || '<p class="text-slate-500">Няма чакащи.</p>';
+      document.getElementById('adsPending').innerHTML =
+        (data||[]).map(r => cardPending(r)).join('') || '<p class="text-slate-500">Няма чакащи.</p>';
     }
 
     async function loadAdultPending(){
       const qEmail = document.getElementById('searchEmailAdult').value.trim().toLowerCase();
-      let data = [], error = null;
+      let data = [];
       try {
         let q = sb.from('ads').select(`
-          id,title,price,city,category,created_at,is_adult,
+          id,title,price,city,category,created_at,is_adult,description,
           contact_name,contact_phone,contact_email,posted_by_email,
           plan_name,plan_currency,plan_price,payment_status
         `).eq('ad_status','pending').eq('is_adult', true).order('created_at',{ascending:true});
         if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
-        ({ data, error } = await q);
-        if (error) throw error;
+        const res = await q; if (res.error) throw res.error;
+        data = res.data;
       } catch(e) {
-        // fallback: търсим по категория 18+
+        // Fallback: улавяме по ключови думи
         let q = sb.from('ads').select(`
-          id,title,price,city,category,created_at,
+          id,title,price,city,category,created_at,description,
           contact_name,contact_phone,contact_email,posted_by_email,
           plan_name,plan_currency,plan_price,payment_status
         `).eq('ad_status','pending').order('created_at',{ascending:true});
         if (qEmail) q = q.ilike('posted_by_email','%' + qEmail + '%');
         const res = await q;
-        data = (res.data||[]).filter(r => /18\+|adult|erot/i.test(r.category||''));
+        data = (res.data||[]).filter(r => ADULT_RE.test(`${r.category||''} ${r.title||''} ${r.description||''}`));
       }
 
-      const wrap = document.getElementById('adsAdultPending');
-      wrap.innerHTML = (data||[]).map(r => cardPending(r, true)).join('') || '<p class="text-slate-500">Няма 18+ чакащи.</p>';
+      document.getElementById('adsAdultPending').innerHTML =
+        (data||[]).map(r => cardPending(r, true)).join('') || '<p class="text-slate-500">Няма 18+ чакащи.</p>';
     }
 
     async function loadApproved(){
@@ -305,14 +308,14 @@
     }
 
     function adultBadge(r, compact=false){
-      const isAdult = r?.is_adult === true || /18\+|adult|erot/i.test(r?.category||'');
+      const isAdult = r?.is_adult === true || ADULT_RE.test(`${r?.category||''} ${r?.title||''} ${r?.description||''}`);
       if (!isAdult) return '';
       return `<span class="${compact?'text-[10px] px-1.5 py-0.5':'text-[11px] px-2 py-0.5'} rounded-full bg-rose-100 text-rose-800 border border-rose-200">18+</span>`;
     }
 
     function cardPending(r, forceAdult=false){
       const currency = (r.plan_currency||'BGN').toUpperCase();
-      const isAdult = forceAdult || r?.is_adult === true || /18\+|adult|erot/i.test(r?.category||'');
+      const isAdult = forceAdult || r?.is_adult === true || ADULT_RE.test(`${r?.category||''} ${r?.title||''} ${r?.description||''}`);
       return `
       <div class="border rounded-xl p-4 ${isAdult?'ring-1 ring-rose-200':''}">
         <div class="flex items-start justify-between gap-4">
@@ -343,8 +346,9 @@
     function cardApproved(r){
       const cur = (r.plan_currency||'BGN').toUpperCase();
       const when = r.approved_at ? new Date(r.approved_at).toLocaleString('bg-BG') : '—';
+      const adult = r?.is_adult === true || ADULT_RE.test(`${r?.category||''} ${r?.title||''} ${r?.description||''}`);
       return `
-      <div class="border rounded-xl p-3 ${r?.is_adult ? 'ring-1 ring-rose-200' : ''}">
+      <div class="border rounded-xl p-3 ${adult ? 'ring-1 ring-rose-200' : ''}">
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-medium flex items-center gap-2">${esc(r.title)} ${adultBadge(r,true)}</div>
@@ -359,7 +363,7 @@
       </div>`;
     }
 
-    // ====== ACTIONS ======
+    // ====== ACTIONS (approve/reject) ======
     async function approve(id, payStatus){
       // if (payStatus !== 'paid' && !confirm('Тази обява не е маркирана като платена. Да продължа с одобрение?')) return;
       const { error } = await sb.from('ads').update({ ad_status:'approved', approved_at: new Date().toISOString() }).eq('id', id);
@@ -411,7 +415,7 @@
       document.getElementById('mContact').innerHTML = contactHTML;
 
       // Adult badge
-      const isAdult = data?.is_adult === true || /18\+|adult|erot/i.test(data?.category||'');
+      const isAdult = data?.is_adult === true || ADULT_RE.test(`${data?.category||''} ${data?.title||''} ${data?.description||''}`);
       document.getElementById('mAdultBadge').classList.toggle('hidden', !isAdult);
 
       // pay link
@@ -445,7 +449,7 @@
     }
     window.preview = preview;
 
-    // ====== MARK PAID ======
+    // ====== MARK PAID (RPC + fallback) ======
     async function markPaid(adId, pillEl, btnEl){
       try{
         btnEl.disabled = true;
