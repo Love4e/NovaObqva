@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <style>
+    /* Тема */
     body{background:
       radial-gradient(1200px 600px at -10% -10%, rgba(244,114,182,.18), transparent 60%),
       radial-gradient(1000px 600px at 120% 20%, rgba(99,102,241,.15), transparent 60%),
@@ -19,30 +20,80 @@
     .rose-soft{background:linear-gradient(180deg,#fff,#fff5f8);}
     .glass{background:rgba(255,255,255,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
     .ring-rose-soft{box-shadow:0 0 0 1px rgba(244,114,182,.35) inset}
-    .cta-publish{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.9rem 1.4rem;border-radius:9999px;font-weight:900;letter-spacing:.01em;background:linear-gradient(135deg,#fb7185 0%,#f472b6 55%,#a78bfa 100%);color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:0 12px 28px rgba(244,114,182,.35), inset 0 0 0 1px rgba(255,255,255,.15);transition:transform .15s ease, box-shadow .15s ease;}
+
+    /* CTA */
+    .cta-publish{
+      display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+      padding:.9rem 1.4rem;border-radius:9999px;font-weight:900;letter-spacing:.01em;
+      background:linear-gradient(135deg,#fb7185 0%,#f472b6 55%,#a78bfa 100%);color:#fff;
+      border:1px solid rgba(255,255,255,.35);
+      box-shadow:0 12px 28px rgba(244,114,182,.35), inset 0 0 0 1px rgba(255,255,255,.15);
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
     .cta-publish:hover{transform:translateY(-1px); box-shadow:0 16px 36px rgba(244,114,182,.45), inset 0 0 0 1px rgba(255,255,255,.2)}
-    .adult-card{border-radius:18px; overflow:hidden; border:1px solid rgba(244,114,182,.35); box-shadow:0 10px 24px rgba(244,114,182,.18); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;}
+
+    /* Карти 18+ */
+    .adult-card{
+      border-radius:18px; overflow:hidden; border:1px solid rgba(244,114,182,.35);
+      box-shadow:0 10px 24px rgba(244,114,182,.18);
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
     .adult-card:hover{ transform:translateY(-2px); box-shadow:0 14px 34px rgba(244,114,182,.28); border-color:rgba(244,114,182,.55); }
-    .adult-card .aspect-video img{filter: grayscale(.35) brightness(.98) saturate(.92) contrast(.98); transform: scale(1.01);}
-    .adult-card .mat{position:absolute; inset:0; pointer-events:none; background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,.0), rgba(255,182,193,.18)), linear-gradient(180deg, rgba(255,255,255,.0), rgba(0,0,0,.08));}
-    .adult-badge{position:absolute; top:10px; right:10px; z-index:10; display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; font-weight:900; letter-spacing:.02em; background:linear-gradient(90deg,#fb7185,#f472b6); color:#fff; box-shadow:0 8px 22px rgba(244,114,182,.45), inset 0 0 0 1px rgba(255,255,255,.25);}
+    .adult-card .aspect-video img{
+      filter: grayscale(.35) brightness(.98) saturate(.92) contrast(.98);
+      transform: scale(1.01);
+    }
+    .adult-card .mat{
+      position:absolute; inset:0; pointer-events:none;
+      background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,.0), rgba(255,182,193,.18)),
+                  linear-gradient(180deg, rgba(255,255,255,.0), rgba(0,0,0,.08));
+    }
+    .adult-badge{
+      position:absolute; top:10px; right:10px; z-index:10;
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 12px; border-radius:999px; font-weight:900; letter-spacing:.02em;
+      background:linear-gradient(90deg,#fb7185,#f472b6); color:#fff;
+      box-shadow:0 8px 22px rgba(244,114,182,.45), inset 0 0 0 1px rgba(255,255,255,.25);
+    }
     .adult-badge .dot{width:10px; height:10px; border-radius:999px; background:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+
+    /* Модали (общо) */
     .modal{position:fixed; inset:0; z-index:50; display:none}
     .modal.is-open{display:block}
     .modal .backdrop{position:absolute; inset:0; background:rgba(15,23,42,.6); backdrop-filter: blur(2px)}
     .modal-card{position:relative; z-index:1}
+
+    /* видим тънък хор. скрол за галерии */
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+
+    /* Възрастов гейт */
     #ageGate{display:none}
     #ageGate.is-open{display:block}
+
     .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:12px;font-weight:700}
     .btn-ghost{background:rgba(255,255,255,.8);border:1px solid rgba(15,23,42,.08)}
+
+    /* Публикатор – светла визия + „невидим“ вертикален скрол */
     .overlay{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center}
     .overlay.show{display:flex}
-    .overlay .modal{display:block;position:relative;background:#ffffff;color:#0f172a;border:1px solid rgba(244,114,182,.25);width:min(100vw - 24px,1100px);max-height:min(100vh - 24px,92vh);border-radius:20px;overflow:auto;box-shadow:0 20px 60px rgba(244,114,182,.22);-ms-overflow-style:none;scrollbar-width:none}
+    .overlay .modal{
+      display:block;position:relative;background:#ffffff;color:#0f172a;
+      border:1px solid rgba(244,114,182,.25);
+      width:min(100vw - 24px,1100px);
+      max-height:min(100vh - 24px,92vh);
+      border-radius:20px;overflow:auto;
+      box-shadow:0 20px 60px rgba(244,114,182,.22);
+      -ms-overflow-style:none;scrollbar-width:none
+    }
     .overlay .modal::-webkit-scrollbar{width:0;height:0}
-    .overlay .m-head{padding:14px 16px;border-bottom:1px solid rgba(244,114,182,.25);background:linear-gradient(180deg,#fff5f8,rgba(255,255,255,.6));position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:.75rem}
+    .overlay .m-head{
+      padding:14px 16px;border-bottom:1px solid rgba(244,114,182,.25);
+      background:linear-gradient(180deg,#fff5f8,rgba(255,255,255,.6));
+      position:sticky;top:0;z-index:2;
+      display:flex;align-items:center;gap:.75rem
+    }
     .overlay .m-head h2{font-weight:800;font-size:1.05rem}
     .overlay .m-head .hint{color:#64748b;font-size:.8rem}
     .overlay .m-body{padding:16px}
@@ -59,11 +110,15 @@
     .overlay .note{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#ecfdf5;border:1px dashed #86efac;color:#065f46}
     .overlay .err{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#fff1f2;border:1px dashed #fecdd3;color:#b91c1c}
     .thumb{display:none;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-top:6px;border:1px solid #e5e7eb}
-    .fab{position:fixed;right:16px;bottom:18px;z-index:65;padding:.8rem 1.1rem;border-radius:9999px;background:linear-gradient(135deg,#fb7185,#a78bfa);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 30px rgba(0,0,0,.25);font-weight:800}
+
+    /* FAB */
+    .fab{position:fixed;right:16px;bottom:18px;z-index:65;padding:.8rem 1.1rem;border-radius:9999px;
+      background:linear-gradient(135deg,#fb7185,#a78bfa);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 30px rgba(0,0,0,.25);font-weight:800}
   </style>
 </head>
 <body class="min-h-screen antialiased">
   <div class="page-wrap">
+    <!-- HEADER -->
     <header class="sticky top-0 z-30 glass border-b border-rose-100">
       <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
         <a href="/" class="flex items-center gap-2">
@@ -80,6 +135,7 @@
       </div>
     </header>
 
+    <!-- HERO -->
     <section class="py-8 md:py-10">
       <div class="max-w-6xl mx-auto px-4">
         <div class="rounded-2xl p-5 md:p-7 rose-soft border border-rose-100 shadow-[0_10px_30px_rgba(244,114,182,.12)]">
@@ -96,10 +152,11 @@
       </div>
     </section>
 
+    <!-- MAIN -->
     <main class="max-w-6xl mx-auto px-4 pb-10">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end mb-5">
-        <input id="q" placeholder="Търси в заглавие/описание" class="lg:col-span-2 h-11 w-full px-4 rounded-xl border" />
-        <input id="city" placeholder="Град" class="h-11 w-full px-4 rounded-xl border" />
+        <input id="q"    placeholder="Търси в заглавие/описание" class="lg:col-span-2 h-11 w-full px-4 rounded-xl border" />
+        <input id="city" placeholder="Град"                     class="h-11 w-full px-4 rounded-xl border" />
         <input id="pmin" type="number" min="0" step="0.01" placeholder="Мин. цена" class="h-11 w-full px-4 rounded-xl border" />
         <input id="pmax" type="number" min="0" step="0.01" placeholder="Макс. цена" class="h-11 w-full px-4 rounded-xl border" />
         <select id="sort" class="h-11 w-full px-4 rounded-xl border">
@@ -118,6 +175,7 @@
     </main>
   </div>
 
+  <!-- FAB -->
   <button id="floatingCta" class="fab">Публикувай</button>
 
   <!-- Детайлен модал -->
@@ -226,6 +284,7 @@
           </div>
         </div>
 
+        <!-- Контакти -->
         <div class="row">
           <div style="flex:1;min-width:200px">
             <label>Име за контакт</label>
@@ -266,10 +325,10 @@
   </div>
 
   <script>
-    // Supabase
+    /* Supabase */
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // Помощници за валути
+    /* Валутни помощници */
     const FX = { EUR_BGN: 1.95583 };
     const utils = {
       fmt(n,c){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:c}).format(Number(n)||0); }
@@ -289,7 +348,7 @@
       }
     };
 
-    // Навигация / Auth
+    /* Навигация / Auth */
     async function renderAuthAreas() {
       const { data: { user } } = await sb.auth.getUser();
       const d = document.getElementById('nav-auth-desktop');
@@ -304,7 +363,7 @@
     }
     renderAuthAreas();
 
-    // Листинг
+    /* Листинг */
     const listEl  = document.getElementById('list');
     const emptyEl = document.getElementById('empty');
     const moreBtn = document.getElementById('moreBtn');
@@ -409,7 +468,7 @@
     document.getElementById('searchBtn').addEventListener('click', ()=>search(true));
     moreBtn.addEventListener('click', async ()=>{ page += 1; await fetchPage(); });
 
-    // ---------- Модали ----------
+    /* Модали */
     const modalEl = document.getElementById('adModal');
     const modalBody = document.getElementById('adModalBody');
     function openModal(el){ el.classList.add('is-open'); document.body.classList.add('overflow-hidden'); }
@@ -421,7 +480,7 @@
     offerEl.addEventListener('click', (e)=>{ if (e.target.matches('[data-close], .backdrop')) closeModal(offerEl); });
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && offerEl.classList.contains('is-open')) closeModal(offerEl); });
 
-    // Делегация: клик по карта → popup
+    /* Делегация: клик по карта → popup */
     document.addEventListener('click', async (e)=>{
       const link = e.target.closest('a.open-ad[data-ad-id]');
       if (!link) return;
@@ -431,8 +490,12 @@
       await openAdPopup(id);
     });
 
-    // === ВРЪЗКА КЪМ ЧАТА (без RPC тук) ===
+    /* Връзка към чата (без RPC тук) */
     function goChat(adId, ownerId, msg='', offer=''){
+      if (!ownerId) {
+        alert('Тази обява е публикувана без профил. Свържи се с продавача по имейл/телефон от описанието.');
+        return;
+      }
       const q = new URLSearchParams({ ad: adId, to: ownerId });
       if (msg)   q.set('msg', msg);
       if (offer) q.set('offer', offer);
@@ -501,8 +564,24 @@
         });
       }
 
-      modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> goChat(data.id, data.user_id));
-      modalBody.querySelector('#offerBtn')?.addEventListener('click', ()=>{
+      // т.2: деактивирай чат/оферта ако няма owner
+      const canChat = !!data.user_id;
+      const chatBtn  = modalBody.querySelector('#chatBtn');
+      const offerBtn = modalBody.querySelector('#offerBtn');
+      if (!canChat){
+        [chatBtn, offerBtn].forEach(btn=>{
+          if (!btn) return;
+          btn.classList.add('opacity-60','cursor-not-allowed','pointer-events-none');
+          btn.setAttribute('title','Чатът е наличен само за обяви, публикувани от профил.');
+        });
+      }
+
+      chatBtn?.addEventListener('click', ()=> goChat(data.id, data.user_id));
+      offerBtn?.addEventListener('click', ()=>{
+        if (!canChat){
+          alert('Тази обява е публикувана без профил. Свържи се по имейл/телефон от описанието.');
+          return;
+        }
         offerEl.dataset.adId = data.id;
         offerEl.dataset.owner = data.user_id;
         openModal(offerEl);
@@ -512,7 +591,7 @@
       openModal(modalEl);
     }
 
-    // Live BGN/EUR
+    /* Live BGN/EUR за офертата */
     const offerAmount = document.getElementById('offerAmount');
     const offerPair   = document.getElementById('offerPair');
     offerAmount?.addEventListener('input', ()=>{
@@ -535,7 +614,7 @@
       goChat(adId, owner, msg, offer);
     });
 
-    // Възрастов gate
+    /* Възрастов gate */
     const ageGateEl = document.getElementById('ageGate');
     function openAgeGate(){ ageGateEl.classList.add('is-open'); document.body.classList.add('overflow-hidden'); }
     function closeAgeGate(){ ageGateEl.classList.remove('is-open'); document.body.classList.remove('overflow-hidden'); }
@@ -543,7 +622,7 @@
     document.getElementById('ageYes').addEventListener('click', ()=>{ try{ localStorage.setItem('adult_ok','1'); }catch(_){} closeAgeGate(); });
     document.getElementById('ageNo').addEventListener('click', ()=>{ try{ localStorage.removeItem('adult_ok'); }catch(_){} location.href = '/'; });
 
-    // Плащане + публикуване
+    /* Плащане + публикуване */
     const PAY_MAX_BGN = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10";
     const PAY_MAX_EUR = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527";
 
@@ -564,6 +643,7 @@
     optFree.addEventListener('click', ()=>{ plan='FREE'; optFree.classList.add('active'); optMax.classList.remove('active'); upsell.style.display='none'; });
     optMax.addEventListener('click',  ()=>{ plan='MAX';  optMax.classList.add('active');  optFree.classList.remove('active'); upsell.style.display='block'; });
 
+    // префил на имейл ако е логнат
     (async () => {
       try{
         const { data:{ user } } = await sb.auth.getUser();
@@ -574,6 +654,7 @@
       }catch(_){}
     })();
 
+    // thumb preview
     const thumb = document.getElementById('thumb');
     document.getElementById('f_image').addEventListener('input', () => {
       const url = document.getElementById('f_image').value.trim();
@@ -584,7 +665,7 @@
     async function submitAd(){
       const msg = document.getElementById('msg');
       msg.style.display='none'; msg.textContent='';
-      if(document.getElementById('hpt').value){ return; }
+      if(document.getElementById('hpt').value){ return; } // honeypot
 
       const title = document.getElementById('f_title').value.trim();
       const priceRaw = document.getElementById('f_price').value.trim();
@@ -595,45 +676,55 @@
       const contact_email = document.getElementById('f_email').value.trim();
       const contact_phone = document.getElementById('f_phone').value.trim();
 
-      if(title.length<3 || description.length<20){ msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; msg.className='err'; msg.style.display='block'; return; }
-      if(price!==null && (!isFinite(price)||price<0)){ msg.textContent='Невалидна цена.'; msg.className='err'; msg.style.display='block'; return; }
-      if(!contact_email){ msg.textContent='Имейл за контакт е задължителен.'; msg.className='err'; msg.style.display='block'; return; }
+      if(title.length<3 || description.length<20){
+        msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).';
+        msg.className='err'; msg.style.display='block'; return;
+      }
+      if(price!==null && (!isFinite(price)||price<0)){
+        msg.textContent='Невалидна цена.'; msg.className='err'; msg.style.display='block'; return;
+      }
+      if(!contact_email){
+        msg.textContent='Имейл за контакт е задължителен.'; msg.className='err'; msg.style.display='block'; return;
+      }
 
       const plan_name = plan;
       const plan_currency = 'BGN';
       const plan_price = plan==='MAX' ? 39.99 : 0;
       const payment_status = 'unpaid';
 
+      // т.1: запис на user_id ако е логнат
       let ownerId = null, posted_by_email = null;
-try {
-  const { data:{ user } } = await sb.auth.getUser();
-  if (user) { ownerId = user.id; posted_by_email = user.email; }
-} catch(_) {}
+      try {
+        const { data:{ user } } = await sb.auth.getUser();
+        if (user) { ownerId = user.id; posted_by_email = user.email; }
+      } catch(_) {}
 
-const payload = {
-  title, description, price,
-  category: 'Услуги 18+', city: null,
-  images: image_url ? [image_url] : null,
-  cover_image: image_url || null,
+      const payload = {
+        title, description, price,
+        category: 'Услуги 18+', city: null,
+        images: image_url ? [image_url] : null,
+        cover_image: image_url || null,
 
-  // план/плащане
-  plan_name, plan_currency, plan_price, payment_status,
+        // план/плащане
+        plan_name, plan_currency, plan_price, payment_status,
 
-  // контакти + собственик
-  contact_name: contact_name || null,
-  contact_email,
-  contact_phone: contact_phone || null,
-  posted_by_email,
-  user_id: ownerId,        // ✅ добавено
+        // контакти + собственик
+        contact_name: contact_name || null,
+        contact_email,
+        contact_phone: contact_phone || null,
+        posted_by_email,
+        user_id: ownerId,
 
-  is_adult: true,
-  ad_status: 'pending'
+        is_adult: true,
+        ad_status: 'pending'
       };
 
       try{
         const { data, error } = await sb.from('ads').insert(payload).select('id').single();
         if(error) throw error;
         const pid = data.id; createdPid = pid;
+
+        // активирай MAX линковете
         const bgn = document.getElementById('btnMaxBGN');
         const eur = document.getElementById('btnMaxEUR');
         if (bgn && eur){
@@ -641,6 +732,7 @@ const payload = {
           eur.href = `${"https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527"}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
           bgn.setAttribute('aria-disabled','false'); eur.setAttribute('aria-disabled','false');
         }
+
         msg.className='note';
         msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
         msg.style.display='block';
@@ -650,7 +742,7 @@ const payload = {
     }
     document.getElementById('sendAd')?.addEventListener('click', submitAd);
 
-    // ИНИТ
+    /* ИНИТ */
     search(true);
   </script>
 </body>
