@@ -8,15 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
-  <style>
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px}
-    .pill{border:1px solid #e5e7eb;border-radius:9999px;padding:.25rem .6rem;font-size:.75rem}
-    .muted{color:#64748b}
-    .warning{background:#fff7ed;border:1px dashed #fdba74;color:#9a3412}
-    .ok{background:#ecfdf5;border:1px dashed #86efac;color:#065f46}
-    .danger{background:#fff1f2;border:1px dashed #fecdd3;color:#b91c1c}
-    .avatar{width:92px;height:92px;border-radius:9999px;object-fit:cover;border:1px solid #e5e7eb}
-  </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 
@@ -52,58 +43,28 @@
   </header>
 
   <main class="max-w-5xl mx-auto p-4 md:p-6">
-    <!-- Банер за непълен профил -->
-    <div id="profileBanner" class="hidden mb-4 px-4 py-3 rounded-xl warning">
-      Попълнете име и телефон и качете снимка, за да активирате профила си.
+    <!-- Инфо за потребителя -->
+    <div class="bg-white rounded-2xl border p-4 md:p-6 mb-6">
+      <div id="userInfo" class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 grid place-items-center text-lg font-semibold">U</div>
+        <div>
+          <div class="text-lg font-semibold" id="uName">Потребител</div>
+          <div class="text-slate-600 text-sm" id="uEmail"></div>
+        </div>
+        <div class="flex-1"></div>
+        <a href="/submit.html" class="hidden px-4 py-2 rounded-xl border hover:bg-slate-50" id="btnNewAd">Нова обява</a>
+      </div>
     </div>
 
-    <!-- Профил: създаване/редакция (1 имейл = 1 профил) -->
-    <section class="card p-4 md:p-6 mb-6">
-      <div id="userInfo" class="flex items-start gap-4">
-        <img id="avatarImg" src="https://placehold.co/200x200?text=Avatar" alt="Аватар" class="avatar">
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <div class="text-lg font-semibold truncate" id="uName">Потребител</div>
-            <span class="pill muted" id="emailBadge">—</span>
-          </div>
-
-          <div class="grid sm:grid-cols-2 gap-3 mt-3">
-            <div>
-              <label class="text-sm text-slate-600">Име и фамилия</label>
-              <input id="fullName" class="mt-1 w-full rounded-xl border px-3 py-2" placeholder="напр. Иван Иванов">
-            </div>
-            <div>
-              <label class="text-sm text-slate-600">Телефон</label>
-              <input id="phone" class="mt-1 w-full rounded-xl border px-3 py-2" placeholder="+359...">
-            </div>
-          </div>
-
-          <div class="mt-3 flex flex-col sm:flex-row gap-3">
-            <div class="flex items-center gap-2">
-              <input id="avatarFile" type="file" accept="image/*" class="block text-sm">
-              <button id="uploadBtn" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-50 text-sm">Качи снимка</button>
-            </div>
-            <div class="flex-1"></div>
-            <a href="/submit.html" class="hidden px-4 py-2 rounded-xl border hover:bg-slate-50" id="btnNewAd">Нова обява</a>
-            <button id="saveProfile" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Запази профил</button>
-            <button id="logout" class="px-4 py-2 rounded-xl border hover:bg-slate-50">Изход</button>
-          </div>
-
-          <div id="profileMsg" class="hidden mt-3 px-3 py-2 rounded-lg text-sm"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Филтри/статуси + списък обяви -->
-    <section class="card p-4 md:p-6">
+    <!-- Филтри/статуси -->
+    <div class="bg-white rounded-2xl border p-4 md:p-6">
       <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-4">
         <div class="flex flex-wrap gap-2" id="filters">
-          <button data-f="all"      class="fbtn px-3 py-1.5 rounded-full border bg-slate-100">Всички <span class="ml-1 text-slate-500" id="c_all">0</span></button>
-          <button data-f="pending"  class="fbtn px-3 py-1.5 rounded-full border">Чакащи <span class="ml-1 text-slate-500" id="c_pending">0</span></button>
+          <button data-f="all"     class="fbtn px-3 py-1.5 rounded-full border bg-slate-100">Всички <span class="ml-1 text-slate-500" id="c_all">0</span></button>
+          <button data-f="pending" class="fbtn px-3 py-1.5 rounded-full border">Чакащи <span class="ml-1 text-slate-500" id="c_pending">0</span></button>
           <button data-f="approved" class="fbtn px-3 py-1.5 rounded-full border">Одобрени <span class="ml-1 text-slate-500" id="c_approved">0</span></button>
-          <button data-f="hidden"   class="fbtn px-3 py-1.5 rounded-full border">Скрити <span class="ml-1 text-slate-500" id="c_hidden">0</span></button>
-          <button data-f="unpaid"   class="fbtn px-3 py-1.5 rounded-full border">Неплатени <span class="ml-1 text-slate-500" id="c_unpaid">0</span></button>
-          <button data-f="active"   class="fbtn px-3 py-1.5 rounded-full border">Активни <span class="ml-1 text-slate-500" id="c_active">0</span></button>
+          <button data-f="hidden"  class="fbtn px-3 py-1.5 rounded-full border">Скрити <span class="ml-1 text-slate-500" id="c_hidden">0</span></button>
+          <button data-f="unpaid"  class="fbtn px-3 py-1.5 rounded-full border">Неплатени <span class="ml-1 text-slate-500" id="c_unpaid">0</span></button>
         </div>
         <div class="flex-1"></div>
         <input id="search" placeholder="търсене по заглавие…" class="border rounded-lg px-3 py-2 w-full md:w-64">
@@ -111,14 +72,13 @@
 
       <div id="list" class="space-y-3"></div>
       <p id="empty" class="text-center text-slate-500 py-8 hidden">Няма обяви по този филтър.</p>
-    </section>
+    </div>
   </main>
 
   <script>
     const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
 
-    // ==== Конфиг ====
-    const DEFAULT_PLAN_DAYS = 30; // ако няма expires_at в БД
+    // Fallback планове за pay линкове
     const FALLBACK_PLANS = {
       starter: {pay_url:{bgn:'https://checkout.revolut.com/payment-link/b9d03509-71b2-4c35-8d3a-43357e663650', eur:'https://checkout.revolut.com/payment-link/f776550f-0424-4656-aacb-3c1f06c6014b'}},
       pro:     {pay_url:{bgn:'https://checkout.revolut.com/payment-link/b0cc7f69-9a29-4559-8eed-a06ffc1b2604', eur:'https://checkout.revolut.com/payment-link/62ddc3ea-6192-4b5d-875b-a90d80235edf'}},
@@ -126,140 +86,122 @@
     };
     let PLAN_MAP = {}; // {id|nameLower: {pay_url:{bgn,eur}}}
 
-    // ==== Състояние ====
-    let USER=null, PROFILE=null, ADS=[], FILTER='all', SEARCH='';
+    let USER=null, ADS=[], FILTER='all', SEARCH='';
 
-    // ==== DOM ====
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const mLoginBtn = document.getElementById('mLoginBtn');
-    const mLogoutBtn = document.getElementById('mLogoutBtn');
-
-    const uName = document.getElementById('uName');
-    const emailBadge = document.getElementById('emailBadge');
-    const btnNewAd = document.getElementById('btnNewAd');
-    const profileBanner = document.getElementById('profileBanner');
-    const profileMsg = document.getElementById('profileMsg');
-
-    const avatarImg = document.getElementById('avatarImg');
-    const avatarFile = document.getElementById('avatarFile');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const fullName = document.getElementById('fullName');
-    const phone = document.getElementById('phone');
-    const saveProfileBtn = document.getElementById('saveProfile');
-    const logoutBtn2 = document.getElementById('logout');
-
-    // ==== Utils ====
-    function showMsg(type, text){
-      profileMsg.className = (type==='ok'?'ok':type==='danger'?'danger':'warning')+' mt-3 px-3 py-2 rounded-lg text-sm';
-      profileMsg.textContent = text; profileMsg.classList.remove('hidden');
-      setTimeout(()=>profileMsg.classList.add('hidden'), 4000);
-    }
-    function esc(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-    function fmtDate(ts){ return ts ? new Date(ts).toLocaleDateString('bg-BG') : '—'; }
-    function daysBetween(a,b){ const MS=86400000; return Math.ceil((a.getTime()-b.getTime())/MS); }
-
-    function computeExpiry(ad){
-      if (ad.expires_at) return new Date(ad.expires_at);
-      const base = new Date(ad.approved_at || ad.created_at);
-      if (isNaN(base)) return null;
-      const d = new Date(base); d.setDate(d.getDate()+DEFAULT_PLAN_DAYS);
-      return d;
-    }
-
-    // ==== Профил ====
-    async function ensureAuth(){
+    (async () => {
+      // guard
       const { data:{ user } } = await sb.auth.getUser();
-      if (!user) { location.href='/auth.html?redirectTo='+encodeURIComponent(location.href); throw new Error('noauth'); }
-      return user;
-    }
+      if (!user) { location.href='/auth.html?redirectTo='+encodeURIComponent(location.href); return; }
+      USER = user;
 
-    async function ensureProfileRow(){
-      // създава празен ред при първо логване (1 имейл = 1 профил по id)
-      const { data } = await sb.from('profiles').select('id').eq('id', USER.id).maybeSingle();
-      if (!data){
-        await sb.from('profiles').insert({ id: USER.id, email: USER.email, created_at: new Date().toISOString() });
-      }
-    }
+      // header login state
+      document.getElementById('loginBtn').classList.add('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
+      document.getElementById('mLoginBtn').classList.add('hidden');
+      document.getElementById('mLogoutBtn').classList.remove('hidden');
+      document.getElementById('logoutBtn').onclick = document.getElementById('mLogoutBtn').onclick = async () => { await sb.auth.signOut(); location.replace('/'); };
 
-    async function loadProfile(){
-      const { data } = await sb.from('profiles').select('email,full_name,phone,avatar_url').eq('id', USER.id).maybeSingle();
-      PROFILE = data || null;
-      const metaName = USER.user_metadata?.full_name || USER.user_metadata?.name || '';
-      uName.textContent = (PROFILE?.full_name || metaName || 'Потребител');
-      emailBadge.textContent = USER.email || (PROFILE?.email || '—');
-      fullName.value = PROFILE?.full_name || '';
-      phone.value = PROFILE?.phone || '';
-      if (PROFILE?.avatar_url) avatarImg.src = PROFILE.avatar_url;
+      // user info
+      const meta = user.user_metadata || {};
+      document.getElementById('uName').textContent = meta.full_name || meta.name || 'Потребител';
+      document.getElementById('uEmail').textContent = user.email || '';
+      document.getElementById('btnNewAd').classList.remove('hidden');
 
-      const incomplete = !(fullName.value.trim() && phone.value.trim() && (PROFILE?.avatar_url));
-      profileBanner.classList.toggle('hidden', !incomplete);
-    }
+      // load plan map (за коректен Pay линк)
+      try {
+        const { data, error } = await sb.from('plans').select('id,name,pay_url');
+        if (!error && data?.length) {
+          data.forEach(p=>{
+            let pay = p.pay_url;
+            if (typeof pay === 'string') { try{ pay=JSON.parse(pay); }catch{ pay={bgn:pay,eur:pay}; } }
+            PLAN_MAP[p.id] = {pay_url:pay};
+            if (p.name) PLAN_MAP[p.name.toLowerCase()] = {pay_url:pay};
+          });
+        }
+      } catch(_) {}
+      if (Object.keys(PLAN_MAP).length===0) PLAN_MAP = FALLBACK_PLANS;
 
-    async function uploadAvatar(){
-      const file = avatarFile.files?.[0];
-      if(!file){ showMsg('warning','Изберете файл за качване.'); return null; }
-      if(file.size > 5*1024*1024){ showMsg('danger','Файлът е по-голям от 5 MB.'); return null; }
-      const path = `${USER.id}/${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
-      const { data, error } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
-      if (error){ console.error(error); showMsg('danger','Грешка при качване на снимка.'); return null; }
-      const { data: pub } = sb.storage.from('avatars').getPublicUrl(data.path);
-      avatarImg.src = pub.publicUrl;
-      return pub.publicUrl;
-    }
+      // load ads
+      await loadAds();
 
-    async function saveProfile(){
-      let avatar_url = PROFILE?.avatar_url || null;
-      if (avatarFile.files?.length){ const url = await uploadAvatar(); if(url) avatar_url = url; }
+      // filters
+      document.querySelectorAll('.fbtn').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('bg-slate-100'));
+          b.classList.add('bg-slate-100');
+          FILTER = b.dataset.f;
+          render();
+        });
+      });
+      document.querySelector('.fbtn[data-f="all"]').click();
 
-      const full_name = fullName.value.trim();
-      const phoneVal  = phone.value.trim();
-      if (!full_name || !phoneVal){ showMsg('warning','Моля, попълнете име и телефон.'); return; }
+      // search
+      document.getElementById('search').addEventListener('input', e => { SEARCH=e.target.value.toLowerCase(); render(); });
 
-      const row = { id: USER.id, email: USER.email, full_name, phone: phoneVal, avatar_url, updated_at: new Date().toISOString() };
-      const { error } = await sb.from('profiles').upsert(row, { onConflict:'id' });
-      if (error){ console.error(error); showMsg('danger','Неуспешно запазване.'); return; }
+      // mobile menu
+      document.getElementById('menuToggle')?.addEventListener('click', () => {
+        document.getElementById('mobileMenu')?.classList.toggle('hidden');
+      });
 
-      showMsg('ok','Профилът е запазен успешно.');
-      profileBanner.classList.add('hidden');
-      await loadProfile();
-    }
+      // realtime (по избор)
+      sb.channel('user-ads')
+        .on('postgres_changes',{event:'*', schema:'public', table:'ads', filter:`user_id=eq.${USER.id}`}, payload => {
+          loadAds(); // re-render
+        })
+        .subscribe();
+    })();
 
-    // ==== Обяви ====
     async function loadAds(){
       const { data, error } = await sb.from('ads').select(`
-        id,title,created_at,approved_at,expires_at,ad_status,payment_status,
+        id,title,created_at,ad_status,payment_status,
         plan_name,plan_currency,plan_price,plan_id,
-        price,price_currency,
         cover_image,images
-      `).or(`user_id.eq.${USER.id},posted_by_email.eq.${USER.email}`).order('created_at', {ascending:false});
+      `).eq('user_id', USER.id).order('created_at', {ascending:false});
       if (error){ console.error(error); return; }
       ADS = data || [];
       // counters
-      const active = ADS.filter(a => { const ex = computeExpiry(a); return a.ad_status==='approved' && (ex ? ex.getTime() >= Date.now() : true); });
       document.getElementById('c_all').textContent = ADS.length;
       document.getElementById('c_pending').textContent = ADS.filter(a=>a.ad_status==='pending').length;
       document.getElementById('c_approved').textContent = ADS.filter(a=>a.ad_status==='approved').length;
       document.getElementById('c_hidden').textContent = ADS.filter(a=>a.ad_status==='hidden').length;
       document.getElementById('c_unpaid').textContent = ADS.filter(a=>(a.payment_status||'unpaid')!=='paid' && (a.ad_status!=='hidden')).length;
-      document.getElementById('c_active').textContent = active.length;
       render();
     }
 
+    function render(){
+      const wrap = document.getElementById('list');
+      let items = ADS.slice();
+
+      // filter by status
+      items = items.filter(a=>{
+        if (FILTER==='all') return true;
+        if (FILTER==='unpaid') return (a.payment_status||'unpaid')!=='paid' && (a.ad_status!=='hidden');
+        return a.ad_status===FILTER;
+      });
+
+      // search by title
+      if (SEARCH) items = items.filter(a => (a.title||'').toLowerCase().includes(SEARCH));
+
+      wrap.innerHTML = items.map(card).join('');
+      document.getElementById('empty').classList.toggle('hidden', items.length>0);
+    }
+
     function badgeStatus(s){
-      const map = { pending:'bg-amber-100 text-amber-800', approved:'bg-emerald-100 text-emerald-800', hidden:'bg-slate-200 text-slate-700' };
+      const map = {
+        pending:  'bg-amber-100 text-amber-800',
+        approved: 'bg-emerald-100 text-emerald-800',
+        hidden:   'bg-slate-200 text-slate-700'
+      };
       return `<span class="text-xs px-2 py-1 rounded ${map[s]||'bg-slate-100 text-slate-700'}">${s||'—'}</span>`;
     }
     function badgePay(s){
-      const map = { paid:'bg-emerald-100 text-emerald-800', manual:'bg-emerald-100 text-emerald-800', unpaid:'bg-rose-100 text-rose-800', failed:'bg-rose-100 text-rose-800' };
+      const map = {
+        paid:    'bg-emerald-100 text-emerald-800',
+        manual:  'bg-emerald-100 text-emerald-800',
+        unpaid:  'bg-rose-100 text-rose-800',
+        failed:  'bg-rose-100 text-rose-800'
+      };
       return `<span class="text-xs px-2 py-1 rounded ${map[(s||'unpaid')]}">${s||'unpaid'}</span>`;
-    }
-
-    function getPayLink(a){
-      const cur = (a.plan_currency||'BGN').toLowerCase();
-      const byId = PLAN_MAP[a.plan_id]?.pay_url?.[cur];
-      const byName = PLAN_MAP[(a.plan_name||'').toLowerCase()]?.pay_url?.[cur];
-      return byId || byName || '#';
     }
 
     function card(a){
@@ -267,18 +209,6 @@
       const cur = (a.plan_currency||'BGN').toUpperCase();
       const paid = (a.payment_status==='paid' || a.payment_status==='manual');
       const payLink = getPayLink(a);
-
-      const ex = computeExpiry(a);
-      const daysLeft = ex ? daysBetween(ex, new Date()) : null;
-      const expireLine = a.ad_status==='approved'
-        ? (ex ? `Изтича: <b>${fmtDate(ex)}</b> · ${daysLeft>=0 ? `<span class="text-emerald-700">${daysLeft} дни</span>` : `<span class="text-rose-600">изтекла</span>`}`
-               : 'Изтича: —')
-        : '';
-
-      const priceStr = (()=>{
-        try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:(a.price_currency||'BGN')}).format(Number(a.price||0)); }
-        catch{ return (Number(a.price||0)).toFixed(2)+' '+(a.price_currency||'BGN'); }
-      })();
 
       return `
         <div class="border rounded-2xl bg-white overflow-hidden">
@@ -292,9 +222,7 @@
                 <div class="hidden md:flex items-center gap-2">${badgeStatus(a.ad_status)} ${badgePay(a.payment_status)}</div>
               </div>
               <div class="text-sm text-slate-500 mt-0.5">Създадена: ${new Date(a.created_at).toLocaleString('bg-BG')}</div>
-              <div class="mt-1 text-sm text-slate-700">План: ${esc(a.plan_name||'—')} · ${Number(a.plan_price||0).toFixed(2)} ${cur}</div>
-              <div class="mt-1 text-sm text-slate-700">Цена в обявата: ${priceStr}</div>
-              ${expireLine ? `<div class="mt-1 text-sm">${expireLine}</div>` : ''}
+              <div class="mt-2 text-sm text-slate-700">План: ${esc(a.plan_name||'—')} · ${Number(a.plan_price||0).toFixed(2)} ${cur}</div>
               <div class="md:hidden mt-2 flex items-center gap-2">${badgeStatus(a.ad_status)} ${badgePay(a.payment_status)}</div>
             </div>
             <div class="p-3 md:p-4 flex flex-col items-stretch gap-2">
@@ -312,98 +240,15 @@
       `;
     }
 
-    function render(){
-      const wrap = document.getElementById('list');
-      let items = ADS.slice();
-
-      // filter by status
-      items = items.filter(a=>{
-        if (FILTER==='all') return true;
-        if (FILTER==='unpaid') return (a.payment_status||'unpaid')!=='paid' && (a.ad_status!=='hidden');
-        if (FILTER==='active') {
-          const ex = computeExpiry(a);
-          return a.ad_status==='approved' && (ex ? ex.getTime() >= Date.now() : true);
-        }
-        return a.ad_status===FILTER;
-      });
-
-      // search by title
-      if (SEARCH) items = items.filter(a => (a.title||'').toLowerCase().includes(SEARCH));
-
-      wrap.innerHTML = items.map(card).join('');
-      document.getElementById('empty').classList.toggle('hidden', items.length>0);
+    function getPayLink(a){
+      const cur = (a.plan_currency||'BGN').toLowerCase();
+      const byId = PLAN_MAP[a.plan_id]?.pay_url?.[cur];
+      const byName = PLAN_MAP[(a.plan_name||'').toLowerCase()]?.pay_url?.[cur];
+      return byId || byName || '#';
     }
 
-    // ==== Инициализация ====
-    (async () => {
-      // guard
-      const { data:{ user } } = await sb.auth.getUser();
-      if (!user) { location.href='/auth.html?redirectTo='+encodeURIComponent(location.href); return; }
-      USER = user;
-
-      // header login state
-      loginBtn.classList.add('hidden');
-      logoutBtn.classList.remove('hidden');
-      mLoginBtn.classList.add('hidden');
-      mLogoutBtn.classList.remove('hidden');
-      logoutBtn.onclick = mLogoutBtn.onclick = logoutBtn2.onclick = async () => { await sb.auth.signOut(); location.replace('/'); };
-      document.getElementById('menuToggle')?.addEventListener('click', () => {
-        document.getElementById('mobileMenu')?.classList.toggle('hidden');
-      });
-
-      // user info
-      const meta = user.user_metadata || {};
-      uName.textContent = meta.full_name || meta.name || 'Потребител';
-      emailBadge.textContent = user.email || '—';
-      btnNewAd.classList.remove('hidden');
-
-      // профил: създай ред ако липсва и зареди
-      await ensureProfileRow();
-      await loadProfile();
-
-      // планове (за правилни pay линкове)
-      try {
-        const { data, error } = await sb.from('plans').select('id,name,pay_url');
-        if (!error && data?.length) {
-          data.forEach(p=>{
-            let pay = p.pay_url;
-            if (typeof pay === 'string') { try{ pay=JSON.parse(pay); }catch{ pay={bgn:pay,eur:pay}; } }
-            PLAN_MAP[p.id] = {pay_url:pay};
-            if (p.name) PLAN_MAP[p.name.toLowerCase()] = {pay_url:pay};
-          });
-        }
-      } catch(_) {}
-      if (Object.keys(PLAN_MAP).length===0) PLAN_MAP = FALLBACK_PLANS;
-
-      // обяви
-      await loadAds();
-
-      // filters
-      document.querySelectorAll('.fbtn').forEach(b=>{
-        b.addEventListener('click', ()=>{
-          document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('bg-slate-100'));
-          b.classList.add('bg-slate-100');
-          FILTER = b.dataset.f;
-          render();
-        });
-      });
-      document.querySelector('.fbtn[data-f="all"]').click();
-
-      // search
-      document.getElementById('search').addEventListener('input', e => { SEARCH=e.target.value.toLowerCase(); render(); });
-
-      // събития за профила
-      uploadBtn.addEventListener('click', async (e)=>{ e.preventDefault(); await uploadAvatar(); });
-      saveProfileBtn.addEventListener('click', async ()=>{ await saveProfile(); });
-
-      // realtime (по избор)
-      sb.channel('user-ads')
-        .on('postgres_changes',{event:'*', schema:'public', table:'ads', filter:`user_id=eq.${USER.id}`}, payload => {
-          loadAds();
-        })
-        .subscribe();
-
-    })();
+    // utils
+    function esc(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
   </script>
 </body>
 </html>
