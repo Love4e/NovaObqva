@@ -212,6 +212,10 @@
 
   <!-- APP SCRIPT -->
   <script>
+    // ===== КЪДЕ ДА ВОДИ БУТОНЪТ "Виж всички обяви" (страницата с всички обяви + 18+) =====
+    // Смени пътя, ако файлът ти е с друго име.
+    const ALL_ADS_URL = 'ads-all.html';
+
     // Supabase client
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
     // === ADULT: категорията, която криеш от основния сайт
@@ -471,10 +475,6 @@
     // ===== FEATURE OVERLAY LOGIC =====
     const featureLayer = document.getElementById('featureLayer');
     const pageShell    = document.getElementById('pageShell');
-    document.getElementById('featClose').addEventListener('click', closeFeature);
-    document.getElementById('featEnter').addEventListener('click', closeFeature);
-    document.getElementById('featSkip').addEventListener('click', closeFeature);
-    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !featureLayer.classList.contains('is-hidden')) closeFeature(); });
 
     function closeFeature(){
       featureLayer.classList.add('is-hidden');
@@ -482,6 +482,21 @@
       pageShell.removeAttribute('aria-hidden');
       document.body.classList.remove('overflow-hidden');
     }
+
+    // Ново: зеленият бутон праща към страницата с всички обяви (+18)
+    document.getElementById('featEnter').addEventListener('click', ()=>{
+      location.href = ALL_ADS_URL;
+    });
+
+    document.getElementById('featClose').addEventListener('click', closeFeature);
+    document.getElementById('featSkip').addEventListener('click', closeFeature);
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !featureLayer.classList.contains('is-hidden')) closeFeature(); });
+
+    // Ново: клик извън съдържанието затваря overlay-а
+    featureLayer.addEventListener('click', (e)=>{
+      const inside = e.target.closest('.feature-card, .feature-header, .feature-actions');
+      if (!inside) closeFeature();
+    });
 
     async function loadFeatured(){
       // PRO / GOLD / VIP / MAX (case-insensitive), без 18+
@@ -495,7 +510,7 @@
 
       const wrap = document.getElementById('featList');
       if (error){ console.error(error); wrap.innerHTML = '<p class="text-slate-200">Неуспешно зареждане.</p>'; return; }
-      if (!data || !data.length){ wrap.innerHTML = '<p class="text-slate-2 00">Няма налични PRO/GOLD обяви в момента.</p>'; return; }
+      if (!data || !data.length){ wrap.innerHTML = '<p class="text-slate-200">Няма налични PRO/GOLD обяви в момента.</p>'; return; }
 
       wrap.innerHTML = data.map(ad=>{
         const imgArr = Array.isArray(ad.images) ? ad.images : [];
@@ -533,7 +548,7 @@
 <style>
   /* Анимирана преливаща лента */
   .nova-gradient-bar{
-    height: 4px;              /* х-1 е тънка; това е малко по-видимо */
+    height: 4px;
     background: linear-gradient(90deg,
       #10b981, #22d3ee, #6366f1, #a855f7, #f59e0b, #f43f5e, #10b981);
     background-size: 300% 100%;
@@ -543,25 +558,21 @@
     0%   { background-position:   0% 50%; }
     100% { background-position: 300% 50%; }
   }
-  /* достъпност: ако потребителят намалява анимациите */
   @media (prefers-reduced-motion: reduce){
     .nova-gradient-bar{ animation: none; }
   }
 </style>
 
 <footer class="bg-slate-900 text-slate-100 mt-12">
-  <!-- жива преливаща лента -->
   <div class="nova-gradient-bar"></div>
 
   <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-      <!-- Лого + бранд -->
       <a href="/" class="flex items-center gap-3">
         <img src="favicon.png" alt="NovaObqva" class="w-8 h-8 rounded">
         <span class="text-lg font-bold">NovaObqva</span>
       </a>
 
-      <!-- Facebook бутон -->
       <div class="flex items-center">
         <a
           href="https://www.facebook.com/profile.php?id=61580045685489"
@@ -570,14 +581,13 @@
           aria-label="NovaObqva във Facebook"
         >
           <svg viewBox="0 0 24 24" class="w-5 h-5" aria-hidden="true">
-            <path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.14 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.58v1.89h2.8l-.45 2.91h-2.35V22c4.78-.8 8.44-4.94 8.44-9.94Z"/>
+            <path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.14 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.58v1.89h2.8л-.45 2.91h-2.35V22c4.78-.8 8.44-4.94 8.44-9.94Z"/>
           </svg>
           <span class="text-sm">Facebook</span>
         </a>
       </div>
     </div>
 
-    <!-- Долен ред -->
     <div class="mt-10 border-t border-white/10 pt-4 text-xs text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
       <p>© <span id="yearNova"></span> NovaObqva — Платформата не е страна по сделките между потребителите.</p>
       <p class="opacity-80">Използвайки сайта, се съгласяваш с Общите условия и Политиките.</p>
@@ -621,7 +631,6 @@
     background:linear-gradient(90deg,#22c55e,#10b981);color:#0b1220
   }
   #smartLaunch .sl-btn-ghost{background:rgba(255,255,255,.06);color:#fff}
-  /* панел (стъпка 2) */
   #smartLaunch .sl-panel{display:none}
   #smartLaunch .sl-panel.is-open{display:block}
   #smartLaunch .sl-field{display:grid;gap:6px;margin-top:10px}
@@ -641,7 +650,6 @@
     margin-top:10px;display:flex;gap:8px;flex-wrap:wrap
   }
   #smartLaunch .sl-note{margin-top:6px;color:#94a3b8;font-size:11.5px}
-  /* по-широко на телефон – исканото „по-широко балонче“ */
   @media (max-width:480px){
     #smartLaunch .sl-bubble{width:min(94vw,420px)}
   }
@@ -655,7 +663,6 @@
         <button class="sl-x" id="slClose" aria-label="Затвори">✕</button>
       </div>
       <div class="sl-body">
-        <!-- Стъпка 1 -->
         <div id="slStep1" class="sl-step">
           <p class="sl-msg">Пусни я за минута — снимка, заглавие, цена. Да те насоча ли?</p>
           <div class="sl-row">
@@ -665,7 +672,6 @@
           <div class="sl-note">Без посредници. Всички планове с ДДС. Публикуване след успешно плащане.</div>
         </div>
 
-        <!-- Стъпка 2 (панел с избор/прогноза) -->
         <div id="slStep2" class="sl-panel">
           <div class="sl-field">
             <label for="slCat" class="text-xs text-slate-300">Категория</label>
@@ -706,7 +712,6 @@
   const root = document.getElementById('smartLaunch');
   if (!root) return;
 
-  // Не показвай 7 дни след отказ
   try{
     const hideUntil = localStorage.getItem('sl_hide_until');
     if (hideUntil && Date.now() < Number(hideUntil)) return;
@@ -715,7 +720,6 @@
   const bubble = root.querySelector('.sl-bubble');
   requestAnimationFrame(()=> bubble.classList.add('is-in'));
 
-  // Категории (взимаме от глобалния CATEGORIES, ако го има)
   const CATS = (window.CATEGORIES && Array.isArray(window.CATEGORIES) && window.CATEGORIES.length)
     ? window.CATEGORIES
     : ['Недвижими имоти','Автомобили','Работа','Услуги','Техника','Дом и градина','Животни','Мода','Спорт','Игри и хоби','Други'];
@@ -723,28 +727,20 @@
   const catSel = document.getElementById('slCat');
   catSel.innerHTML = CATS.map(c => `<option value="${c}">${c}</option>`).join('');
 
-  // Модел за прогноза (опростен, но убедителен)
-  const BASE = {
-    'Недвижими имоти': 220,
-    'Автомобили': 260,
-    'Работа': 180,
-    'Услуги': 140
-  };
-  const MULT = { starter: 1.0, vip: 2.2, gold: 4.0 };
+  const BASE = {'Недвижими имоти':220,'Автомобили':260,'Работа':180,'Услуги':140};
+  const MULT = { starter:1.0, vip:2.2, gold:4.0 };
 
   function fmt(n){ try{ return new Intl.NumberFormat('bg-BG').format(Math.round(n)); }catch(_){ return Math.round(n); } }
   function estimate(){
     const cat = catSel.value;
     const activeBtn = plansWrap.querySelector('.sl-plan[data-active="true"]') || plansWrap.querySelector('.sl-plan[data-plan="vip"]');
     const plan = activeBtn?.dataset.plan || 'vip';
-    const base = BASE[cat] || 150; // дефолт базова видимост
+    const base = BASE[cat] || 150;
     const views = base * (MULT[plan] || 1);
     viewsEl.textContent = fmt(views);
-    recEl.textContent = (plan === 'gold')
-      ? 'GOLD — макс. видимост и приоритет отпред'
-      : (plan === 'vip')
-        ? 'VIP — 30 дни на първа страница, бърз старт'
-        : 'Starter — публикувай и тествай интереса';
+    recEl.textContent = (plan === 'gold') ? 'GOLD — макс. видимост и приоритет отпред'
+                    : (plan === 'vip')   ? 'VIP — 30 дни на първа страница, бърз старт'
+                    : 'Starter — публикувай и тествай интереса';
   }
 
   const step1 = document.getElementById('slStep1');
@@ -758,7 +754,6 @@
   const recEl   = document.getElementById('slRec');
   const startVip= document.getElementById('slStartVip');
 
-  // Избор на план — по подразбиране VIP активен
   plansWrap.querySelectorAll('.sl-plan').forEach(btn=>{
     if (btn.dataset.plan === 'vip') btn.setAttribute('data-active','true');
     btn.addEventListener('click', ()=>{
@@ -781,13 +776,11 @@
       const until = Date.now() + 7*24*60*60*1000;
       localStorage.setItem('sl_hide_until', String(until));
     }catch(_){}
-    // към списъка с обяви
     location.href = 'ad.html';
   }
 
   noBtn.addEventListener('click', goAdsAndHide, {passive:true});
 
-  // CTA – проверяваме дали има Supabase и user
   async function goSubmitPreferred(plan){
     const target = 'submit.html?plan=' + encodeURIComponent(plan||'vip');
     try{
@@ -802,7 +795,6 @@
 
   startVip.addEventListener('click', ()=> goSubmitPreferred('vip'));
 
-  // Затваряне (✕) — запомни за 7 дни
   function closeBubble(){
     bubble.classList.remove('is-in');
     setTimeout(()=> root.remove(), 200);
@@ -813,17 +805,15 @@
   }
   close.addEventListener('click', closeBubble);
 
-  // 10s авто-подсказване, ако user стои на страницата
   setTimeout(()=>{
     if (!step2.classList.contains('is-open')){
       bubble.classList.add('is-in');
     }
   }, 10000);
 
-  // Скрий под feature overlay (ако е отворен)
   const feat = document.getElementById('featureLayer');
   if (feat && !feat.classList.contains('is-hidden')){
-    root.style.zIndex = 58; // под feature-mask (70), над дока (60)
+    root.style.zIndex = 58;
   }
 })();
 </script>
