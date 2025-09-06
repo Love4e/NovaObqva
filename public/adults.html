@@ -20,7 +20,7 @@
     .rose-soft{background:linear-gradient(180deg,#fff,#fff5f8);}
     .glass{background:rgba(255,255,255,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
 
-    /* ---------- ПУБЛИКУВАЙ CTA (градиент) ---------- */
+    /* CTA в хедъра */
     .cta-publish{
       display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
       padding:.9rem 1.4rem;border-radius:9999px;font-weight:900;letter-spacing:.01em;
@@ -56,7 +56,7 @@
     }
     .adult-badge .dot{width:10px; height:10px; border-radius:999px; background:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 
-    /* ---------- МОДАЛИ ---------- */
+    /* ---------- МОДАЛИ (общо) ---------- */
     .modal{position:fixed; inset:0; z-index:50; display:none}
     .modal.is-open{display:block}
     .modal .backdrop{position:absolute; inset:0; background:rgba(15,23,42,.6); backdrop-filter: blur(2px)}
@@ -69,30 +69,39 @@
     #ageGate{display:none}
     #ageGate.is-open{display:block}
 
-    /* ---------- ДРЕБНИ ---------- */
+    /* ---------- КОСМЕТИКА ---------- */
     .ring-rose-soft{box-shadow:0 0 0 1px rgba(244,114,182,.35) inset}
     .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:12px;font-weight:700}
-    .btn-rose{background:linear-gradient(90deg,#22c55e,#10b981);color:#0b1220;border:1px solid rgba(255,255,255,.18)}
     .btn-ghost{background:rgba(255,255,255,.8);border:1px solid rgba(15,23,42,.08)}
 
-    /* ---------- OLD 18+ FORM MODAL (iframe, без промени по формата) ---------- */
-    #oldFormModal{position:fixed;inset:0;z-index:80;display:none}
-    #oldFormModal.is-open{display:block}
-    #oldFormModal .backdrop{position:absolute;inset:0;background:rgba(3,7,18,.72);backdrop-filter:blur(6px)}
-    #oldFormModal .panel{
-      position:relative;margin:auto;background:#0b1220;border:1px solid rgba(255,255,255,.08);
-      width:min(100vw - 24px,1100px);height:min(100vh - 24px,92vh);border-radius:20px;overflow:hidden;
-      box-shadow:0 20px 60px rgba(0,0,0,.45)
-    }
-    #oldFormModal .close{
-      position:absolute;top:10px;right:10px;z-index:2;appearance:none;border:0;
-      padding:.55rem .8rem;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;font-weight:800
-    }
-    #oldFormModal iframe{width:100%;height:100%;border:0;background:#fff}
-    @media (max-width:640px){
-      #oldFormModal .panel{width:100vw;height:100vh;border-radius:0;border:none}
-      #oldFormModal .close{top:12px;right:12px}
-    }
+    /* ---------- ПУБЛИКАТОР (от подадения частичен код) ---------- */
+    .overlay{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center}
+    .overlay.show{display:flex}
+    .overlay .modal{display:block;position:relative;background:#0b1220;color:#e5e7eb;border:1px solid rgba(255,255,255,.08);
+      width:min(100vw - 24px,1100px);max-height:min(100vh - 24px,92vh);border-radius:20px;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+    .overlay .m-head{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0))}
+    .overlay .m-body{padding:16px}
+    .overlay .row{display:flex;gap:10px;flex-wrap:wrap}
+    .overlay label{font-size:.9rem;color:#cbd5e1}
+    .overlay input,.overlay textarea,.overlay select{
+      width:100%;background:#0f172a;border:1px solid rgba(255,255,255,.14);color:#e5e7eb;border-radius:12px;padding:.6rem .75rem}
+    .overlay textarea{min-height:120px}
+    .overlay .btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#fff;cursor:pointer}
+    .overlay .btn.primary{background:linear-gradient(90deg,#22c55e,#10b981);color:#0b1220;border:1px solid rgba(255,255,255,.18)}
+    .overlay .closeX{appearance:none;background:transparent;border:0;color:#cbd5e1;font-weight:800;font-size:16px;border-radius:10px;padding:6px 10px}
+    .overlay .closeX:hover{background:rgba(255,255,255,.08);color:#fff}
+    .overlay .opt{flex:1 1 200px;padding:10px;border:1px dashed rgba(255,255,255,.2);border-radius:12px;cursor:pointer}
+    .overlay .opt.active{outline:2px solid #6366f1;background:linear-gradient(180deg,#0f172a,#0b1324)}
+    .overlay .note{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:rgba(34,197,94,.08);border:1px dashed rgba(34,197,94,.35);color:#d1fae5}
+    .overlay .err{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:rgba(244,63,94,.08);border:1px dashed rgba(244,63,94,.35);color:#fecaca}
+    .thumb{display:none;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-top:6px;border:1px solid rgba(255,255,255,.14)}
+    .fab{position:fixed;right:16px;bottom:18px;z-index:65;padding:.8rem 1.1rem;border-radius:9999px;
+      background:linear-gradient(135deg,#fb7185,#a78bfa);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 30px rgba(0,0,0,.35);font-weight:800}
+    .glass.pad{max-width:1100px;margin:0 auto 36px;display:block;padding:14px;border:1px solid rgba(244,114,182,.25);border-radius:16px}
+    .sec{font-weight:900}
+    .muted{opacity:.8}
+    .pill{padding:.35rem .7rem;border-radius:9999px;background:#fff;border:1px solid #e5e7eb}
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -128,7 +137,7 @@
               </p>
             </div>
             <div class="flex items-center gap-3">
-              <button class="cta-publish js-open-old-form">Публикувай</button>
+              <button id="openPublish" class="cta-publish">Публикувай</button>
               <img src="favicon.png" class="w-9 h-9 rounded ring-rose-soft" alt="">
             </div>
           </div>
@@ -136,9 +145,8 @@
       </div>
     </section>
 
-    <!-- MAIN -->
+    <!-- MAIN (филтри + резултати) -->
     <main class="max-w-6xl mx-auto px-4 pb-10">
-      <!-- Филтри -->
       <div class="grid sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end mb-5">
         <input id="q" placeholder="Търси в заглавие/описание" class="lg:col-span-2 w-full px-4 py-2 rounded-xl border" />
         <input id="city" placeholder="Град" class="w-full px-4 py-2 rounded-xl border" />
@@ -152,16 +160,28 @@
         <button id="searchBtn" class="w-full px-4 py-2 rounded-xl border bg-white hover:bg-slate-100">Търси</button>
       </div>
 
-      <!-- Резултати -->
       <div id="list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       <p id="empty" class="text-center text-slate-500 hidden">Няма резултати.</p>
       <div class="flex justify-center mt-6">
         <button id="moreBtn" class="hidden px-5 py-2 rounded-xl border bg-white hover:bg-slate-100">Зареди още</button>
       </div>
     </main>
+
+    <!-- Как работи MAX (от частичния блок) -->
+    <aside class="glass pad">
+      <h3 class="sec">Как работи MAX</h3>
+      <p class="muted">Публикуваш → избираш план → плащаш по външен линк (BGN/EUR) → админът одобрява → твоята обява с <b>MAX</b> излиза най-отгоре. Всяка нова MAX измества предишната.</p>
+      <div class="row" style="margin-top:10px">
+        <button id="openPublish2" class="btn primary">💖 Публикувай 18+ услуга</button>
+        <a class="btn" href="/auth.html?next=/adults.html">Вход/Регистрация</a>
+      </div>
+    </aside>
   </div>
 
-  <!-- Modal: детайли -->
+  <!-- FAB -->
+  <button id="floatingCta" class="fab">Публикувай</button>
+
+  <!-- Modal: детайли за обява -->
   <div id="adModal" class="modal" aria-hidden="true">
     <div class="backdrop" data-close></div>
     <div class="absolute inset-0 p-4 md:p-8 overflow-auto">
@@ -229,21 +249,88 @@
     </div>
   </div>
 
-  <!-- OLD 18+ FORM (kept intact; embedded via iframe) -->
-  <div id="oldFormModal" aria-hidden="true">
-    <div class="backdrop" data-close></div>
-    <div class="panel" role="dialog" aria-label="Публикувай обява 18+">
-      <button class="close" data-close aria-label="Затвори">✕</button>
-      <iframe id="oldFormFrame" src="" loading="eager" title="Публикувай обява 18+"></iframe>
+  <!-- ---------- ПУБЛИКУВАЙ МОДАЛ (от частичния код) ---------- -->
+  <div id="publishModal" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="m-head">
+        <button class="closeX" id="closePublish">✕</button>
+        <h2>Публикувай услуга · 18+</h2>
+        <small class="hint">Избери план · плати по външен линк · MAX = най-предни позиции</small>
+      </div>
+      <div class="m-body">
+        <input id="hpt" type="text" style="position:absolute;left:-9999px;opacity:0" autocomplete="off" tabindex="-1" aria-hidden="true">
+        <div class="row">
+          <div style="flex:2;min-width:220px">
+            <label>Заглавие <span class="hint">(до 80 знака)</span></label>
+            <input id="f_title" maxlength="80" placeholder="Пример: Deluxe Velvet Experience" />
+          </div>
+          <div style="flex:1;min-width:140px">
+            <label>Цена (лв.)</label>
+            <input id="f_price" type="number" min="0" step="1" placeholder="100" />
+          </div>
+        </div>
+
+        <label>Описание <span class="hint">(мин. 20 знака)</span></label>
+        <textarea id="f_desc" minlength="20" placeholder="Кратко и ясно описание на услугата..."></textarea>
+
+        <div class="row">
+          <div style="flex:1;min-width:240px">
+            <label>Снимка (URL)</label>
+            <input id="f_image" placeholder="https://..." />
+            <img id="thumb" class="thumb" alt="Преглед">
+          </div>
+          <div style="flex:1;min-width:180px">
+            <label>Категория</label>
+            <select id="f_cat" disabled><option selected>Услуги 18+</option></select>
+          </div>
+        </div>
+
+        <!-- Контакти -->
+        <div class="row">
+          <div style="flex:1;min-width:200px">
+            <label>Име за контакт</label>
+            <input id="f_name" placeholder="Вашето име" />
+          </div>
+          <div style="flex:1;min-width:220px">
+            <label>Имейл за контакт</label>
+            <input id="f_email" type="email" placeholder="you@example.com" />
+          </div>
+          <div style="flex:1;min-width:180px">
+            <label>Телефон</label>
+            <input id="f_phone" placeholder="+359..." />
+          </div>
+        </div>
+
+        <label>План</label>
+        <div class="row">
+          <div id="optFree" class="opt active"><b>FREE</b><br><small class="muted">Стандартна позиция (след одобрение)</small></div>
+          <div id="optMax" class="opt"><b>MAX</b><br><small class="muted">Най-предни позиции (след плащане и одобрение)</small></div>
+        </div>
+
+        <div id="upsell" class="note" style="display:none">
+          ❤️ При избор на <b>MAX</b> ще получиш два бутона за плащане (активни след изпращане на заявката):<br>
+          <div class="row" style="margin-top:8px">
+            <a id="btnMaxBGN" class="btn" aria-disabled="true">Купи MAX (BGN)</a>
+            <a id="btnMaxEUR" class="btn" aria-disabled="true">Купи MAX (EUR)</a>
+          </div>
+          <small class="muted">Линкът ще съдържа <code>ref=PID</code> за бързо одобрение.</small>
+        </div>
+
+        <div id="msg" class="err" style="display:none"></div>
+
+        <div class="row" style="justify-content:flex-end">
+          <button id="sendAd" class="btn primary">Изпрати за одобрение</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // ---------- SB Клиент ----------
+    // ---------- Supabase клиент (ползваме ENV от env.js) ----------
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // ---------- Валутни помощници ----------
-    const FX = { EUR_BGN: 1.95583 }; // 1 EUR = 1.95583 BGN
+    // ---------- Валутни помощници за офертата ----------
+    const FX = { EUR_BGN: 1.95583 };
     const utils = {
       fmt(n,c){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:c}).format(Number(n)||0); }
                 catch{ return (Number(n)||0).toFixed(2)+' '+c; } },
@@ -282,7 +369,7 @@
     }
     renderAuthAreas();
 
-    // ---------- Филтри/зареждане ----------
+    // ---------- Листинг на обяви (18+) ----------
     const listEl  = document.getElementById('list');
     const emptyEl = document.getElementById('empty');
     const moreBtn = document.getElementById('moreBtn');
@@ -399,7 +486,7 @@
     modalEl.addEventListener('click', (e)=>{ if (e.target.matches('[data-close], .backdrop')) closeModal(modalEl); });
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && modalEl.classList.contains('is-open')) closeModal(modalEl); });
 
-    // Offer modal
+    // ---------- Offer modal ----------
     const offerEl = document.getElementById('offerModal');
     offerEl.addEventListener('click', (e)=>{ if (e.target.matches('[data-close], .backdrop')) closeModal(offerEl); });
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && offerEl.classList.contains('is-open')) closeModal(offerEl); });
@@ -450,7 +537,7 @@
 
       modalBody.innerHTML = `
         <div class="relative">
-          <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
+          <div class="relative aspect-video bg-slate-100 rounded-2xl overflow-hidden">
             ${badge}
             <span class="adult-badge" style="right:12px; top:12px;"><span class="dot"></span>18+</span>
             <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
@@ -494,13 +581,12 @@
         });
       }
 
-      // Действия
       modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> startChat(data.id, data.user_id));
       modalBody.querySelector('#offerBtn')?.addEventListener('click', ()=>{
         offerEl.dataset.adId = data.id;
         offerEl.dataset.owner = data.user_id;
         openModal(offerEl);
-        document.getElementById('offerAmount').dispatchEvent(new Event('input')); // опресни двойката
+        document.getElementById('offerAmount').dispatchEvent(new Event('input'));
       });
 
       openModal(modalEl);
@@ -509,7 +595,7 @@
     // Live BGN/EUR за офертата
     const offerAmount = document.getElementById('offerAmount');
     const offerPair   = document.getElementById('offerPair');
-    offerAmount.addEventListener('input', ()=>{
+    offerAmount?.addEventListener('input', ()=>{
       const v = parseFloat(offerAmount.value);
       if (isNaN(v) || v<=0){ offerPair.innerHTML = ''; return; }
       offerPair.innerHTML = `
@@ -520,8 +606,7 @@
         </div>
       `;
     });
-
-    document.getElementById('offerSend').addEventListener('click', ()=>{
+    document.getElementById('offerSend')?.addEventListener('click', ()=>{
       const msg = document.getElementById('offerMsg').value.trim();
       const offer = offerAmount.value ? String(offerAmount.value) : '';
       const adId = offerEl.dataset.adId;
@@ -532,55 +617,124 @@
 
     // ---------- Възрастов gate ----------
     const ageGateEl = document.getElementById('ageGate');
-    const ageYesBtn = document.getElementById('ageYes');
-    const ageNoBtn  = document.getElementById('ageNo');
     function openAgeGate(){ ageGateEl.classList.add('is-open'); document.body.classList.add('overflow-hidden'); }
     function closeAgeGate(){ ageGateEl.classList.remove('is-open'); document.body.classList.remove('overflow-hidden'); }
     (function initAge(){
-      try{
-        const ok = localStorage.getItem('adult_ok');
-        if (ok==='1') return;
-      }catch(_){}
+      try{ if (localStorage.getItem('adult_ok')==='1') return; }catch(_){}
       openAgeGate();
     })();
-    ageYesBtn.addEventListener('click', ()=>{ try{ localStorage.setItem('adult_ok','1'); }catch(_){} closeAgeGate(); });
-    ageNoBtn.addEventListener('click', ()=>{ try{ localStorage.removeItem('adult_ok'); }catch(_){} location.href = '/'; });
+    document.getElementById('ageYes').addEventListener('click', ()=>{ try{ localStorage.setItem('adult_ok','1'); }catch(_){} closeAgeGate(); });
+    document.getElementById('ageNo').addEventListener('click', ()=>{ try{ localStorage.removeItem('adult_ok'); }catch(_){} location.href = '/'; });
 
-    // ---------- OLD FORM modal logic ----------
-    const OLD_FORM_URL = 'submit.html?adult=1&category=' + encodeURIComponent('Услуги 18+');
-    const oldModal = document.getElementById('oldFormModal');
-    const oldFrame = document.getElementById('oldFormFrame');
-    function openOldForm(url = OLD_FORM_URL){
-      oldFrame.src = url + (url.includes('?') ? '&' : '?') + 'from=astra18';
-      oldModal.classList.add('is-open');
-      document.body.classList.add('overflow-hidden');
-    }
-    function closeOldForm(){
-      oldModal.classList.remove('is-open');
-      document.body.classList.remove('overflow-hidden');
-      setTimeout(()=>{ try{ oldFrame.src='about:blank'; }catch(_){}} , 200);
-    }
-    document.querySelectorAll('.js-open-old-form').forEach(btn=>{
-      btn.addEventListener('click', e=>{ e.preventDefault(); openOldForm(); });
-    });
-    oldModal.addEventListener('click', e=>{
-      if (e.target.matches('[data-close], .backdrop')) closeOldForm();
-    });
-    window.addEventListener('keydown', e=>{
-      if (e.key === 'Escape' && oldModal.classList.contains('is-open')) closeOldForm();
-    });
-    if (new URLSearchParams(location.search).get('openForm') === '1') openOldForm();
+    // ---------- ПУБЛИКАТОР: логика + плащане (BGN/EUR) ----------
+    const PAY_MAX_BGN = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10";
+    const PAY_MAX_EUR = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527";
 
-    // ---------- Старт ----------
-    search(true);
+    const pubModal = document.getElementById('publishModal');
+    const openModalPub = ()=> pubModal.classList.add('show');
+    const closeModalPub= ()=> pubModal.classList.remove('show');
 
-    // Затваряне на модалите и при клик извън панела
-    document.addEventListener('click', (e)=>{
-      if (e.target.classList.contains('backdrop')) {
-        if (modalEl.classList.contains('is-open')) closeModal(modalEl);
-        if (offerEl.classList.contains('is-open')) closeModal(offerEl);
+    document.getElementById('openPublish').addEventListener('click', openModalPub);
+    document.getElementById('openPublish2').addEventListener('click', openModalPub);
+    document.getElementById('floatingCta').addEventListener('click', openModalPub);
+    document.getElementById('closePublish').addEventListener('click', closeModalPub);
+    pubModal.addEventListener('click', (e)=>{ if(e.target===pubModal) closeModalPub(); });
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && pubModal.classList.contains('show')) closeModalPub(); });
+
+    // избор на план
+    let plan='FREE', createdPid=null;
+    const upsell = document.getElementById('upsell');
+    const optFree = document.getElementById('optFree');
+    const optMax  = document.getElementById('optMax');
+    optFree.addEventListener('click', ()=>{ plan='FREE'; optFree.classList.add('active'); optMax.classList.remove('active'); upsell.style.display='none'; });
+    optMax.addEventListener('click',  ()=>{ plan='MAX';  optMax.classList.add('active');  optFree.classList.remove('active'); upsell.style.display='block'; });
+
+    // префил на имейл ако е логнат
+    (async () => {
+      try{
+        const { data:{ user } } = await sb.auth.getUser();
+        if (user?.email) {
+          const el = document.getElementById('f_email');
+          if (!el.value) el.value = user.email;
+        }
+      }catch(_){}
+    })();
+
+    // thumb preview
+    const thumb = document.getElementById('thumb');
+    document.getElementById('f_image').addEventListener('input', () => {
+      const url = document.getElementById('f_image').value.trim();
+      if(/^https?:\/\/.+\.(png|jpe?g|gif|webp|avif)$/i.test(url)){ thumb.src=url; thumb.style.display='block'; }
+      else { thumb.style.display='none'; }
+    });
+
+    async function submitAd(){
+      const msg = document.getElementById('msg');
+      msg.style.display='none'; msg.textContent='';
+
+      if(document.getElementById('hpt').value){ return; } // honeypot
+
+      const title = document.getElementById('f_title').value.trim();
+      const priceRaw = document.getElementById('f_price').value.trim();
+      const price = priceRaw? Number(priceRaw) : null;
+      const description = document.getElementById('f_desc').value.trim();
+      const image_url = document.getElementById('f_image').value.trim();
+      const contact_name = document.getElementById('f_name').value.trim();
+      const contact_email = document.getElementById('f_email').value.trim();
+      const contact_phone = document.getElementById('f_phone').value.trim();
+
+      if(title.length<3 || description.length<20){
+        msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).';
+        msg.className='err'; msg.style.display='block'; return;
       }
-    });
+      if(price!==null && (!isFinite(price)||price<0)){
+        msg.textContent='Невалидна цена.'; msg.className='err'; msg.style.display='block'; return;
+      }
+      if(!contact_email){
+        msg.textContent='Имейл за контакт е задължителен.'; msg.className='err'; msg.style.display='block'; return;
+      }
+
+      const plan_name = plan;                 // 'FREE' или 'MAX'
+      const plan_currency = 'BGN';
+      const plan_price = plan==='MAX' ? 39.99 : 0;
+      const payment_status = 'unpaid';
+
+      let posted_by_email = null;
+      try{ const { data:{ user } } = await sb.auth.getUser(); posted_by_email = user?.email || null; }catch(_){}
+
+      const payload = {
+        title, description, price,
+        category: 'Услуги 18+', city: null,
+        images: image_url ? [image_url] : null,
+        cover_image: image_url || null,
+        plan_name, plan_currency, plan_price, payment_status,
+        contact_name: contact_name || null, contact_email, contact_phone: contact_phone || null,
+        posted_by_email, is_adult: true, ad_status: 'pending'
+      };
+
+      try{
+        const { data, error } = await sb.from('ads').insert(payload).select('id').single();
+        if(error) throw error;
+        const pid = data.id; createdPid = pid;
+
+        // активирай MAX линковете
+        const bgn = document.getElementById('btnMaxBGN');
+        const eur = document.getElementById('btnMaxEUR');
+        bgn.href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
+        eur.href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
+        bgn.setAttribute('aria-disabled','false'); eur.setAttribute('aria-disabled','false');
+
+        msg.className='note';
+        msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
+        msg.style.display='block';
+      }catch(e){
+        msg.className='err'; msg.textContent='Грешка при изпращане: ' + (e?.message || e); msg.style.display='block';
+      }
+    }
+    document.getElementById('sendAd').addEventListener('click', submitAd);
+
+    // ---------- ИНИТ ----------
+    search(true);
   </script>
 </body>
 </html>
