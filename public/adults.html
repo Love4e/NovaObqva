@@ -10,7 +10,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <style>
-    /* ---------- ТЕМА (светла розова) ---------- */
     body{background:
       radial-gradient(1200px 600px at -10% -10%, rgba(244,114,182,.18), transparent 60%),
       radial-gradient(1000px 600px at 120% 20%, rgba(99,102,241,.15), transparent 60%),
@@ -20,86 +19,36 @@
     .rose-soft{background:linear-gradient(180deg,#fff,#fff5f8);}
     .glass{background:rgba(255,255,255,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
     .ring-rose-soft{box-shadow:0 0 0 1px rgba(244,114,182,.35) inset}
-
-    /* CTA в хедъра */
-    .cta-publish{
-      display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-      padding:.9rem 1.4rem;border-radius:9999px;font-weight:900;letter-spacing:.01em;
-      background:linear-gradient(135deg,#fb7185 0%,#f472b6 55%,#a78bfa 100%);color:#fff;
-      border:1px solid rgba(255,255,255,.35);
-      box-shadow:0 12px 28px rgba(244,114,182,.35), inset 0 0 0 1px rgba(255,255,255,.15);
-      transition:transform .15s ease, box-shadow .15s ease;
-    }
+    .cta-publish{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.9rem 1.4rem;border-radius:9999px;font-weight:900;letter-spacing:.01em;background:linear-gradient(135deg,#fb7185 0%,#f472b6 55%,#a78bfa 100%);color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:0 12px 28px rgba(244,114,182,.35), inset 0 0 0 1px rgba(255,255,255,.15);transition:transform .15s ease, box-shadow .15s ease;}
     .cta-publish:hover{transform:translateY(-1px); box-shadow:0 16px 36px rgba(244,114,182,.45), inset 0 0 0 1px rgba(255,255,255,.2)}
-
-    /* ---------- КАРТИ 18+ ---------- */
-    .adult-card{
-      border-radius:18px; overflow:hidden; border:1px solid rgba(244,114,182,.35);
-      box-shadow:0 10px 24px rgba(244,114,182,.18);
-      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    }
+    .adult-card{border-radius:18px; overflow:hidden; border:1px solid rgba(244,114,182,.35); box-shadow:0 10px 24px rgba(244,114,182,.18); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;}
     .adult-card:hover{ transform:translateY(-2px); box-shadow:0 14px 34px rgba(244,114,182,.28); border-color:rgba(244,114,182,.55); }
-    .adult-card .aspect-video img{
-      filter: grayscale(.35) brightness(.98) saturate(.92) contrast(.98);
-      transform: scale(1.01);
-    }
-    .adult-card .mat{
-      position:absolute; inset:0; pointer-events:none;
-      background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,.0), rgba(255,182,193,.18)),
-                  linear-gradient(180deg, rgba(255,255,255,.0), rgba(0,0,0,.08));
-    }
-    .adult-badge{
-      position:absolute; top:10px; right:10px; z-index:10;
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 12px; border-radius:999px; font-weight:900; letter-spacing:.02em;
-      background:linear-gradient(90deg,#fb7185,#f472b6); color:#fff;
-      box-shadow:0 8px 22px rgba(244,114,182,.45), inset 0 0 0 1px rgba(255,255,255,.25);
-    }
+    .adult-card .aspect-video img{filter: grayscale(.35) brightness(.98) saturate(.92) contrast(.98); transform: scale(1.01);}
+    .adult-card .mat{position:absolute; inset:0; pointer-events:none; background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,.0), rgba(255,182,193,.18)), linear-gradient(180deg, rgba(255,255,255,.0), rgba(0,0,0,.08));}
+    .adult-badge{position:absolute; top:10px; right:10px; z-index:10; display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; font-weight:900; letter-spacing:.02em; background:linear-gradient(90deg,#fb7185,#f472b6); color:#fff; box-shadow:0 8px 22px rgba(244,114,182,.45), inset 0 0 0 1px rgba(255,255,255,.25);}
     .adult-badge .dot{width:10px; height:10px; border-radius:999px; background:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.35)}
-
-    /* ---------- МОДАЛИ (общо) ---------- */
     .modal{position:fixed; inset:0; z-index:50; display:none}
     .modal.is-open{display:block}
     .modal .backdrop{position:absolute; inset:0; background:rgba(15,23,42,.6); backdrop-filter: blur(2px)}
     .modal-card{position:relative; z-index:1}
-
-    /* видим тънък скрол за галерии */
     .scrollbar-thin::-webkit-scrollbar{height:8px}
     .scrollbar-thin::-webkit-scrollbar-track{background:#e5e7eb;border-radius:999px}
     .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
-
-    /* ---------- ВЪЗРАСТОВ ГЕЙТ ---------- */
     #ageGate{display:none}
     #ageGate.is-open{display:block}
-
     .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:12px;font-weight:700}
     .btn-ghost{background:rgba(255,255,255,.8);border:1px solid rgba(15,23,42,.08)}
-
-    /* ---------- ПУБЛИКАТОР (нова светла визия + невидим вертикален скрол) ---------- */
     .overlay{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center}
     .overlay.show{display:flex}
-    .overlay .modal{
-      display:block;position:relative;background:#ffffff;color:#0f172a;
-      border:1px solid rgba(244,114,182,.25);
-      width:min(100vw - 24px,1100px);
-      max-height:min(100vh - 24px,92vh);
-      border-radius:20px;overflow:auto;
-      box-shadow:0 20px 60px rgba(244,114,182,.22);
-    }
-    .overlay .m-head{
-      padding:14px 16px;border-bottom:1px solid rgba(244,114,182,.25);
-      background:linear-gradient(180deg,#fff5f8,rgba(255,255,255,.6));
-      position:sticky;top:0;z-index:2;
-      display:flex;align-items:center;gap:.75rem;
-    }
+    .overlay .modal{display:block;position:relative;background:#ffffff;color:#0f172a;border:1px solid rgba(244,114,182,.25);width:min(100vw - 24px,1100px);max-height:min(100vh - 24px,92vh);border-radius:20px;overflow:auto;box-shadow:0 20px 60px rgba(244,114,182,.22);-ms-overflow-style:none;scrollbar-width:none}
+    .overlay .modal::-webkit-scrollbar{width:0;height:0}
+    .overlay .m-head{padding:14px 16px;border-bottom:1px solid rgba(244,114,182,.25);background:linear-gradient(180deg,#fff5f8,rgba(255,255,255,.6));position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:.75rem}
     .overlay .m-head h2{font-weight:800;font-size:1.05rem}
     .overlay .m-head .hint{color:#64748b;font-size:.8rem}
     .overlay .m-body{padding:16px}
     .overlay .row{display:flex;gap:10px;flex-wrap:wrap}
     .overlay label{font-size:.9rem;color:#0f172a}
-    .overlay input,.overlay textarea,.overlay select{
-      width:100%;background:#fff;border:1px solid #e5e7eb;color:#0f172a;border-radius:12px;padding:.6rem .75rem
-    }
+    .overlay input,.overlay textarea,.overlay select{width:100%;background:#fff;border:1px solid #e5e7eb;color:#0f172a;border-radius:12px;padding:.6rem .75rem}
     .overlay textarea{min-height:120px}
     .overlay .btn{background:#fff;border:1px solid #e5e7eb;color:#0f172a;cursor:pointer}
     .overlay .btn.primary{background:linear-gradient(90deg,#fb7185,#f472b6);color:#fff;border:1px solid rgba(251,113,133,.5)}
@@ -110,19 +59,11 @@
     .overlay .note{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#ecfdf5;border:1px dashed #86efac;color:#065f46}
     .overlay .err{margin:.5rem 0;padding:.6rem .75rem;border-radius:12px;background:#fff1f2;border:1px dashed #fecdd3;color:#b91c1c}
     .thumb{display:none;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-top:6px;border:1px solid #e5e7eb}
-
-    /* невидим вертикален скрол в модала */
-    .overlay .modal{-ms-overflow-style:none;scrollbar-width:none}
-    .overlay .modal::-webkit-scrollbar{width:0;height:0}
-
-    /* FAB */
-    .fab{position:fixed;right:16px;bottom:18px;z-index:65;padding:.8rem 1.1rem;border-radius:9999px;
-      background:linear-gradient(135deg,#fb7185,#a78bfa);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 30px rgba(0,0,0,.25);font-weight:800}
+    .fab{position:fixed;right:16px;bottom:18px;z-index:65;padding:.8rem 1.1rem;border-radius:9999px;background:linear-gradient(135deg,#fb7185,#a78bfa);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 30px rgba(0,0,0,.25);font-weight:800}
   </style>
 </head>
 <body class="min-h-screen antialiased">
   <div class="page-wrap">
-    <!-- HEADER -->
     <header class="sticky top-0 z-30 glass border-b border-rose-100">
       <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
         <a href="/" class="flex items-center gap-2">
@@ -139,41 +80,34 @@
       </div>
     </header>
 
-    <!-- HERO -->
     <section class="py-8 md:py-10">
       <div class="max-w-6xl mx-auto px-4">
         <div class="rounded-2xl p-5 md:p-7 rose-soft border border-rose-100 shadow-[0_10px_30px_rgba(244,114,182,.12)]">
           <div class="flex items-start md:items-center justify-between gap-4 flex-col md:flex-row">
-            <div>
-              <h1 class="text-2xl md:text-3xl font-black tracking-tight">
-                Услуги 18+ — селекция с визуална подчертаност
-              </h1>
-              <p class="mt-1 text-slate-600">
-                Страницата е само за пълнолетни. Картите са леко „матирани“ и маркирани с 18+.
-              </p>
+            <div class="min-w-0">
+              <h1 class="text-2xl md:text-3xl font-black tracking-tight">Услуги 18+ — селекция с визуална подчертаност</h1>
+              <p class="mt-1 text-slate-600">Страницата е само за пълнолетни. Картите са леко „матирани“ и маркирани с 18+.</p>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 shrink-0">
               <button id="openPublish" class="cta-publish">Публикувай</button>
-              <!-- Премахнат „горен десен бутон“ (иконата) -->
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- MAIN (филтри + резултати) -->
     <main class="max-w-6xl mx-auto px-4 pb-10">
-      <div class="grid sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end mb-5">
-        <input id="q" placeholder="Търси в заглавие/описание" class="lg:col-span-2 w-full px-4 py-2 rounded-xl border" />
-        <input id="city" placeholder="Град" class="w-full px-4 py-2 rounded-xl border" />
-        <input id="pmin" type="number" min="0" step="0.01" placeholder="Мин. цена" class="w-full px-4 py-2 rounded-xl border" />
-        <input id="pmax" type="number" min="0" step="0.01" placeholder="Макс. цена" class="w-full px-4 py-2 rounded-xl border" />
-        <select id="sort" class="w-full px-4 py-2 rounded-xl border">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end mb-5">
+        <input id="q" placeholder="Търси в заглавие/описание" class="lg:col-span-2 h-11 w-full px-4 rounded-xl border" />
+        <input id="city" placeholder="Град" class="h-11 w-full px-4 rounded-xl border" />
+        <input id="pmin" type="number" min="0" step="0.01" placeholder="Мин. цена" class="h-11 w-full px-4 rounded-xl border" />
+        <input id="pmax" type="number" min="0" step="0.01" placeholder="Макс. цена" class="h-11 w-full px-4 rounded-xl border" />
+        <select id="sort" class="h-11 w-full px-4 rounded-xl border">
           <option value="new">Най-нови</option>
           <option value="plh">Цена ↑</option>
           <option value="phl">Цена ↓</option>
         </select>
-        <button id="searchBtn" class="w-full px-4 py-2 rounded-xl border bg-white hover:bg-slate-100">Търси</button>
+        <button id="searchBtn" class="sm:col-span-2 lg:col-span-1 h-11 w-full px-4 rounded-xl border bg-white hover:bg-slate-100">Търси</button>
       </div>
 
       <div id="list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -182,15 +116,11 @@
         <button id="moreBtn" class="hidden px-5 py-2 rounded-xl border bg-white hover:bg-slate-100">Зареди още</button>
       </div>
     </main>
-
-    <!-- Премахнато: aside „Как работи MAX“ -->
-
   </div>
 
-  <!-- FAB -->
   <button id="floatingCta" class="fab">Публикувай</button>
 
-  <!-- Modal: детайли за обява -->
+  <!-- Детайлен модал -->
   <div id="adModal" class="modal" aria-hidden="true">
     <div class="backdrop" data-close></div>
     <div class="absolute inset-0 p-4 md:p-8 overflow-auto">
@@ -203,7 +133,7 @@
     </div>
   </div>
 
-  <!-- Modal: Запитване/Оферта (BGN/EUR live) -->
+  <!-- Оферта -->
   <div id="offerModal" class="modal" aria-hidden="true">
     <div class="backdrop" data-close></div>
     <div class="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
@@ -232,7 +162,7 @@
     </div>
   </div>
 
-  <!-- Modal: възрастово потвърждение -->
+  <!-- Възрастово потвърждение -->
   <div id="ageGate" class="fixed inset-0 z-50">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
     <div class="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
@@ -258,7 +188,7 @@
     </div>
   </div>
 
-  <!-- ---------- ПУБЛИКУВАЙ МОДАЛ ---------- -->
+  <!-- Публикувай модал -->
   <div id="publishModal" class="overlay" role="dialog" aria-modal="true">
     <div class="modal">
       <div class="m-head">
@@ -296,7 +226,6 @@
           </div>
         </div>
 
-        <!-- Контакти -->
         <div class="row">
           <div style="flex:1;min-width:200px">
             <label>Име за контакт</label>
@@ -337,10 +266,10 @@
   </div>
 
   <script>
-    // ---------- Supabase клиент ----------
+    // Supabase
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
-    // ---------- Валутни помощници ----------
+    // Помощници за валути
     const FX = { EUR_BGN: 1.95583 };
     const utils = {
       fmt(n,c){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:c}).format(Number(n)||0); }
@@ -351,36 +280,31 @@
         else { bgn=Number(n)||0; eur=bgn/FX.EUR_BGN; }
         return { bgn, eur };
       },
-      pairHTML(n, base='BGN', theme='light'){
+      pairHTML(n, base='BGN'){
         const { bgn, eur } = utils.pair(n, base);
-        const main = theme==='dark' ? 'text-emerald-300' : 'text-emerald-700';
-        const sub  = theme==='dark' ? 'text-slate-300'   : 'text-slate-500';
         return `
-          <span class="${main} font-bold whitespace-nowrap">${utils.fmt(bgn,'BGN')}</span>
-          <span class="${sub} text-xs ml-2 whitespace-nowrap">(${utils.fmt(eur,'EUR')})</span>
+          <span class="text-emerald-700 font-bold whitespace-nowrap">${utils.fmt(bgn,'BGN')}</span>
+          <span class="text-slate-500 text-xs ml-2 whitespace-nowrap">(${utils.fmt(eur,'EUR')})</span>
         `;
       }
     };
 
-    // ---------- Навигация / Auth ----------
+    // Навигация / Auth
     async function renderAuthAreas() {
       const { data: { user } } = await sb.auth.getUser();
       const d = document.getElementById('nav-auth-desktop');
       const loginHref = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
-      let desktopHTML = '';
-      if (user) {
-        desktopHTML = `<a href="chat.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Съобщения</a>
-                       <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
-                       <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`;
-      } else {
-        desktopHTML = `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
-      }
-      if (d) { d.classList.remove('hidden'); d.innerHTML = desktopHTML; }
+      d?.classList.remove('hidden');
+      d.innerHTML = user
+        ? `<a href="chat.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Съобщения</a>
+           <a href="account.html" class="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-sm">Моят профил</a>
+           <button id="nav-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`
+        : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
       document.getElementById('nav-logout')?.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
     }
     renderAuthAreas();
 
-    // ---------- Листинг на обяви (18+) ----------
+    // Листинг
     const listEl  = document.getElementById('list');
     const emptyEl = document.getElementById('empty');
     const moreBtn = document.getElementById('moreBtn');
@@ -409,8 +333,6 @@
               </span>`;
     }
 
-    const isAdultAd = (ad)=> !!(ad?.is_adult || ad?.category==='Услуги 18+');
-
     function card(ad){
       const images = Array.isArray(ad.images) ? ad.images : [];
       const thumb  = ad.cover_image || images[0] || 'https://placehold.co/600x340?text=NovaObqva';
@@ -430,9 +352,7 @@
               <h3 class="font-semibold line-clamp-1">${esc(ad.title||'—')}</h3>
               <div class="whitespace-nowrap">${utils.pairHTML(ad.price, baseCur)}</div>
             </div>
-            <div class="text-sm text-slate-600 mt-1">
-              Публикувана: ${new Date(ad.approved_at || ad.created_at).toLocaleDateString('bg-BG')}${city}${cat}
-            </div>
+            <div class="text-sm text-slate-600 mt-1">Публикувана: ${new Date(ad.approved_at || ad.created_at).toLocaleDateString('bg-BG')}${city}${cat}</div>
           </div>
         </a>`;
     }
@@ -489,7 +409,7 @@
     document.getElementById('searchBtn').addEventListener('click', ()=>search(true));
     moreBtn.addEventListener('click', async ()=>{ page += 1; await fetchPage(); });
 
-    // ---------- Детайлен модал ----------
+    // ---------- Модали ----------
     const modalEl = document.getElementById('adModal');
     const modalBody = document.getElementById('adModalBody');
     function openModal(el){ el.classList.add('is-open'); document.body.classList.add('overflow-hidden'); }
@@ -497,7 +417,6 @@
     modalEl.addEventListener('click', (e)=>{ if (e.target.matches('[data-close], .backdrop')) closeModal(modalEl); });
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && modalEl.classList.contains('is-open')) closeModal(modalEl); });
 
-    // ---------- Offer modal ----------
     const offerEl = document.getElementById('offerModal');
     offerEl.addEventListener('click', (e)=>{ if (e.target.matches('[data-close], .backdrop')) closeModal(offerEl); });
     window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && offerEl.classList.contains('is-open')) closeModal(offerEl); });
@@ -512,22 +431,12 @@
       await openAdPopup(id);
     });
 
-    async function startChat(adId, ownerId, msg, offer){
-      const { data:{ user } } = await sb.auth.getUser();
-      if (!user) {
-        const q = new URLSearchParams({ ad: adId, to: ownerId, msg: msg||'', offer: offer||'' }).toString();
-        location.href = `auth.html?redirectTo=${encodeURIComponent('chat.html?'+q)}`;
-        return;
-      }
-      try{
-        const { data, error } = await sb.rpc('ensure_conversation', { p_ad_id: adId, p_other_user: ownerId });
-        if (error) throw error;
-        const qs = new URLSearchParams({ id: data, msg: msg||'', offer: offer||'' }).toString();
-        location.href = 'chat.html?'+qs;
-      }catch(err){
-        console.error(err);
-        alert('Неуспешно отваряне на чата.');
-      }
+    // === ВРЪЗКА КЪМ ЧАТА (без RPC тук) ===
+    function goChat(adId, ownerId, msg='', offer=''){
+      const q = new URLSearchParams({ ad: adId, to: ownerId });
+      if (msg)   q.set('msg', msg);
+      if (offer) q.set('offer', offer);
+      location.href = 'chat.html?' + q.toString();
     }
 
     async function openAdPopup(id){
@@ -592,7 +501,7 @@
         });
       }
 
-      modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> startChat(data.id, data.user_id));
+      modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> goChat(data.id, data.user_id));
       modalBody.querySelector('#offerBtn')?.addEventListener('click', ()=>{
         offerEl.dataset.adId = data.id;
         offerEl.dataset.owner = data.user_id;
@@ -603,7 +512,7 @@
       openModal(modalEl);
     }
 
-    // Live BGN/EUR за офертата
+    // Live BGN/EUR
     const offerAmount = document.getElementById('offerAmount');
     const offerPair   = document.getElementById('offerPair');
     offerAmount?.addEventListener('input', ()=>{
@@ -623,21 +532,18 @@
       const adId = offerEl.dataset.adId;
       const owner= offerEl.dataset.owner;
       closeModal(offerEl);
-      startChat(adId, owner, msg, offer);
+      goChat(adId, owner, msg, offer);
     });
 
-    // ---------- Възрастов gate ----------
+    // Възрастов gate
     const ageGateEl = document.getElementById('ageGate');
     function openAgeGate(){ ageGateEl.classList.add('is-open'); document.body.classList.add('overflow-hidden'); }
     function closeAgeGate(){ ageGateEl.classList.remove('is-open'); document.body.classList.remove('overflow-hidden'); }
-    (function initAge(){
-      try{ if (localStorage.getItem('adult_ok')==='1') return; }catch(_){}
-      openAgeGate();
-    })();
+    (function initAge(){ try{ if (localStorage.getItem('adult_ok')==='1') return; }catch(_){} openAgeGate(); })();
     document.getElementById('ageYes').addEventListener('click', ()=>{ try{ localStorage.setItem('adult_ok','1'); }catch(_){} closeAgeGate(); });
     document.getElementById('ageNo').addEventListener('click', ()=>{ try{ localStorage.removeItem('adult_ok'); }catch(_){} location.href = '/'; });
 
-    // ---------- ПУБЛИКАТОР: логика + плащане (BGN/EUR) ----------
+    // Плащане + публикуване
     const PAY_MAX_BGN = "https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10";
     const PAY_MAX_EUR = "https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527";
 
@@ -646,13 +552,11 @@
     const closeModalPub= ()=> pubModal.classList.remove('show');
 
     document.getElementById('openPublish')?.addEventListener('click', openModalPub);
-    document.getElementById('openPublish2')?.addEventListener?.('click', openModalPub); // безопасно, ако някъде съществува
     document.getElementById('floatingCta')?.addEventListener('click', openModalPub);
     document.getElementById('closePublish')?.addEventListener('click', closeModalPub);
     pubModal.addEventListener('click', (e)=>{ if(e.target===pubModal) closeModalPub(); });
     window.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && pubModal.classList.contains('show')) closeModalPub(); });
 
-    // избор на план
     let plan='FREE', createdPid=null;
     const upsell = document.getElementById('upsell');
     const optFree = document.getElementById('optFree');
@@ -660,7 +564,6 @@
     optFree.addEventListener('click', ()=>{ plan='FREE'; optFree.classList.add('active'); optMax.classList.remove('active'); upsell.style.display='none'; });
     optMax.addEventListener('click',  ()=>{ plan='MAX';  optMax.classList.add('active');  optFree.classList.remove('active'); upsell.style.display='block'; });
 
-    // префил на имейл ако е логнат
     (async () => {
       try{
         const { data:{ user } } = await sb.auth.getUser();
@@ -671,7 +574,6 @@
       }catch(_){}
     })();
 
-    // thumb preview
     const thumb = document.getElementById('thumb');
     document.getElementById('f_image').addEventListener('input', () => {
       const url = document.getElementById('f_image').value.trim();
@@ -682,8 +584,7 @@
     async function submitAd(){
       const msg = document.getElementById('msg');
       msg.style.display='none'; msg.textContent='';
-
-      if(document.getElementById('hpt').value){ return; } // honeypot
+      if(document.getElementById('hpt').value){ return; }
 
       const title = document.getElementById('f_title').value.trim();
       const priceRaw = document.getElementById('f_price').value.trim();
@@ -694,18 +595,11 @@
       const contact_email = document.getElementById('f_email').value.trim();
       const contact_phone = document.getElementById('f_phone').value.trim();
 
-      if(title.length<3 || description.length<20){
-        msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).';
-        msg.className='err'; msg.style.display='block'; return;
-      }
-      if(price!==null && (!isFinite(price)||price<0)){
-        msg.textContent='Невалидна цена.'; msg.className='err'; msg.style.display='block'; return;
-      }
-      if(!contact_email){
-        msg.textContent='Имейл за контакт е задължителен.'; msg.className='err'; msg.style.display='block'; return;
-      }
+      if(title.length<3 || description.length<20){ msg.textContent='Попълни валидни заглавие (мин. 3) и описание (мин. 20).'; msg.className='err'; msg.style.display='block'; return; }
+      if(price!==null && (!isFinite(price)||price<0)){ msg.textContent='Невалидна цена.'; msg.className='err'; msg.style.display='block'; return; }
+      if(!contact_email){ msg.textContent='Имейл за контакт е задължителен.'; msg.className='err'; msg.style.display='block'; return; }
 
-      const plan_name = plan;                 // 'FREE' или 'MAX'
+      const plan_name = plan;
       const plan_currency = 'BGN';
       const plan_price = plan==='MAX' ? 39.99 : 0;
       const payment_status = 'unpaid';
@@ -727,16 +621,13 @@
         const { data, error } = await sb.from('ads').insert(payload).select('id').single();
         if(error) throw error;
         const pid = data.id; createdPid = pid;
-
-        // активирай MAX линковете
         const bgn = document.getElementById('btnMaxBGN');
         const eur = document.getElementById('btnMaxEUR');
         if (bgn && eur){
-          bgn.href = `${PAY_MAX_BGN}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
-          eur.href = `${PAY_MAX_EUR}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
+          bgn.href = `${"https://checkout.revolut.com/payment-link/e336d64c-7c6a-4962-a7ba-0f9a0e8f3a10"}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=BGN`;
+          eur.href = `${"https://checkout.revolut.com/payment-link/cc4190df-60c1-4f8c-9d3a-c0a949dbb527"}?ref=${encodeURIComponent(pid)}&action=approve_max&cur=EUR`;
           bgn.setAttribute('aria-disabled','false'); eur.setAttribute('aria-disabled','false');
         }
-
         msg.className='note';
         msg.innerHTML='Заявката е изпратена. Ако избра <b>MAX</b>, плати по линка (BGN/EUR). След плащане админът ще активира обявата и тя ще заеме първа позиция.';
         msg.style.display='block';
@@ -744,9 +635,9 @@
         msg.className='err'; msg.textContent='Грешка при изпращане: ' + (e?.message || e); msg.style.display='block';
       }
     }
-    document.getElementById('sendAd').addEventListener('click', submitAd);
+    document.getElementById('sendAd')?.addEventListener('click', submitAd);
 
-    // ---------- ИНИТ ----------
+    // ИНИТ
     search(true);
   </script>
 </body>
