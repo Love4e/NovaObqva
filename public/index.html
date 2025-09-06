@@ -214,6 +214,8 @@
   <script>
     // Supabase client
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
+    // === ADULT: категорията, която криеш от основния сайт
+    const ADULT_CATEGORY = 'Услуги 18+';
 
     // -------- Навигация --------
     async function renderAuthAreas() {
@@ -315,6 +317,7 @@
         .from('ads')
         .select('id,title,price,city,category,created_at,approved_at,cover_image,images,ad_status,plan_name,plan_currency')
         .eq('ad_status','approved')
+        .neq('category', ADULT_CATEGORY)   // ADULT: скрий 18+
         .order('approved_at', { ascending: false })
         .limit(60);
 
@@ -399,13 +402,19 @@
 
     async function openAdPopup(id){
       const { data, error } = await sb.from('ads')
-        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
+        .select('id,user_id,title,description,price,city,category,approved_at,cover_image,images,plan_name,plan_currency,is_adult')
         .eq('id', id)
         .maybeSingle();
 
       if (error || !data){
         modalBody.innerHTML = `<div class="p-8 text-center text-slate-600">Обявата не е налична.</div>`;
         openModal(); return;
+      }
+
+      // ADULT: ако е 18+, пренасочи към Astra18
+      if (data.is_adult || data.category === ADULT_CATEGORY) {
+        location.href = 'adults.html?id=' + encodeURIComponent(id);
+        return;
       }
 
       const imgs = Array.from(new Set([data.cover_image, ...(Array.isArray(data.images)?data.images:[])].filter(Boolean)));
@@ -475,17 +484,18 @@
     }
 
     async function loadFeatured(){
-      // PRO / GOLD / VIP / MAX (case-insensitive)
+      // PRO / GOLD / VIP / MAX (case-insensitive), без 18+
       const { data, error } = await sb.from('ads')
         .select('id,title,price,city,category,approved_at,cover_image,images,plan_name,plan_currency')
         .eq('ad_status','approved')
+        .neq('category', ADULT_CATEGORY)   // ADULT: скрий 18+ и от overlay
         .or('plan_name.ilike.%pro%,plan_name.ilike.%gold%,plan_name.ilike.%vip%,plan_name.ilike.%max%')
         .order('approved_at',{ascending:false})
         .limit(12);
 
       const wrap = document.getElementById('featList');
       if (error){ console.error(error); wrap.innerHTML = '<p class="text-slate-200">Неуспешно зареждане.</p>'; return; }
-      if (!data || !data.length){ wrap.innerHTML = '<p class="text-slate-200">Няма налични PRO/GOLD обяви в момента.</p>'; return; }
+      if (!data || !data.length){ wrap.innerHTML = '<p class="text-slate-2 00">Няма налични PRO/GOLD обяви в момента.</p>'; return; }
 
       wrap.innerHTML = data.map(ad=>{
         const imgArr = Array.isArray(ad.images) ? ad.images : [];
