@@ -118,34 +118,49 @@
       </button>`;
     }
 
+    // ------------ ВАЖНО: Зареждане на разговорите през RPC (без директен SELECT към participants)
     async function loadThreads(filter=''){
-      const { data: parts, error } = await sb
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', me.id);
-      if (error) { console.error(error); threadsEl.innerHTML = `<div class="px-4 py-6 text-red-600">Грешка при зареждане.</div>`; return; }
-      const convIds = (parts||[]).map(p=>p.conversation_id);
-      if (!convIds.length){ threadsEl.innerHTML = `<div class="px-4 py-6 text-slate-500">Нямаш разговори.</div>`; return; }
+      // 1) моите разговори чрез my_conversation_ids()
+      const got = await sb.rpc('my_conversation_ids');
+      if (got.error) {
+        console.error(got.error);
+        threadsEl.innerHTML = `<div class="px-4 py-6 text-red-600">Грешка: ${got.error.message || JSON.stringify(got.error)}</div>`;
+        return;
+      }
+      const convIds = (got.data || []).map(r => r.conversation_id);
+      if (!convIds.length){
+        threadsEl.innerHTML = `<div class="px-4 py-6 text-slate-500">Нямаш разговори.</div>`;
+        return;
+      }
 
+      // 2) разговорите
       const { data: convs, error: convErr } = await sb
         .from('conversations')
         .select('id, ad_id, updated_at')
         .in('id', convIds)
         .order('updated_at', { ascending: false });
-      if (convErr){ console.error(convErr); return; }
+      if (convErr){
+        console.error(convErr);
+        threadsEl.innerHTML = `<div class="px-4 py-6 text-red-600">Грешка: ${convErr.message || JSON.stringify(convErr)}</div>`;
+        return;
+      }
 
+      // 3) заглавия на обяви
       const adIds = [...new Set((convs||[]).map(c=>c.ad_id).filter(Boolean))];
       let adMap = {};
       if (adIds.length){
-        const { data: ads } = await sb.from('ads').select('id,title').in('id', adIds);
+        const { data: ads, error: adsErr } = await sb.from('ads').select('id,title').in('id', adIds);
+        if (adsErr){ console.error(adsErr); }
         (ads||[]).forEach(a => adMap[a.id] = a.title);
       }
 
-      const { data: lastMsgs } = await sb
+      // 4) последни съобщения
+      const { data: lastMsgs, error: lastErr } = await sb
         .from('messages')
         .select('conversation_id, content, created_at')
         .in('conversation_id', convIds)
         .order('created_at', { ascending:false });
+      if (lastErr){ console.error(lastErr); }
       const lastMap = {};
       (lastMsgs||[]).forEach(m => { if (!lastMap[m.conversation_id]) lastMap[m.conversation_id] = m; });
 
@@ -218,9 +233,8 @@
       }
 
       if (adId && toUser){
-        // ТУК разчитаме на чистото RPC ensure_conversation(text,text)
         const { data, error } = await sb.rpc('ensure_conversation', { p_ad_id: adId, p_other_user: toUser });
-        if (error){ console.warn(error); alert('Неуспешно създаване/намиране на чат. Пусни SQL-а от т.2 по-долу.'); return; }
+        if (error){ console.warn(error); alert('Неуспешно създаване/намиране на чат.'); return; }
 
         await loadThreads(threadSearch.value.trim());
         await openConversation(data);
