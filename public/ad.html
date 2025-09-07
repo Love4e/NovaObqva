@@ -1,4 +1,4 @@
-<!doctype html> 
+<!doctype html>
 <html lang="bg">
 <head>
   <meta charset="utf-8" />
@@ -16,10 +16,9 @@
 
     /* ===== Мат + розова подцветка за 18+ карти ===== */
     .adult-card{
-      /* фина розова рамка и деликатно розово подложно */
       border-color: rgba(244,63,94,.28) !important;          /* rose-500 @ 28% */
       background-image: linear-gradient(180deg, rgba(244,63,94,.06), rgba(255,255,255,1));
-      box-shadow: 0 10px 28px rgba(244,63,94,.10);           /* мек розов шадоу */
+      box-shadow: 0 10px 28px rgba(244,63,94,.10);
     }
     .adult-card:hover{
       box-shadow: 0 14px 34px rgba(244,63,94,.16);
@@ -30,7 +29,6 @@
     }
     .adult-card .adult-overlay{
       position:absolute; inset:0;
-      /* добавяме розов оттенък към матовия воал */
       background:
         radial-gradient(60% 60% at 50% 40%, rgba(244,63,94,.18), rgba(0,0,0,.45));
       backdrop-filter: blur(2px);
@@ -140,8 +138,6 @@
   </div>
 
   <script>
-    /* JS-ът е непроменен спрямо твоя файл — само CSS добавките горе правят розовата подцветка */
-
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
     const FX = { EUR_BGN: 1.95583 };
     const utils = {
@@ -211,6 +207,7 @@
       const city   = ad.city ? ` · ${esc(ad.city)}` : '';
       const cat    = ad.category ? ` · ${esc(ad.category)}` : '';
       const baseCur= (ad.price_currency || ad.plan_currency || 'BGN');
+      const pubDate = ad.published_at || ad.approved_at || ad.created_at;
       return `
         <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}" data-adult="${adult?1:0}"
            class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative${adult?' adult-card':''}">
@@ -226,7 +223,7 @@
               <div class="whitespace-nowrap">${utils.pairHTML(ad.price, baseCur)}</div>
             </div>
             <div class="text-sm text-slate-500 mt-1">
-              Публикувана: ${new Date(ad.approved_at || ad.created_at).toLocaleDateString('bg-BG')}${city}${cat}
+              Публикувана: ${new Date(pubDate).toLocaleDateString('bg-BG')}${city}${cat}
             </div>
           </div>
         </a>`;
@@ -243,29 +240,45 @@
       moreBtn.classList.toggle('hidden', lastBatch < PAGE);
     }
 
+    // >>> НОВА ЗАЯВКА С ads_for_listing + plan_rank
     async function fetchPage(){
       let query = sb
-        .from('ads')
-        .select('id,title,price,price_currency,city,category,created_at,approved_at,cover_image,images,ad_status,description,plan_name,plan_currency,user_id,is_adult')
-        .eq('ad_status','approved');
+        .from('ads_for_listing')
+        .select('id,title,price,price_currency,city,category,created_at,approved_at,published_at,cover_image,images,description,plan_name,plan_currency,user_id,is_adult,plan_rank');
 
-      const q = qEl.value.trim();
-      const cat = catEl.value;
-      const city = cityEl.value.trim();
-      const pmin = parseFloat(pminEl.value);
-      const pmax = parseFloat(pmaxEl.value);
+      // --- филтри ---
+      const q     = qEl.value.trim();
+      const cat   = catEl.value;
+      const city  = cityEl.value.trim();
+      const pmin  = parseFloat(pminEl.value);
+      const pmax  = parseFloat(pmaxEl.value);
 
-      if (cat)  query = query.eq('category', cat);
-      if (city) query = query.ilike('city', `%${city}%`);
+      if (cat)          query = query.eq('category', cat);
+      if (city)         query = query.ilike('city', `%${city}%`);
       if (!isNaN(pmin)) query = query.gte('price', pmin);
       if (!isNaN(pmax)) query = query.lte('price', pmax);
-      if (q) query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+      if (q)            query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
 
+      // --- сортиране: MAX -> PRO -> други; вътре в tier-а: sort по избор ---
       const sort = sortEl.value;
-      if (sort === 'plh') query = query.order('price',{ascending:true});
-      else if (sort === 'phl') query = query.order('price',{ascending:false});
-      else query = query.order('approved_at',{ascending:false});
 
+      // 1) винаги по plan_rank (0=MAX, 1=PRO, 2=други)
+      query = query.order('plan_rank', { ascending: true });
+
+      // 2) вътрешно сортиране
+      if (sort === 'plh') {
+        query = query.order('price', { ascending: true });
+      } else if (sort === 'phl') {
+        query = query.order('price', { ascending: false });
+      } else {
+        // „Най-нови“ – по published_at (fallback се прави в изгледа)
+        query = query.order('published_at', { ascending: false });
+      }
+
+      // 3) стабилен tiebreak
+      query = query.order('id', { ascending: false });
+
+      // --- пагинация ---
       const from = page * PAGE;
       const to   = from + PAGE - 1;
       query = query.range(from, to);
@@ -357,8 +370,8 @@
     }
 
     async function openAdPopup(id){
-      const { data, error } = await sb.from('ads')
-        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,cover_image,images,plan_name,plan_currency,is_adult')
+      const { data, error } = await sb.from('ads_for_listing')
+        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,published_at,cover_image,images,plan_name,plan_currency,is_adult')
         .eq('id', id).maybeSingle();
 
       if (error || !data){
@@ -370,6 +383,7 @@
       const big = imgs[0] || 'https://placehold.co/800x500?text=NovaObqva';
       const badge = (()=>{ const n=String(data.plan_name||'').toLowerCase(); let cls='bg-slate-100 text-slate-700 ring-1 ring-slate-200'; let label=data.plan_name||'Starter'; if(n==='pro'){cls='bg-violet-50 text-violet-800 ring-1 ring-violet-200';} if(n==='max'||n==='gold'){cls='bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label=(data.plan_name||'MAX').toUpperCase();} return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}"><svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${label}</span>`; })();
       const baseCur = (data.price_currency || data.plan_currency || 'BGN');
+      const pubDate = data.published_at || data.approved_at;
       const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
       modalBody.innerHTML = `
@@ -392,7 +406,7 @@
             <div class="text-lg md:text-xl whitespace-nowrap">${utils.pairHTML(data.price, baseCur)}</div>
           </div>
           <div class="text-sm text-slate-600 mt-1">
-            Публикувана: ${new Date(data.approved_at).toLocaleString('bg-BG')}
+            Публикувана: ${new Date(pubDate).toLocaleString('bg-BG')}
             ${data.city?` · ${esc(data.city)}`:''}
             ${data.category?` · ${esc(data.category)}`:''}
           </div>
