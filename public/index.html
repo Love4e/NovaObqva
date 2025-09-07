@@ -586,36 +586,42 @@
   }
 </style>
 
-<footer class="bg-slate-900 text-slate-100 mt-12">
-  <div class="nova-gradient-bar"></div>
+<footer class="site-footer bg-slate-900 text-slate-100 mt-12">
+  <div class="nova-gradient-bar decor"></div>
 
   <div class="max-w-6xl mx-auto px-4 py-8">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
       <a href="/" class="flex items-center gap-3">
         <img src="favicon.png" alt="NovaObqva" class="w-8 h-8 rounded">
         <span class="text-lg font-bold">NovaObqva</span>
       </a>
 
-      <div class="flex items-center">
-        <a
-          href="https://www.facebook.com/profile.php?id=61580045685489"
-          target="_blank" rel="noopener"
-          class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
-          aria-label="NovaObqva във Facebook"
-        >
-          <svg viewBox="0 0 24 24" class="w-5 h-5" aria-hidden="true">
-            <path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.14 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.58v1.89h2.8l-.45 2.91h-2.35V22c4.78-.8 8.44-4.94 8.44-9.94Z"/>
-          </svg>
-          <span class="text-sm">Facebook</span>
-        </a>
-      </div>
+      <a href="https://www.facebook.com/profile.php?id=61580045685489"
+         target="_blank" rel="noopener"
+         class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10">
+        <svg viewBox="0 0 24 24" class="w-5 h-5" aria-hidden="true">
+          <path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.14 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.58v1.89h2.8l-.45 2.91h-2.35V22c4.78-.8 8.44-4.94 8.44-9.94Z"/>
+        </svg>
+        <span class="text-sm">Facebook</span>
+      </a>
     </div>
 
-    <div class="mt-10 border-т border-white/10 pt-4 text-xs text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <div class="mt-10 border-t border-white/10 pt-4 text-xs text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
       <p>© <span id="yearNova"></span> NovaObqva — Платформата не е страна по сделките между потребителите.</p>
-      <p class="opacity-80">Използвайки сайта, се съгласяваш с Общите условия и Политиките.</p>
+
+      <p class="opacity-80">
+        Използвайки сайта, се съгласяваш с
+        <a href="legal.html" class="underline hover:text-slate-200">Общите условия</a>
+        и
+        <a href="legal.html" class="underline hover:text-slate-200">Политиките</a>.
+      </p>
     </div>
   </div>
+
+  <script>
+    // динамична година
+    (function(){ var y = document.getElementById('yearNova'); if (y) y.textContent = new Date().getFullYear(); })();
+  </script>
 </footer>
 <!-- ========== SMART LAUNCH (NovaObqva) ========== -->
 <style>
