@@ -16,21 +16,15 @@
 
     /* ===== Мат + розова подцветка за 18+ карти ===== */
     .adult-card{
-      border-color: rgba(244,63,94,.28) !important;          /* rose-500 @ 28% */
+      border-color: rgba(244,63,94,.28) !important;
       background-image: linear-gradient(180deg, rgba(244,63,94,.06), rgba(255,255,255,1));
       box-shadow: 0 10px 28px rgba(244,63,94,.10);
     }
-    .adult-card:hover{
-      box-shadow: 0 14px 34px rgba(244,63,94,.16);
-    }
-    .adult-card .aspect-video img{
-      filter: grayscale(.85) brightness(.86) saturate(.8) contrast(.95);
-      transform: scale(1.02);
-    }
+    .adult-card:hover{ box-shadow: 0 14px 34px rgba(244,63,94,.16); }
+    .adult-card .aspect-video img{ filter: grayscale(.85) brightness(.86) saturate(.8) contrast(.95); transform: scale(1.02); }
     .adult-card .adult-overlay{
       position:absolute; inset:0;
-      background:
-        radial-gradient(60% 60% at 50% 40%, rgba(244,63,94,.18), rgba(0,0,0,.45));
+      background: radial-gradient(60% 60% at 50% 40%, rgba(244,63,94,.18), rgba(0,0,0,.45));
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
       pointer-events:none;
@@ -42,10 +36,7 @@
       background:rgba(239,68,68,.92); color:#fff; font-weight:800; font-size:12px;
       box-shadow:0 8px 22px rgba(239,68,68,.35), inset 0 0 0 1px rgba(255,255,255,.18);
     }
-    .adult-card .adult-badge .dot{
-      width:8px; height:8px; border-radius:999px; background:#fff;
-      box-shadow:0 0 0 2px rgba(255,255,255,.25);
-    }
+    .adult-card .adult-badge .dot{ width:8px; height:8px; border-radius:999px; background:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.25); }
 
     /* ===== Възрастов pop-up ===== */
     #ageGate{display:none}
@@ -240,11 +231,11 @@
       moreBtn.classList.toggle('hidden', lastBatch < PAGE);
     }
 
-    // >>> НОВА ЗАЯВКА С ads_for_listing + plan_rank
+    // >>> Заявка към ads_for_listing: първо boost_rank, после plan_rank, после избраното сортиране
     async function fetchPage(){
       let query = sb
         .from('ads_for_listing')
-        .select('id,title,price,price_currency,city,category,created_at,approved_at,published_at,cover_image,images,description,plan_name,plan_currency,user_id,is_adult,plan_rank');
+        .select('id,title,price,price_currency,city,category,created_at,approved_at,published_at,cover_image,images,description,plan_name,plan_currency,user_id,is_adult,plan_rank,boost_rank');
 
       // --- филтри ---
       const q     = qEl.value.trim();
@@ -259,23 +250,25 @@
       if (!isNaN(pmax)) query = query.lte('price', pmax);
       if (q)            query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
 
-      // --- сортиране: MAX -> PRO -> други; вътре в tier-а: sort по избор ---
+      // --- сортиране ---
       const sort = sortEl.value;
 
-      // 1) винаги по plan_rank (0=MAX, 1=PRO, 2=други)
+      // 1) Бустнати обяви най-горе
+      query = query.order('boost_rank', { ascending: true });
+
+      // 2) Приоритет по план
       query = query.order('plan_rank', { ascending: true });
 
-      // 2) вътрешно сортиране
+      // 3) Вътрешно сортиране в рамките на същия tier
       if (sort === 'plh') {
         query = query.order('price', { ascending: true });
       } else if (sort === 'phl') {
         query = query.order('price', { ascending: false });
       } else {
-        // „Най-нови“ – по published_at (fallback се прави в изгледа)
         query = query.order('published_at', { ascending: false });
       }
 
-      // 3) стабилен tiebreak
+      // 4) стабилен tiebreak
       query = query.order('id', { ascending: false });
 
       // --- пагинация ---
