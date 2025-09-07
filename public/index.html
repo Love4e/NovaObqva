@@ -55,7 +55,7 @@
     .ad-new{ position:relative; box-shadow:0 0 0 0 rgba(250,204,21,.0); animation:newGlow 2.2s ease-in-out infinite; }
     .ad-new::after{
       content:"НОВА"; position:absolute; top:10px; right:10px; z-index:10;
-      font-size:11px; font-weight:800; letter-spacing:.02em;
+      font-size:11px; font-weight:800; letter-spacing:.02ем;
       color:#78350f; background:#fde68a; border:1px solid #f59e0b;
       padding:2px 8px; border-radius:999px;
     }
@@ -229,7 +229,7 @@
       const chatDesktop = user
         ? `<a href="chat.html" class="relative px-3 py-1.5 rounded-lg hover:bg-slate-100">
              Съобщения
-             <span id="unreadBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span>
+             <span id=\"unreadBadge\" class=\"hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center\"></span>
            </a>` : '';
 
       let desktopHTML = '';
@@ -257,7 +257,7 @@
                 else elD.classList.add('hidden');
               }
             }
-          }catch(_){}
+          }catch(_){ }
         }
         updateUnread();
         setInterval(updateUnread, 20000);
@@ -313,7 +313,7 @@
     }
 
     async function search(){
-      const q = qEl.value.trim();
+      const q   = qEl.value.trim();
       const cat = catEl.value;
 
       let query = sb
@@ -324,7 +324,8 @@
           cover_image,images,description,
           plan_name,plan_currency,user_id,is_adult,
           plan_rank,boost_rank
-        `);
+        `)
+        .neq('category', ADULT_CATEGORY); // скрий 18+ на индекса
 
       if (cat) query = query.eq('category', cat);
       if (q)   query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
@@ -339,7 +340,8 @@
       const { data, error } = await query;
       if (error) { console.error(error); render([]); return; }
 
-      render(data || []);
+      const rows = (data || []).filter(ad => !ad?.is_adult && ad?.category !== ADULT_CATEGORY);
+      render(rows);
     }
 
     // Бадж за план – В ЛЯВО; "НОВА" е вдясно от псевдо-елемента
@@ -351,7 +353,7 @@
       if (n === 'max' || n === 'gold') { cls = 'bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label = (name||'').toUpperCase(); }
       if (n === 'vip'){ cls = 'bg-indigo-50 text-indigo-800 ring-1 ring-indigo-200'; label='VIP'; }
       return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}">
-                <svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61Л12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                 ${label}
               </span>`;
     }
@@ -424,7 +426,7 @@
         openModal(); return;
       }
 
-      // ако (някак си) е 18+, пренасочи към страницата за възрастни
+      // ако все пак е 18+, пренасочи към страницата за възрастни
       if (data.is_adult || data.category === ADULT_CATEGORY) {
         location.href = 'adults.html?id=' + encodeURIComponent(id);
         return;
@@ -493,7 +495,7 @@
       document.body.classList.remove('overflow-hidden');
     }
 
-    // Ново: зеленият бутон праща към страницата с всички обяви (+18)
+    // зеленият бутон праща към страницата с всички обяви (+18)
     document.getElementById('featEnter').addEventListener('click', ()=>{
       location.href = ALL_ADS_URL;
     });
@@ -502,7 +504,7 @@
     document.getElementById('featSkip').addEventListener('click', closeFeature);
     window.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !featureLayer.classList.contains('is-hidden')) closeFeature(); });
 
-    // Ново: клик извън съдържанието затваря overlay-а
+    // клик извън съдържанието затваря overlay-а
     featureLayer.addEventListener('click', (e)=>{
       const inside = e.target.closest('.feature-card, .feature-header, .feature-actions');
       if (!inside) closeFeature();
@@ -510,8 +512,9 @@
 
     async function loadFeatured(){
       const { data, error } = await sb.from('ads_for_listing')
-        .select('id,title,price,price_currency,city,category,approved_at,published_at,cover_image,images,plan_name,plan_currency')
+        .select('id,title,price,price_currency,city,category,approved_at,published_at,cover_image,images,plan_name,plan_currency,is_adult')
         .or('plan_name.ilike.%pro%,plan_name.ilike.%gold%,plan_name.ilike.%vip%,plan_name.ilike.%max%')
+        .neq('category', ADULT_CATEGORY) // скрий 18+
         .order('boost_rank',   { ascending:true  })
         .order('plan_rank',    { ascending:true  })
         .order('published_at', { ascending:false })
@@ -519,16 +522,17 @@
 
       const wrap = document.getElementById('featList');
       if (error){ console.error(error); wrap.innerHTML = '<p class="text-slate-200">Неуспешно зареждане.</p>'; return; }
-      if (!data || !data.length){ wrap.innerHTML = '<p class="text-slate-200">Няма налични PRO/GOLD обяви в момента.</p>'; return; }
 
-      wrap.innerHTML = data.map(ad=>{
+      const rows = (data || []).filter(ad => !ad?.is_adult && ad?.category !== ADULT_CATEGORY);
+      if (!rows.length){ wrap.innerHTML = '<p class="text-slate-200">Няма налични PRO/GOLD обяви в момента.</p>'; return; }
+
+      wrap.innerHTML = rows.map(ad=>{
         const imgArr = Array.isArray(ad.images) ? ad.images : [];
-        const thumb = ad.cover_image || imgArr[0] || 'https://placehold.co/600x340?text=NovaObqva';
-        const plan = String(ad.plan_name||'').toLowerCase();
+        const thumb  = ad.cover_image || imgArr[0] || 'https://placehold.co/600x340?text=NovaObqva';
+        const plan   = String(ad.plan_name||'').toLowerCase();
         const badgeCls = (plan.includes('gold')||plan.includes('max')) ? 'badge-gold' : 'badge-pro';
-        const label = plan.includes('gold')||plan.includes('max') ? 'GOLD' : (plan.includes('vip') ? 'VIP' : 'PRO');
+        const label    = plan.includes('gold')||plan.includes('max') ? 'GOLD' : (plan.includes('vip') ? 'VIP' : 'PRO');
 
-        /* ВАЖНО: тук НЕ е anchor, за да не се отваря при клик */
         return `
           <div class="feature-card" data-ad-id="${ad.id}">
             <div class="relative aspect-video bg-slate-800">
@@ -597,7 +601,7 @@
       </div>
     </div>
 
-    <div class="mt-10 border-t border-white/10 pt-4 text-xs text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <div class="mt-10 border-т border-white/10 pt-4 text-xs text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
       <p>© <span id="yearNova"></span> NovaObqva — Платформата не е страна по сделките между потребителите.</p>
       <p class="opacity-80">Използвайки сайта, се съгласяваш с Общите условия и Политиките.</p>
     </div>
