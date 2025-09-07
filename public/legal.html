@@ -7,27 +7,40 @@
   <link rel="icon" type="image/png" href="favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Градиентна лента за основния сайт (зелено→виолетово→златно) */
+    /* Градиентна лента – в стила на основния сайт */
     .nova-gradient-bar{
-      height: 4px;
-      background: linear-gradient(90deg,#10b981,#22d3ee,#6366f1,#a855f7,#f59e0b,#f43f5e,#10b981);
-      background-size: 300% 100%;
-      animation: novaGradient 8s linear infinite;
+      height:4px;
+      background:linear-gradient(90deg,#10b981,#22d3ee,#6366f1,#a855f7,#f59e0b,#f43f5e,#10b981);
+      background-size:300% 100%;
+      animation:novaGradient 8s linear infinite;
     }
     @keyframes novaGradient{0%{background-position:0% 50%}100%{background-position:300% 50%}}
-    .prose h2{scroll-margin-top:90px}
+
+    /* Лява навигация (TOC) */
+    .toc a{color:#475569}
+    .toc a:hover{color:#0f172a}
+    .toc .active{color:#0f172a;font-weight:700}
+
+    /* Картички за секции */
+    .section-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 24px rgba(2,6,23,.05)}
+
+    /* Аккордеон за мобилни */
+    details summary::-webkit-details-marker{display:none}
+    details[open] .acc-icon{transform:rotate(180deg)}
+
+    /* Подсладени чипове */
     .chip{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .6rem;border-radius:9999px;font-weight:700;font-size:.72rem}
     .chip-main{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
     .chip-18{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}
-    .toc a{color:#334155}
-    .toc a:hover{color:#111827}
-    .note{background:#f8fafc;border:1px solid #e5e7eb}
+
+    /* По-плавен scroll */
+    html{scroll-behavior:smooth}
   </style>
 </head>
 <body class="bg-white text-slate-900">
   <!-- HEADER -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
       <a href="/" class="flex items-center gap-2">
         <img src="favicon.png" alt="NovaObqva" class="w-6 h-6 rounded" />
         <span class="text-xl font-bold">NovaObqva</span>
@@ -44,131 +57,261 @@
 
   <!-- HERO -->
   <section class="bg-slate-50 border-b">
-    <div class="max-w-5xl mx-auto px-4 py-8">
-      <h1 class="text-3xl md:text-4xl font-black tracking-tight">Общи условия и политики за ползване</h1>
-      <p class="mt-2 text-slate-600">Настоящият документ урежда използването на платформите на NovaObqva — основен сайт и секция „Услуги 18+“.</p>
-      <div class="mt-3 flex flex-wrap gap-2">
-        <span class="chip chip-main">Основен сайт</span>
-        <span class="chip chip-18">Секция 18+</span>
+    <div class="max-w-6xl mx-auto px-4 py-8">
+      <div class="grid md:grid-cols-2 gap-4 items-center">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-black tracking-tight">Общи условия и политики за ползване</h1>
+          <p class="mt-2 text-slate-600">Документът урежда използването на платформите NovaObqva — <b>основен сайт</b> и <b>секция „Услуги 18+“</b>.</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="chip chip-main">Основен сайт</span>
+            <span class="chip chip-18">Секция 18+</span>
+          </div>
+          <p class="mt-3 text-xs text-slate-500">Последна актуализация: <span id="updatedAt"></span></p>
+        </div>
+        <div class="hidden md:block justify-self-end">
+          <div class="section-card p-4">
+            <div class="text-sm text-slate-600">Бърза навигация</div>
+            <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
+              <a href="#acc-1" class="block px-3 py-2 rounded-lg border hover:bg-slate-50">Профили и възраст</a>
+              <a href="#acc-4" class="block px-3 py-2 rounded-lg border hover:bg-slate-50">Планове и плащания</a>
+              <a href="#acc-2" class="block px-3 py-2 rounded-lg border hover:bg-slate-50">Обяви и съдържание</a>
+              <a href="#acc-5" class="block px-3 py-2 rounded-lg border hover:bg-slate-50">18+ правила</a>
+            </div>
+          </div>
+        </div>
       </div>
-      <p class="mt-3 text-xs text-slate-500">Последна актуализация: <span id="updatedAt"></span></p>
     </div>
   </section>
 
-  <!-- CONTENT -->
-  <main class="max-w-5xl mx-auto px-4 py-8">
-    <!-- TOC -->
-    <div class="toc grid md:grid-cols-2 gap-4 note rounded-xl p-4 mb-8">
-      <div>
-        <h2 class="font-bold text-slate-800 mb-2">Съдържание</h2>
-        <ul class="list-disc pl-5 space-y-1 text-sm">
-          <li><a href="#I">I. Дефиниции и страни</a></li>
-          <li><a href="#II">II. Приемане на условията</a></li>
-          <li><a href="#III">III. Профили, сигурност и възраст</a></li>
-          <li><a href="#IV">IV. Обяви и съдържание на потребители</a></li>
-          <li><a href="#V">V. Забранени стоки, услуги и действия</a></li>
-          <li><a href="#VI">VI. Видимост, планове, плащания</a></li>
-        </ul>
+  <!-- MAIN LAYOUT -->
+  <main class="max-w-6xl mx-auto px-4 py-8 grid lg:grid-cols-[280px_1fr] gap-6">
+    <!-- SIDE TOC -->
+    <aside class="toc hidden lg:block">
+      <div class="section-card p-4 sticky top-24">
+        <div class="font-bold text-slate-800 mb-2">Съдържание</div>
+        <nav class="space-y-1 text-sm" id="toc">
+          <a href="#sec-I" class="block px-2 py-1.5 rounded">I. Дефиниции и страни</a>
+          <a href="#sec-II" class="block px-2 py-1.5 rounded">II. Приемане на условията</a>
+          <a href="#sec-III" class="block px-2 py-1.5 rounded">III. Профили, сигурност и възраст</a>
+          <a href="#sec-IV" class="block px-2 py-1.5 rounded">IV. Обяви и съдържание</a>
+          <a href="#sec-V" class="block px-2 py-1.5 rounded">V. Забранени дейности</a>
+          <a href="#sec-VI" class="block px-2 py-1.5 rounded">VI. Планове и плащания</a>
+          <a href="#sec-VII" class="block px-2 py-1.5 rounded">VII. Модерация</a>
+          <a href="#sec-VIII" class="block px-2 py-1.5 rounded">VIII. Правила 18+</a>
+          <a href="#sec-IX" class="block px-2 py-1.5 rounded">IX. Поверителност</a>
+          <a href="#sec-X" class="block px-2 py-1.5 rounded">X. Отговорност</a>
+          <a href="#sec-XI" class="block px-2 py-1.5 rounded">XI. Право и контакт</a>
+        </nav>
       </div>
-      <div>
-        <h2 class="font-bold text-slate-800 mb-2">Още</h2>
-        <ul class="list-disc pl-5 space-y-1 text-sm">
-          <li><a href="#VII">VII. Модерация и сваляне на съдържание</a></li>
-          <li><a href="#VIII">VIII. Специални правила за 18+</a></li>
-          <li><a href="#IX">IX. Поверителност и бисквитки</a></li>
-          <li><a href="#X">X. Отговорност, обезщетения и прекратяване</a></li>
-          <li><a href="#XI">XI. Приложимо право и контакт</a></li>
-        </ul>
-      </div>
-    </div>
+    </aside>
 
-    <article class="prose prose-slate max-w-none">
-      <h2 id="I">I. Дефиниции и страни</h2>
-      <p><strong>„Платформа“ / „Сайт“</strong> са уебсайтовете и мобилните изгледи на NovaObqva, включително <em>основния сайт</em> и <em>секцията „Услуги 18+“</em>. <strong>„Ние“</strong> или <strong>„Оператор“</strong> означава <u>„[Доставчик на дигитална онлайн услуга, Ангел Узунов]“</u>, ЕИК <u>[821011]</u>, със седалище <u>[Самоков, ул. "Македония" № 34,А,ет.3]</u>, имейл за контакт <u>[novaobqva@abv.bg]</u>.</p>
-      <p><strong>„Потребител“</strong> е всяко лице, което разглежда, публикува обяви или кореспондира чрез Платформата. <strong>„Съдържание на потребители“</strong> включва обяви, текст, снимки, цени, съобщения и друга информация, предоставена от Потребителите.</p>
-      <p>NovaObqva е <strong>информационен посредник/платформа за обяви </strong>. Операторът <strong>не е страна по сделки</strong> между потребители и не гарантира изпълнение, качество или законност на предлаганото.</p>
+    <!-- CONTENT (Accordion on mobile, cards on desktop) -->
+    <section class="space-y-6">
+      <!-- Card: I -->
+      <article id="sec-I" class="section-card" aria-labelledby="h-I">
+        <header class="px-5 pt-5">
+          <h2 id="h-I" class="text-xl md:text-2xl font-extrabold">I. Дефиниции и страни</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <p><b>„Платформа“ / „Сайт“</b> са уебсайтовете и мобилните изгледи на NovaObqva: <i>основен сайт</i> и <i>секция „Услуги 18+“</i>. <b>„Оператор“</b> е <u>Доставчик на дигитална онлайн услуга — Ангел Узунов</u>, ЕИК <u>821011</u>, адрес <u>Самоков, ул. „Македония“ №34А, ет.3</u>, имейл <u>novaobqva@abv.bg</u>.</p>
+          <p><b>„Потребител“</b> е лице, което разглежда, публикува обяви или кореспондира чрез Платформата. <b>„Съдържание на потребители“</b> включва обяви, текстове, снимки, цени и съобщения.</p>
+          <div class="mt-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm"><b>Важно:</b> NovaObqva е платформа/посредник. Операторът <b>не е страна по сделки</b> и не гарантира изпълнение, качество или законност на предлаганото.</div>
+        </div>
+      </article>
 
-      <h2 id="II">II. Приемане на условията</h2>
-      <p>С достъп до Платформата приемате настоящите Общи условия и Политики. Ако не сте съгласни, преустановете ползването.</p>
+      <!-- Card: II -->
+      <article id="sec-II" class="section-card" aria-labelledby="h-II">
+        <header class="px-5 pt-5">
+          <h2 id="h-II" class="text-xl md:text-2xl font-extrabold">II. Приемане на условията</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <p>С достъп до Платформата Вие приемате настоящите Общи условия и Политики. Ако не сте съгласни, преустановете ползването.</p>
+        </div>
+      </article>
 
-      <h2 id="III">III. Профили, сигурност и възраст</h2>
-      <ul>
-        <li>Регистрацията изисква валиден имейл (gmail) и спазване на политиките ни. Носите отговорност за дейността от Вашия акаунт.</li>
-        <li>Забранено е представяне за друго лице, качване на чужди лични данни без съгласие или създаване на многократни акаунти за злоупотреба.</li>
-        <li>Достъпът до секцията <strong>„Услуги 18+“</strong> е разрешен <strong>само за лица навършили 18 години</strong>. При първо влизане се изисква потвърждение на възраст.</li>
-      </ul>
+      <!-- Card: III (accordion for mobile) -->
+      <article id="sec-III" class="section-card" aria-labelledby="h-III">
+        <header class="px-5 pt-5">
+          <h2 id="h-III" class="text-xl md:text-2xl font-extrabold">III. Профили, сигурност и възраст</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Регистрация с валиден имейл; отговорност за дейността от акаунта.</li>
+            <li>Забранено е представяне за друго лице, качване на чужди лични данни без съгласие и многократни акаунти с цел злоупотреба.</li>
+            <li>Достъпът до <b>„Услуги 18+“</b> е <b>само за лица 18+</b>; при първо влизане се изисква потвърждение на възраст.</li>
+          </ul>
+        </div>
+      </article>
 
-      <h2 id="IV">IV. Обяви и съдържание на потребители</h2>
-      <ul>
-        <li>Потребителят декларира, че има право да публикува съдържанието (вкл. лични снимки) и че то е вярно, актуално и не нарушава права на трети лица.</li>
-        <li>Задължително е: ясна категория, коректна цена и описание; без раздел „контакти“ да липсват данни за връзка.</li>
-        <li>Операторът може да редактира технически грешки (правопис/формат), да <strong>скрива/премахва</strong> обяви при нарушения, както и да променя видимост според избрания план и правилата за класиране.</li>
-      </ul>
+      <!-- Card: IV -->
+      <article id="sec-IV" class="section-card" aria-labelledby="h-IV">
+        <header class="px-5 pt-5">
+          <h2 id="h-IV" class="text-xl md:text-2xl font-extrabold">IV. Обяви и съдържание на потребители</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Потребителят декларира права и достоверност на каченото съдържание (вкл. снимки).</li>
+            <li>Задължително: правилна категория, коректна цена/описание; контактни данни да са налични при нужда.</li>
+            <li>Операторът може да коригира технически грешки, да <b>скрива/премахва</b> обяви при нарушения и да променя видимост според плана и правилата за класиране.</li>
+          </ul>
+        </div>
+      </article>
 
-      <h2 id="V">V. Забранени стоки, услуги и действия</h2>
-      <p>Платформата не допуска публикации и поведение, които са незаконни, опасни или против добрите нрави, включително, но не само:</p>
-      <ul>
-        <li>Наркотици, оръжия, взривни вещества, откраднати вещи, фалшификати, нелицензирани лекарства и медицински услуги.</li>
-        <li>Трафик на хора, проституция с участие на <strong>непълнолетни</strong>, порнография с непълнолетни, насилие, изнудване, дискриминационна и омразна реч.</li>
-        <li>Насърчаване на самонараняване, опасни практики, измамни схеми.</li>
-        <li>Скрит маркетинг, спам, манипулиране на рейтинги/класиране.</li>
-      </ul>
+      <!-- Card: V -->
+      <article id="sec-V" class="section-card" aria-labelledby="h-V">
+        <header class="px-5 pt-5">
+          <h2 id="h-V" class="text-xl md:text-2xl font-extrabold">V. Забранени стоки, услуги и действия</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <p>Не допускаме незаконно, опасно или неморално съдържание, включително, но не само:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Наркотици, оръжия, взривни вещества, откраднати вещи, фалшификати, нелицензирани лекарства/медицински услуги.</li>
+            <li>Трафик на хора, участие на <b>непълнолетни</b>, порнография с непълнолетни, насилие, изнудване, омразна реч.</li>
+            <li>Насърчаване на самонараняване, опасни практики, измами.</li>
+            <li>Спам, скрит маркетинг, манипулиране на рейтинги/класиране.</li>
+          </ul>
+        </div>
+      </article>
 
-      <h2 id="VI">VI. Видимост, планове, плащания</h2>
-      <ul>
-        <li>NovaObqva предлага платени планове (напр. VIP, GOLD/MAX) за по-висока видимост. Позицията зависи от плана, буст/ранг и рецентност.</li>
-        <li>Плащанията се извършват чрез външен доставчик (напр. Revolut/картов оператор директно на ANGEL DANCHOV UZUNOV). <strong>Операторът не съхранява картови данни.</strong></li>
-        <li>Таксите са за услуга „видимост“ и по правило са <strong>невъзстановими</strong>, освен при доказана техническа неизправност от наша страна, при което се прилага пропорционално възстановяване или удължаване на периода.</li>
-        <li>Обява може да бъде свалена/отказана при нарушения без право на възстановяване.</li>
-      </ul>
+      <!-- Card: VI -->
+      <article id="sec-VI" class="section-card" aria-labelledby="h-VI">
+        <header class="px-5 pt-5">
+          <h2 id="h-VI" class="text-xl md:text-2xl font-extrabold">VI. Видимост, планове, плащания</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Предлагаме платени планове (VIP, GOLD/MAX) за по-висока видимост. Позицията зависи от плана, буст/ранг и рецентност.</li>
+            <li>Плащанията са чрез външен доставчик (напр. Revolut). <b>Не съхраняваме картови данни.</b></li>
+            <li>Таксите са за услуга „видимост“ и по правило са <b>невъзстановими</b>, освен при доказана техническа неизправност.</li>
+            <li>Обява може да бъде свалена при нарушения без право на възстановяване.</li>
+          </ul>
+        </div>
+      </article>
 
-      <h2 id="VII">VII. Модерация и сваляне на съдържание</h2>
-      <ul>
-        <li>Поддържаме механизъм „сигнализирай“ и имейл <u>[novaobqva@abv.bg]</u>. Ще реагираме в разумен срок, като можем да изискаме доказателства/обяснения.</li>
-        <li>При очевидно незаконно съдържание достъпът се блокира незабавно. Може да съдействаме на компетентните органи по законов ред.</li>
-        <li>Повторни или тежки нарушения водят до ограничаване или закриване на акаунт.</li>
-      </ul>
+      <!-- Card: VII -->
+      <article id="sec-VII" class="section-card" aria-labelledby="h-VII">
+        <header class="px-5 pt-5">
+          <h2 id="h-VII" class="text-xl md:text-2xl font-extrabold">VII. Модерация и сваляне на съдържание</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Механизъм „сигнализирай“ + имейл <u>novaobqva@abv.bg</u>. Реагираме в разумен срок и можем да изискаме доказателства.</li>
+            <li>Очевидно незаконно съдържание се блокира незабавно; съдействаме на компетентните органи по закон.</li>
+            <li>Повторни/тежки нарушения водят до ограничаване или закриване на акаунт.</li>
+          </ul>
+        </div>
+      </article>
 
-      <h2 id="VIII">VIII. Специални правила за секция „Услуги 18+“</h2>
-      <ul>
-        <li>Достъп само за пълнолетни (18+). Потребителят потвърждава възрастта си при влизане.</li>
-        <li>Задължително е <strong>изрично съгласие</strong> на всички участници в съдържанието. Забранено е публикуване на лица без тяхно знание/съгласие.</li>
-        <li>Строга забрана за съдържание с непълнолетни, насилие, трафик на хора, принуда, наркотици, както и за рекламиране на незаконни дейности.</li>
-        <li>Операторът може да изиска верификация (напр. имейл/телефон), както и да ограничава видимостта извън секцията 18+.</li>
-        <li>В секцията 18+ визуално се прилагат отделни бранд елементи и предупреждения. Съдържанието от 18+ не се показва на началната страница на основния сайт.</li>
-      </ul>
+      <!-- Card: VIII -->
+      <article id="sec-VIII" class="section-card" aria-labelledby="h-VIII">
+        <header class="px-5 pt-5">
+          <h2 id="h-VIII" class="text-xl md:text-2xl font-extrabold">VIII. Специални правила за секция „Услуги 18+“</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Достъп само за пълнолетни (18+); потвърждение при първо влизане.</li>
+            <li>Задължително изрично съгласие на участниците; забранено е публикуване на лица без знание/съгласие.</li>
+            <li>Строга забрана за съдържание с непълнолетни, насилие, трафик, принуда, наркотици и др.</li>
+            <li>Възможна верификация (имейл/телефон) и ограничаване на видимостта извън секцията 18+.</li>
+            <li>Съдържанието от 18+ не се показва на началната страница на основния сайт.</li>
+          </ul>
+        </div>
+      </article>
 
-      <h2 id="IX">IX. Поверителност и бисквитки (съкратено)</h2>
-      <p>Събираме минимални лични данни, необходими за регистрация, комуникация и изпълнение на услугите (имейл, съдържание на обяви, служебни логове). Обработването се извършва на основание „изпълнение на договор“, „легитимен интерес“ или „съгласие", когато е приложимо.</p>
-      <ul>
-        <li>Използваме бисквитки за вход, предпочитания и аналитика. Можете да ограничите бисквитките в браузъра си — част от функционалността може да се влоши.</li>
-        <li>Данни се споделят с доставчици (хостинг, имейл, плащания) само при необходимост и при договорни гаранции.</li>
-        <li>Имате права на достъп, корекция, изтриване и възражение. Свържете се на <u>[novaobqva@abv.bg]</u>.</li>
-      </ul>
-      <p class="text-sm text-slate-600">Пълната Политика за поверителност и Политика за бисквитки са достъпни на отделни страници. Този раздел е резюме.</p>
+      <!-- Card: IX -->
+      <article id="sec-IX" class="section-card" aria-labelledby="h-IX">
+        <header class="px-5 pt-5">
+          <h2 id="h-IX" class="text-xl md:text-2xl font-extrabold">IX. Поверителност и бисквитки (съкратено)</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <p>Събираме минимални данни за регистрация, комуникация и изпълнение на услугите (имейл, съдържание на обяви, логове). Обработването е на основание „договор“, „легитимен интерес“ или „съгласие“.</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Бисквитки: вход, предпочитания, аналитика. Ограничаването им може да влоши функционалността.</li>
+            <li>Споделяне с доставчици (хостинг, имейл, плащания) — само при необходимост и с договорни гаранции.</li>
+            <li>Права: достъп, корекция, изтриване и възражение на <u>novaobqva@abv.bg</u>.</li>
+          </ul>
+          <p class="text-sm text-slate-600">Пълните политики за поверителност/бисквитки са на отделни страници.</p>
+        </div>
+      </article>
 
-      <h2 id="X">X. Отговорност, обезщетения и прекратяване</h2>
-      <ul>
-        <li>Платформата се предоставя „каквато е“. Не гарантираме непрекъсваемост, точност или конкретни резултати от видимост.</li>
-        <li>Операторът не носи отговорност за преки/косвени вреди, пропуснати ползи или съдържание на потребители. Максималната отговорност се ограничава до заплатените от Вас такси за последните 3 месеца.</li>
-        <li>С публикуване Вие ни обезщетявате при претенции на трети лица, произтичащи от Ваше нарушение.</li>
-        <li>Можем да прекратим или ограничим достъп при нарушения на условията, закон или добри нрави.</li>
-      </ul>
+      <!-- Card: X -->
+      <article id="sec-X" class="section-card" aria-labelledby="h-X">
+        <header class="px-5 pt-5">
+          <h2 id="h-X" class="text-xl md:text-2xl font-extrabold">X. Отговорност, обезщетения и прекратяване</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Услугата се предоставя „каквато е“. Не гарантираме непрекъсваемост или конкретни резултати.</li>
+            <li>Операторът не носи отговорност за преки/косвени вреди от съдържание на потребители. Максимум — платените такси за последните 3 месеца.</li>
+            <li>Публикувайки, обезщетявате Оператора при претенции, произтичащи от Ваши нарушения.</li>
+            <li>Достъпът може да бъде ограничен/прекратен при нарушения на закона или условията.</li>
+          </ul>
+        </div>
+      </article>
 
-      <h2 id="XI">XI. Приложимо право и контакт</h2>
-      <p>За всички неуредени въпроси се прилага действащото право на Република България. Споровете се решават по взаимно съгласие, а при невъзможност — от компетентния съд по седалището на Оператора.</p>
-      <p>Контакт: <u>[Ангел Узунов]</u>, адрес <u>[Самоков, 2003 "Македония" №34А,ет.3]</u>, имейл <u>[novaobqva@abv.bg]</u>.</p>
-
-      <hr />
-      <p class="text-xs text-slate-500">Този документ може да бъде актуализиран. При съществени промени ще публикуваме известие в сайта.</p>
-    </article>
+      <!-- Card: XI -->
+      <article id="sec-XI" class="section-card" aria-labelledby="h-XI">
+        <header class="px-5 pt-5">
+          <h2 id="h-XI" class="text-xl md:text-2xl font-extrabold">XI. Приложимо право и контакт</h2>
+        </header>
+        <div class="px-5 pb-5 pt-3 text-slate-700 leading-relaxed">
+          <p>Приложимо е правото на Република България. Споровете се решават чрез преговори, а при невъзможност — от компетентния съд по седалището на Оператора.</p>
+          <p>Контакт: <u>Ангел Узунов</u>, адрес <u>Самоков, 2003, ул. „Македония“ №34А, ет.3</u>, имейл <u>novaobqva@abv.bg</u>.</p>
+          <hr class="my-4" />
+          <p class="text-xs text-slate-500">Документът може да бъде актуализиран; при съществени промени ще публикуваме известие.</p>
+        </div>
+      </article>
+    </section>
   </main>
 
-  <!-- FOOTER -->
+  <!-- FOOTER (както в index) -->
   <footer class="bg-slate-900 text-slate-100 mt-12">
     <div class="nova-gradient-bar"></div>
-    <div class="max-w-5xl mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto px-4 py-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <a href="/" class="flex items-center gap-3">
           <img src="favicon.png" alt="NovaObqva" class="w-8 h-8 rounded">
-          <span class="text-lg font
+          <span class="text-lg font-bold">NovaObqva</span>
+        </a>
+        <div class="flex items-center">
+          <a href="https://www.facebook.com/profile.php?id=61580045685489" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10" aria-label="NovaObqva във Facebook">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" aria-hidden="true"><path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.14 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.58v1.89h2.8l-.45 2.91h-2.35V22c4.78-.8 8.44-4.94 8.44-9.94Z"/></svg>
+            <span class="text-sm">Facebook</span>
+          </a>
+        </div>
+      </div>
+      <div class="mt-6 text-xs text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <p>© <span id="yearNova"></span> NovaObqva — Платформата не е страна по сделките между потребителите.</p>
+        <p class="opacity-80">Използвайки сайта, се съгласяваш с настоящите Общи условия и Политики.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Дата и година във футъра
+    (function(){
+      const d = new Date();
+      document.getElementById('yearNova').textContent = d.getFullYear();
+      const fmt = new Intl.DateTimeFormat('bg-BG',{dateStyle:'medium'});
+      document.getElementById('updatedAt').textContent = fmt.format(d);
+    })();
+
+    // Активиране на линка в TOC според скрола
+    (function(){
+      const links = Array.from(document.querySelectorAll('#toc a'));
+      const sections = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+      const onScroll = () => {
+        let idx = 0;
+        for (let i=0; i<sections.length; i++){
+          const r = sections[i].getBoundingClientRect();
+          if (r.top <= 120) idx = i; else break;
+        }
+        links.forEach(l=>l.classList.remove('active'));
+        if (links[idx]) links[idx].classList.add('active');
+      };
+      document.addEventListener('scroll', onScroll, {passive:true});
+      onScroll();
+    })();
+  </script>
+</body>
+</html>
