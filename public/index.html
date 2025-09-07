@@ -51,15 +51,19 @@
     }
     .gold-bridge{height:64px; background:linear-gradient(#0f172a, #f8fafc);}    
 
-    /* Мека мигаща подцветка за НОВИ обяви (последни 48ч) */
-    .ad-new{ position:relative; box-shadow:0 0 0 0 rgba(250,204,21,.0); animation:newGlow 2.2s ease-in-out infinite; }
+    /* МЕКА „НОВА“ (последни 48ч) */
+    .ad-new{ position:relative; box-shadow:0 0 0 0 rgba(250,204,21,.0); animation:newGlow 3s ease-in-out infinite; }
     .ad-new::after{
       content:"НОВА"; position:absolute; top:10px; right:10px; z-index:10;
-      font-size:11px; font-weight:800; letter-spacing:.02ем;
-      color:#78350f; background:#fde68a; border:1px solid #f59e0b;
-      padding:2px 8px; border-radius:999px;
+      font-size:11px; font-weight:800; letter-spacing:.02em;
+      color:#7c2d12; background:#fef3c7; border:1px solid #fcd34d;
+      padding:3px 9px; border-radius:999px;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
     }
-    @keyframes newGlow{ 0%,100% { box-shadow:0 0 0 0 rgba(250,204,21,.0) } 50% { box-shadow:0 0 22px 2px rgba(250,204,21,.35) } }
+    @keyframes newGlow{
+      0%,100% { box-shadow:0 0 0 0 rgba(250,204,21,.00) }
+      50%     { box-shadow:0 0 14px 2px rgba(250,204,21,.22) }
+    }
 
     /* ===== FEATURE OVERLAY (PRO/GOLD) ===== */
     .feature-mask{
@@ -350,11 +354,17 @@
       let cls = 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
       let label = name || 'Starter';
       if (n === 'pro') { cls = 'bg-violet-50 text-violet-800 ring-1 ring-violet-200'; label='PRO'; }
-      if (n === 'max' || n === 'gold') { cls = 'bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label = (name||'').toUpperCase(); }
+      if (n === 'max' || n === 'gold') { cls = 'bg-amber-50 text-amber-900 ring-1 ring-amber-200'; label = (name||'').toUpperCase(); }
       if (n === 'vip'){ cls = 'bg-indigo-50 text-indigo-800 ring-1 ring-indigo-200'; label='VIP'; }
-      return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}">
-                <svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61Л12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                ${label}
+
+      const star = `
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path fill="currentColor"
+            d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/>
+        </svg>`;
+
+      return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-semibold gap-1.5 inline-flex items-center ${cls}">
+                ${star}<span>${label}</span>
               </span>`;
     }
 
@@ -594,7 +604,7 @@
           aria-label="NovaObqva във Facebook"
         >
           <svg viewBox="0 0 24 24" class="w-5 h-5" aria-hidden="true">
-            <path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.14 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.58v1.89h2.8л-.45 2.91h-2.35V22c4.78-.8 8.44-4.94 8.44-9.94Z"/>
+            <path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.14 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.58v1.89h2.8l-.45 2.91h-2.35V22c4.78-.8 8.44-4.94 8.44-9.94Z"/>
           </svg>
           <span class="text-sm">Facebook</span>
         </a>
