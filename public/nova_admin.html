@@ -154,6 +154,14 @@
     const EXRATE_EUR_BGN = 1.95583; // фиксиран курс
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
 
+    // секции за сайт – без промяна по друг код
+    const SECTION_OPTIONS = [
+      { v:'main',   t:'Основна' },
+      { v:'adult',  t:'18+' },
+      { v:'both',   t:'И двете' },
+      { v:'hidden', t:'Скрий' },
+    ];
+
     const FALLBACK_PLANS = [
       { id:'starter', name:'Starter', price_bgn:9.99, price_eur:5.10,
         pay_url:{ bgn:'https://checkout.revolut.com/payment-link/b9d03509-71b2-4c35-8d3a-43357e663650',
@@ -167,7 +175,6 @@
     ];
     let PLAN_MAP = {};
 
-    // Форматиране на две валути
     function fmtBGN(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'BGN'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} лв.`; } }
     function fmtEUR(n){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:'EUR'}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} €`; } }
     function dual(amount, currency){
@@ -185,7 +192,7 @@
 
       document.getElementById('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.href='/'; };
 
-      // Plans map (за линкове към плащане)
+      // Plans map
       try {
         const { data, error } = await sb.from('plans').select('id,name,pay_url,price_bgn,price_eur');
         if (!error && data?.length) {
@@ -216,7 +223,8 @@
       let query = sb.from('ads').select(`
           id,title,price,city,category,created_at,
           contact_name,contact_phone,contact_email,posted_by_email,
-          plan_name,plan_currency,plan_price,payment_status
+          plan_name,plan_currency,plan_price,payment_status,
+          site_section
         `).eq('ad_status','pending').order('created_at',{ascending:true});
       if (qEmail) query = query.ilike('posted_by_email','%' + qEmail + '%');
       const { data, error } = await query;
@@ -230,7 +238,7 @@
       const limit = Number(document.getElementById('approvedLimit').value || 10);
       const { data, error } = await sb
         .from('ads')
-        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description')
+        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description,site_section')
         .eq('ad_status','approved')
         .order('approved_at',{ascending:false})
         .limit(limit);
@@ -246,6 +254,20 @@
       return `<span class="ml-2 text-xs px-2 py-0.5 rounded ${paid?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${esc(status||'unpaid')}</span>`;
     }
 
+    // малък селектор за секция
+    function sectionSelector(id, current){
+      const opts = SECTION_OPTIONS
+        .map(o => `<option value="${o.v}" ${String(current||'main')===o.v?'selected':''}>${o.t}</option>`)
+        .join('');
+      return `
+        <label class="text-xs text-slate-500 flex items-center gap-2">
+          Секция:
+          <select class="sectionSel border rounded-md px-2 py-1 text-xs" data-id="${id}">
+            ${opts}
+          </select>
+        </label>`;
+    }
+
     function cardPending(r){
       const currency = (r.plan_currency||'BGN').toUpperCase();
       return `
@@ -256,9 +278,10 @@
             <div class="text-sm text-slate-500">Създадена: ${new Date(r.created_at).toLocaleString('bg-BG')}</div>
             <div class="text-sm text-slate-500">Потребител: ${esc(r.contact_name||'—')} · ${esc(r.contact_email||r.posted_by_email||'—')} · ${esc(r.contact_phone||'—')}</div>
             <div class="text-sm text-slate-500">Категория: ${esc(r.category||'—')} · Град: ${esc(r.city||'—')}</div>
-            <div class="mt-1">
+            <div class="mt-1 flex items-center gap-3 flex-wrap">
               <span class="text-slate-700">План: ${esc(r.plan_name||'—')} · ${dual(r.plan_price||0, currency)}</span>
               ${pill(r.payment_status)}
+              ${sectionSelector(r.id, r.site_section)}
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
@@ -281,7 +304,10 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-medium">${esc(r.title)}</div>
-            <div class="text-xs text-slate-500">Одобрена: ${when} · ${esc(r.city||'—')} · ${esc(r.category||'—')} · План: ${esc(r.plan_name||'—')} ${cur}</div>
+            <div class="text-xs text-slate-500 flex items-center gap-3 flex-wrap">
+              <span>Одобрена: ${when} · ${esc(r.city||'—')} · ${esc(r.category||'—')} · План: ${esc(r.plan_name||'—')} ${cur}</span>
+              ${sectionSelector(r.id, r.site_section)}
+            </div>
           </div>
           <div class="flex gap-2">
             <button class="px-3 py-1.5 rounded-lg border hover:bg-slate-50" onclick="preview('${r.id}')">Преглед</button>
@@ -292,10 +318,35 @@
       </div>`;
     }
 
+    // делегирано слушане за промяна на секцията
+    document.addEventListener('change', async (e)=>{
+      const sel = e.target.closest('.sectionSel');
+      if (!sel) return;
+      const adId = sel.dataset.id;
+      const value = sel.value;
+      sel.disabled = true;
+      try{
+        // 1) RPC, ако съществува
+        let rpcErr = null;
+        try{
+          const { error } = await sb.rpc('admin_set_site_section', { p_ad: adId, p_section: value });
+          if (error) rpcErr = error;
+        }catch(err){ rpcErr = err; }
+
+        // 2) fallback update (ако RLS ти позволява като админ)
+        if (rpcErr){
+          const { error: upErr } = await sb.from('ads').update({ site_section: value }).eq('id', adId);
+          if (upErr) throw upErr;
+        }
+      }catch(err){
+        alert('Неуспешна промяна на секцията: ' + (err?.message || err));
+      }finally{
+        sel.disabled = false;
+      }
+    });
+
     // ====== ACTIONS (approve/reject) ======
     async function approve(id, payStatus){
-      // ако държиш да изисква платено предварително, разкоментирай:
-      // if (payStatus !== 'paid' && !confirm('Тази обява не е маркирана като платена. Да продължа с одобрение?')) return;
       const { error } = await sb.from('ads').update({ ad_status:'approved', approved_at: new Date().toISOString() }).eq('id', id);
       if (error) { alert('Отказано от сървъра. Нямаш права или грешка.'); console.error(error); return; }
       await loadPending(); await loadApproved();
@@ -359,14 +410,12 @@
       btnPaid.textContent = paid ? 'Платено' : 'Маркирай „платено“';
       btnPaid.onclick = async () => {
         await markPaid(data.id, pill, btnPaid);
-        await loadPending(); // обнови списъка ако е бил pending
+        await loadPending();
       };
 
-      // approve / reject от модал
       document.getElementById('mApprove').onclick = () => approve(data.id, data.payment_status);
       document.getElementById('mReject').onclick  = () => rejectAd(data.id);
 
-      // show modal
       const m = document.getElementById('modal');
       m.classList.remove('hidden'); m.classList.add('flex');
       document.getElementById('mClose').onclick = () => { m.classList.add('hidden'); m.classList.remove('flex'); };
@@ -374,12 +423,11 @@
     }
     window.preview = preview;
 
-    // ====== MARK PAID (RPC + fallback) ======
+    // ====== MARK PAID ======
     async function markPaid(adId, pillEl, btnEl){
       try{
         btnEl.disabled = true;
         btnEl.textContent = 'Маркирам...';
-        // Вариант A: RPC (ако е създадено mark_ad_paid)
         let rpcErr = null;
         try{
           const { error } = await sb.rpc('mark_ad_paid', { p_ad_id: adId });
@@ -387,7 +435,6 @@
         }catch(e){ rpcErr = e; }
 
         if (rpcErr){
-          // Вариант B: директен update (ако RLS ти позволява като админ)
           const { error: upErr } = await sb
             .from('ads')
             .update({ payment_status:'paid', paid_at: new Date().toISOString() })
@@ -395,7 +442,6 @@
           if (upErr) throw upErr;
         }
 
-        // UI update
         pillEl.textContent = 'paid';
         pillEl.className = 'inline-block text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-800';
         btnEl.textContent = 'Платено';
@@ -411,7 +457,6 @@
       const { data, error } = await sb.from('ads').select('*').eq('id', id).single();
       if (error) { alert('Грешка при зареждане.'); return; }
 
-      // populate
       byId('eId').value = data.id;
       byId('eTitle').value = data.title || '';
       byId('ePrice').value = Number(data.price||0);
@@ -421,15 +466,12 @@
       byId('ePlan').value = data.plan_name || '';
       byId('ePlanCur').value = (data.plan_currency||'').toUpperCase();
 
-      // show
       const eM = byId('editModal');
       eM.classList.remove('hidden'); eM.classList.add('flex');
 
-      // close handlers
       byId('eClose').onclick = () => { eM.classList.add('hidden'); eM.classList.remove('flex'); };
       eM.querySelector('.absolute.inset-0').onclick = () => { eM.classList.add('hidden'); eM.classList.remove('flex'); };
 
-      // submit
       byId('editForm').onsubmit = async (ev) => {
         ev.preventDefault();
         const payload = {
@@ -447,7 +489,6 @@
         await loadApproved();
       };
 
-      // hide from edit modal
       byId('eHide').onclick = async () => {
         if (!confirm('Скриване на обявата от сайта?')) return;
         await hideAd(id);
@@ -456,17 +497,10 @@
     }
     window.openEdit = openEdit;
 
-    // Премахване (по подразбиране = скриване)
     async function hideAd(id){
       const { error } = await sb.from('ads').update({ ad_status:'hidden' }).eq('id', id);
       if (error){ alert('Неуспешно премахване.'); console.error(error); return; }
       await loadApproved();
-
-      /* HARD DELETE (АКТИВИРАЙ САМО АКО RLS ПОЛИЦИТЕ ГО ПОЗВОЛЯВАТ)
-      const { error:delErr } = await sb.from('ads').delete().eq('id', id);
-      if (delErr){ alert('Неуспешно изтриване.'); console.error(delErr); return; }
-      await loadApproved();
-      */
     }
     window.hideAd = hideAd;
 
