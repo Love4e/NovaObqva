@@ -79,7 +79,7 @@
       d.innerHTML = user
         ? `<a href="account.html" class="px-3 py-1.5 rounded-lg border hover:bg-slate-50 text-sm">Моят профил</a>
            <button id="logout" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm">Изход</button>`
-        : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm">Вход</a>`;
+        : `<a href="${loginHref}" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white textсм">Вход</a>`;
       document.getElementById('logout')?.addEventListener('click', async ()=>{ await sb.auth.signOut(); location.href='/'; });
     }
 
@@ -118,9 +118,8 @@
       </button>`;
     }
 
-    // ------------ ВАЖНО: Зареждане на разговорите през RPC (без директен SELECT към participants)
+    // ------------ Зареждане на разговорите през RPC (без селект към participants)
     async function loadThreads(filter=''){
-      // 1) моите разговори чрез my_conversation_ids()
       const got = await sb.rpc('my_conversation_ids');
       if (got.error) {
         console.error(got.error);
@@ -133,7 +132,6 @@
         return;
       }
 
-      // 2) разговорите
       const { data: convs, error: convErr } = await sb
         .from('conversations')
         .select('id, ad_id, updated_at')
@@ -145,7 +143,6 @@
         return;
       }
 
-      // 3) заглавия на обяви
       const adIds = [...new Set((convs||[]).map(c=>c.ad_id).filter(Boolean))];
       let adMap = {};
       if (adIds.length){
@@ -154,7 +151,6 @@
         (ads||[]).forEach(a => adMap[a.id] = a.title);
       }
 
-      // 4) последни съобщения
       const { data: lastMsgs, error: lastErr } = await sb
         .from('messages')
         .select('conversation_id, content, created_at')
@@ -203,7 +199,7 @@
         ).subscribe();
 
       [...threadsEl.querySelectorAll('[data-conv]')].forEach(b=>{
-        b.classList.toggle('bg-slate-100', b.dataset.conv===convId);
+        b.classList.toggle('bg-сlate-100', b.dataset.conv===convId);
       });
     }
 
