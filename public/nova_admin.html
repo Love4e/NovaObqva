@@ -346,38 +346,35 @@
       </div>`;
     }
 
-    // // карта за бустер (без да очакваме currency/amount_* колони)
-function cardBooster(b, ad){
-  const a = ad || {};
-  // показваме фиксираната цена 8 BGN / ~ EUR, за да няма зависимост от БД
-  const eurApprox = (8 / EXRATE_EUR_BGN).toFixed(2);
-  return `
-  <div class="border rounded-xl p-4">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <div class="font-semibold">${esc(a.title||'—')}</div>
-        <div class="text-xs text-slate-500">
-          Обява: ${esc(a.id||b.ad_id)} · Кат: ${esc(a.category||'—')} · Град: ${esc(a.city||'—')} · boost_rank: ${typeof a.boost_rank==='number'?a.boost_rank:'—'}
+    // ново: карта за бустер
+    function cardBooster(b){
+      const ad = b.ads || {};
+      const cur = (b.currency||'BGN').toUpperCase();
+      const amountTxt = cur === 'EUR'
+        ? `${fmtEUR(b.amount_eur|| (8/EXRATE_EUR_BGN))} · ${fmtBGN((b.amount_eur|| (8/EXRATE_EUR_BGN))*EXRATE_EUR_BGN)}`
+        : `${fmtBGN(b.amount_bgn||8)} · ${fmtEUR((b.amount_bgn||8)/EXRATE_EUR_BGN)}`;
+      return `
+      <div class="border rounded-xl p-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="font-semibold">${esc(ad.title||'—')}</div>
+            <div class="text-xs text-slate-500">Обява: ${esc(ad.id||b.ad_id)} · Кат: ${esc(ad.category||'—')} · Град: ${esc(ad.city||'—')} · boost_rank: ${typeof ad.boost_rank==='number'?ad.boost_rank:'—'}</div>
+            <div class="text-xs text-slate-500 mt-1">Заявка: ${new Date(b.created_at).toLocaleString('bg-BG')} · Статус: ${esc(b.status||'pending')}</div>
+            ${b.note ? `<div class="mt-1 text-xs text-slate-600">Бележка: ${esc(b.note)}</div>`:''}
+            <div class="mt-2 font-medium">Сума: ${amountTxt} (${cur})</div>
+          </div>
+          <div class="flex flex-col items-end gap-2">
+            <div class="flex gap-2">
+              <a class="px-3 py-2 rounded-lg border hover:bg-slate-50" href="${BOOST_LINK_BGN}" target="_blank">Към плащане BGN</a>
+              <a class="px-3 py-2 rounded-lg border hover:bg-slate-50" href="${BOOST_LINK_EUR}" target="_blank">Към плащане EUR</a>
+            </div>
+            <div class="flex gap-2">
+              <button class="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700" onclick="confirmBooster('${b.id}','${b.ad_id}')">Потвърди бустер (24ч)</button>
+              <button class="px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700" onclick="stopBooster('${b.ad_id}','${b.id}')">Спри бустер</button>
+            </div>
+          </div>
         </div>
-        <div class="text-xs text-slate-500 mt-1">
-          Заявка: ${new Date(b.created_at).toLocaleString('bg-BG')} · Статус: ${esc(b.status||'pending')}
-        </div>
-        <div class="mt-2 font-medium">Сума: ${fmtBGN(8)} · ${fmtEUR(eurApprox)}</div>
-      </div>
-      <div class="flex flex-col items-end gap-2">
-        <div class="flex gap-2">
-          <a class="px-3 py-2 rounded-lg border hover:bg-slate-50" href="${BOOST_LINK_BGN}" target="_blank">Към плащане BGN</a>
-          <a class="px-3 py-2 rounded-lg border hover:bg-slate-50" href="${BOOST_LINK_EUR}" target="_blank">Към плащане EUR</a>
-        </div>
-        <div class="flex gap-2">
-          <button class="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
-                  onclick="confirmBooster('${b.id}','${b.ad_id}')">Потвърди бустер (24ч)</button>
-          <button class="px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700"
-                  onclick="stopBooster('${b.ad_id}','${b.id}')">Спри бустер</button>
-        </div>
-      </div>
-    </div>
-  </div>`;
+      </div>`;
     }
 
     // делегирано слушане за промяна на секцията
