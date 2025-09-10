@@ -65,7 +65,7 @@
 
       <nav class="hidden md:flex items-center gap-2 ml-4">
         <a href="index.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Обяви</a>
-        <a href="plans.html" class="px-3 py-1.5 rounded-lg hover:bg-сlate-100">Планове</a>
+        <a href="plans.html" class="px-3 py-1.5 rounded-lg hover:bg-slate-100">Планове</a>
       </nav>
 
       <div class="flex-1"></div>
@@ -123,7 +123,7 @@
         <div class="px-5 py-4 border-b bg-rose-600 text-white flex items-center justify-between">
           <strong class="tracking-wide">Съдържание 18+</strong>
           <span class="inline-flex items-center gap-2 text-xs opacity-90">
-            <span class="w-2 х-2 rounded-full bg-white"></span> Внимание
+            <span class="w-2 h-2 rounded-full bg-white"></span> Внимание
           </span>
         </div>
         <div class="p-5">
@@ -253,7 +253,7 @@
     function card(ad){
       const adult = isAdultAd(ad);
       const images = Array.isArray(ad.images) ? ad.images : [];
-      the thumb  = ad.cover_image || images[0] || 'https://placehold.co/600x340?text=NovaObqva';
+      const thumb  = ad.cover_image || images[0] || 'https://placehold.co/600x340?text=NovaObqva';
       const city   = ad.city ? ` · ${esc(ad.city)}` : '';
       const cat    = ad.category ? ` · ${esc(ad.category)}` : '';
       const baseCur= (ad.price_currency || ad.plan_currency || 'BGN');
@@ -436,7 +436,7 @@
 
       const imgs = Array.from(new Set([data.cover_image, ...(Array.isArray(data.images)?data.images:[])].filter(Boolean)));
       const big = imgs[0] || 'https://placehold.co/800x500?text=NovaObqva';
-      const badge = (()=>{ const n=String(data.plan_name||'').toLowerCase(); let cls='bg-slate-100 text-slate-700 ring-1 ring-slate-200'; let label=data.plan_name||'Starter'; if(n==='pro'){cls='bg-вiolet-50 text-violet-800 ring-1 ring-violet-200';} if(n==='max'||n==='gold'){cls='bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label=(data.plan_name||'MAX').toUpperCase();} return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}"><svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${label}</span>`; })();
+      const badge = (()=>{ const n=String(data.plan_name||'').toLowerCase(); let cls='bg-slate-100 text-slate-700 ring-1 ring-slate-200'; let label=data.plan_name||'Starter'; if(n==='pro'){cls='bg-violet-50 text-violet-800 ring-1 ring-violet-200';} if(n==='max'||n==='gold'){cls='bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200'; label=(data.plan_name||'MAX').toUpperCase();} return `<span class="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-xs font-medium ${cls}"><svg viewBox="0 0 24 24" width="14" height="14" class="inline -mt-0.5 mr-1"><path fill="currentColor" d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${label}</span>`; })();
       const baseCur = (data.price_currency || data.plan_currency || 'BGN');
       const pubDate = data.published_at || data.approved_at;
       const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
@@ -444,7 +444,7 @@
 
       modalBody.innerHTML = `
         <div class="relative">
-          <div class="relative aspect-video bg-slate-100 rounded-т-2xl overflow-hidden">
+          <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
             ${isBusterNow ? `<span class="buster-badge">BUSTER</span>` : ''} <!-- ново -->
             ${badge}
             <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
@@ -470,7 +470,7 @@
           </div>
           <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${esc(data.description||'')}</div>
 
-          <div class="mt-6 flex flex-col см:flex-row gap-2 justify-end">
+          <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
             <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
             <!-- ново: Бустер бутон -->
             <button id="boostBtn" class="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-semibold">
@@ -542,33 +542,25 @@
       if (boostBtn){
         boostBtn.addEventListener('click', async ()=>{
           try{
-            // 1) потребител
-            const { data: authData } = await sb.auth.getUser();
-            if (!authData?.user){
+            const { data: { user } } = await sb.auth.getUser();
+            if (!user){
               const redirect = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
               location.href = redirect;
               return;
             }
-
-            // 2) INSERT в boost_payments (правилен destructuring)
-            const { data: boostRow, error: boostErr } = await sb
-              .from('boost_payments')
-              .insert([{ ad_id: data.id, user_id: authData.user.id }])
+            // 1) създай pending запис за boost плащане
+            const ins = await sb.from('boost_payments')
+              .insert([{ ad_id: data.id, user_id: user.id }])
               .select()
               .maybeSingle();
 
-            if (boostErr){
-              console.error('Boost insert error:', boostErr);
-              alert('Грешка при заявката: ' + (boostErr.message || JSON.stringify(boostErr)));
-              return;
-            }
+            if (ins.error){ console.error(ins.error); alert('Грешка при заявката.'); return; }
 
-            // 3) потвърждение + външен линк към Revolut
-            alert('Заявката за бустер е записана успешно. Очаква потвърждение от админ.');
+            // 2) отвори външен Revolut линк (BGN) – по заданието
             window.open('https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798', '_blank');
           }catch(err){
-            console.error('Boost exception:', err);
-            alert('Грешка при стартиране на бустера: ' + (err?.message || err));
+            console.error(err);
+            alert('Грешка при стартиране на бустера.');
           }
         });
       }
