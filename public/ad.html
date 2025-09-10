@@ -41,6 +41,16 @@
     /* ===== Възрастов pop-up ===== */
     #ageGate{display:none}
     #ageGate.is-open{display:block}
+
+    /* ===== BUSTER badge (ново) ===== */
+    .buster-badge{
+      position:absolute; top:10px; left:10px; z-index:20;
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 12px; border-radius:999px;
+      background:linear-gradient(90deg,#22c55e,#86efac);
+      color:#064e3b; font-weight:900; font-size:12px; letter-spacing:.3px;
+      box-shadow:0 10px 24px rgba(34,197,94,.25), inset 0 0 0 1px rgba(255,255,255,.25);
+    }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -248,10 +258,13 @@
       const cat    = ad.category ? ` · ${esc(ad.category)}` : '';
       const baseCur= (ad.price_currency || ad.plan_currency || 'BGN');
       const pubDate = ad.published_at || ad.approved_at || ad.created_at;
+      const isBuster = Number(ad.boost_rank) === 0; /* ново */
+
       return `
         <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}" data-adult="${adult?1:0}"
            class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative${adult?' adult-card':''}">
           <div class="aspect-video bg-slate-100 relative">
+            ${isBuster ? `<span class="buster-badge">BUSTER</span>` : ''}  <!-- ново -->
             ${planBadge(ad.plan_name)}
             ${adult ? `<span class="adult-badge"><span class="dot"></span>18+</span>` : ''}
             ${adult ? `<div class="adult-overlay"></div>` : ''}
@@ -413,7 +426,7 @@
 
     async function openAdPopup(id){
       const { data, error } = await sb.from('ads_for_listing')
-        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,published_at,cover_image,images,plan_name,plan_currency,is_adult')
+        .select('id,user_id,title,description,price,price_currency,city,category,approved_at,published_at,cover_image,images,plan_name,plan_currency,is_adult,boost_rank')
         .eq('id', id).maybeSingle();
 
       if (error || !data){
@@ -427,10 +440,12 @@
       const baseCur = (data.price_currency || data.plan_currency || 'BGN');
       const pubDate = data.published_at || data.approved_at;
       const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+      const isBusterNow = Number(data.boost_rank) === 0; /* ново */
 
       modalBody.innerHTML = `
         <div class="relative">
           <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
+            ${isBusterNow ? `<span class="buster-badge">BUSTER</span>` : ''} <!-- ново -->
             ${badge}
             <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
           </div>
@@ -457,6 +472,10 @@
 
           <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
             <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
+            <!-- ново: Бустер бутон -->
+            <button id="boostBtn" class="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-semibold">
+              🚀 Бустер (8 BGN / <span id="boostEur">—</span> EUR)
+            </button>
             <button id="shareBtn" class="px-4 py-2 rounded-lg border hover:bg-slate-50">Сподели</button>
             <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-lg border hover:bg-slate-50 text-center">Отвори отделна страница</a>
           </div>
@@ -493,7 +512,7 @@
         });
       }
 
-      /* ----- Views counter (ново) ----- */
+      /* ----- Views counter (съществуващо) ----- */
       (async ()=>{
         const el = modalBody.querySelector('#viewsCount');
         try{
@@ -509,7 +528,43 @@
           console.warn('views counter error', err);
         }
       })();
-      /* -------------------------------- */
+
+      /* ----- Booster: EUR изчисление + insert + външен линк (ново) ----- */
+      (()=>{
+        const eurSpan = modalBody.querySelector('#boostEur');
+        if (eurSpan){
+          const eur = (8 / FX.EUR_BGN);
+          eurSpan.textContent = eur.toFixed(2);
+        }
+      })();
+
+      const boostBtn = modalBody.querySelector('#boostBtn');
+      if (boostBtn){
+        boostBtn.addEventListener('click', async ()=>{
+          try{
+            const { data: { user } } = await sb.auth.getUser();
+            if (!user){
+              const redirect = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
+              location.href = redirect;
+              return;
+            }
+            // 1) създай pending запис за boost плащане
+            const ins = await sb.from('boost_payments')
+              .insert([{ ad_id: data.id, user_id: user.id }])
+              .select()
+              .maybeSingle();
+
+            if (ins.error){ console.error(ins.error); alert('Грешка при заявката.'); return; }
+
+            // 2) отвори външен Revolut линк (BGN) – по заданието
+            window.open('https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798', '_blank');
+          }catch(err){
+            console.error(err);
+            alert('Грешка при стартиране на бустера.');
+          }
+        });
+      }
+      /* --------------------------------------- */
 
       openModal();
     }
