@@ -51,6 +51,27 @@
       color:#064e3b; font-weight:900; font-size:12px; letter-spacing:.3px;
       box-shadow:0 10px 24px rgba(34,197,94,.25), inset 0 0 0 1px rgba(255,255,255,.25);
     }
+
+    /* ===== Красиви BOOST бутони ===== */
+    .boost {
+      @apply inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-lg ring-1 ring-black/5 transition active:scale-[.99];
+    }
+    .boost-bgn {
+      background: linear-gradient(180deg,#f8d438,#f4b400);
+      @apply text-yellow-950 hover:brightness-105;
+      box-shadow: 0 10px 18px rgba(244,180,0,.25), inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .boost-eur {
+      background: linear-gradient(180deg,#60a5fa,#3b82f6);
+      @apply text-white hover:brightness-105;
+      box-shadow: 0 10px 18px rgba(59,130,246,.25), inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .boost .sub {
+      @apply text-xs opacity-90 leading-none;
+    }
+    .boost .ico {
+      @apply text-base;
+    }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -142,7 +163,7 @@
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
     const FX = { EUR_BGN: 1.95583 };
 
-    /* ---- Booster config (чете от ENV, има и стойности по подразбиране) ---- */
+    /* ---- Booster config ---- */
     const BOOST = {
       get priceBGN(){ return Number((window.ENV && window.ENV.BOOST_PRICE_BGN) ?? 8); },
       get priceEUR(){
@@ -155,7 +176,6 @@
           || 'https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798';
       },
       linkEUR(){ 
-        // ако няма EUR линк -> fallback към BGN линка
         return (window.ENV && window.ENV.BOOST_LINK_EUR) || this.linkBGN();
       }
     };
@@ -187,11 +207,9 @@
     }
 
     /* ===== View counter helpers ===== */
-    const VIEW_THROTTLE_MS = 2 * 60 * 1000; // 2 минути
+    const VIEW_THROTTLE_MS = 2 * 60 * 1000;
     function _viewsKey(){ return 'ad_views_ts'; }
-    function _viewsMap(){
-      try{ return JSON.parse(sessionStorage.getItem(_viewsKey())||'{}'); }catch{ return {}; }
-    }
+    function _viewsMap(){ try{ return JSON.parse(sessionStorage.getItem(_viewsKey())||'{}'); }catch{ return {}; } }
     function _saveViewsMap(m){ try{ sessionStorage.setItem(_viewsKey(), JSON.stringify(m)); }catch{} }
     function shouldCountView(adId){
       const m = _viewsMap();
@@ -276,13 +294,13 @@
       const cat    = ad.category ? ` · ${esc(ad.category)}` : '';
       const baseCur= (ad.price_currency || ad.plan_currency || 'BGN');
       const pubDate = ad.published_at || ad.approved_at || ad.created_at;
-      const isBuster = Number(ad.boost_rank) === 0; /* ново */
+      const isBuster = Number(ad.boost_rank) === 0;
 
       return `
         <a href="ad.html?id=${ad.id}" data-ad-id="${ad.id}" data-adult="${adult?1:0}"
            class="open-ad group rounded-2xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition relative${adult?' adult-card':''}">
           <div class="aspect-video bg-slate-100 relative">
-            ${isBuster ? `<span class="buster-badge">BUSTER</span>` : ''}  <!-- ново -->
+            ${isBuster ? `<span class="buster-badge">BUSTER</span>` : ''}
             ${planBadge(ad.plan_name)}
             ${adult ? `<span class="adult-badge"><span class="dot"></span>18+</span>` : ''}
             ${adult ? `<div class="adult-overlay"></div>` : ''}
@@ -311,13 +329,12 @@
       moreBtn.classList.toggle('hidden', lastBatch < PAGE);
     }
 
-    // >>> Заявка към ads_for_listing: първо boost_rank, после plan_rank, после избраното сортиране
+    // >>> Заявка към ads_for_listing
     async function fetchPage(){
       let query = sb
         .from('ads_for_listing')
         .select('id,title,price,price_currency,city,category,created_at,approved_at,published_at,cover_image,images,description,plan_name,plan_currency,user_id,is_adult,plan_rank,boost_rank');
 
-      // --- филтри ---
       const q     = qEl.value.trim();
       const cat   = catEl.value;
       const city  = cityEl.value.trim();
@@ -330,28 +347,16 @@
       if (!isNaN(pmax)) query = query.lte('price', pmax);
       if (q)            query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
 
-      // --- сортиране ---
-      const sort = sortEl.value;
-
-      // 1) Бустнати обяви най-горе
       query = query.order('boost_rank', { ascending: true });
-
-      // 2) Приоритет по план
       query = query.order('plan_rank', { ascending: true });
 
-      // 3) Вътрешно сортиране в рамките на същия tier
-      if (sort === 'plh') {
-        query = query.order('price', { ascending: true });
-      } else if (sort === 'phl') {
-        query = query.order('price', { ascending: false });
-      } else {
-        query = query.order('published_at', { ascending: false });
-      }
+      const sort = sortEl.value;
+      if (sort === 'plh')      query = query.order('price', { ascending: true });
+      else if (sort === 'phl') query = query.order('price', { ascending: false });
+      else                     query = query.order('published_at', { ascending: false });
 
-      // 4) стабилен tiebreak
       query = query.order('id', { ascending: false });
 
-      // --- пагинация ---
       const from = page * PAGE;
       const to   = from + PAGE - 1;
       query = query.range(from, to);
@@ -413,7 +418,7 @@
       location.href = '/';
     });
 
-    // Делегация: клик по карта → age gate (ако е 18+) или директно popup
+    // Делегация: клик по карта
     document.addEventListener('click', async (e)=>{
       const link = e.target.closest('a.open-ad[data-ad-id]');
       if (!link) return;
@@ -458,12 +463,12 @@
       const baseCur = (data.price_currency || data.plan_currency || 'BGN');
       const pubDate = data.published_at || data.approved_at;
       const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-      const isBusterNow = Number(data.boost_rank) === 0; /* ново */
+      const isBusterNow = Number(data.boost_rank) === 0;
 
       modalBody.innerHTML = `
         <div class="relative">
           <div class="relative aspect-video bg-slate-100 rounded-t-2xl overflow-hidden">
-            ${isBusterNow ? `<span class="buster-badge">BUSTER</span>` : ''} <!-- ново -->
+            ${isBusterNow ? `<span class="buster-badge">BUSTER</span>` : ''}
             ${badge}
             <img id="bigImg" src="${big}" alt="" class="w-full h-full object-cover">
           </div>
@@ -489,22 +494,26 @@
           <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${esc(data.description||'')}</div>
 
           <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end items-stretch">
-            <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
+            <button id="chatBtn" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow ring-1 ring-emerald-700/20">Пиши на продавача</button>
 
-            <!-- Бустер с превключване на валута -->
-            <div class="inline-flex rounded-lg overflow-hidden border">
-              <button id="boostBtn"
-                class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 font-semibold flex items-center gap-2"
-                data-cur="BGN">
-                🚀 Бустер <span id="boostPriceLabel" class="font-bold"></span>
-              </button>
-              <button id="boostToggle"
-                class="px-3 py-2 bg-yellow-300 hover:bg-yellow-400 border-l"
-                title="Смени валута">⇄</button>
-            </div>
+            <!-- Два красиви бутона: BGN / EUR -->
+            <button id="boostBGN" class="boost boost-bgn">
+              <span class="ico">🚀</span>
+              <span class="text-left leading-tight">
+                Бустер
+                <span class="block sub" id="boostBGNLabel"></span>
+              </span>
+            </button>
+            <button id="boostEUR" class="boost boost-eur">
+              <span class="ico">🚀</span>
+              <span class="text-left leading-tight">
+                Бустер
+                <span class="block sub" id="boostEURLabel"></span>
+              </span>
+            </button>
 
-            <button id="shareBtn" class="px-4 py-2 rounded-lg border hover:bg-slate-50">Сподели</button>
-            <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-lg border hover:bg-slate-50 text-center">Отвори отделна страница</a>
+            <button id="shareBtn" class="px-4 py-2 rounded-xl border hover:bg-slate-50">Сподели</button>
+            <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-xl border hover:bg-slate-50 text-center">Отвори отделна страница</a>
           </div>
         </div>
       `;
@@ -556,55 +565,47 @@
         }
       })();
 
-      /* ----- Booster: UI + insert + външен линк според валутата ----- */
+      /* ----- BOOST labels + handlers ----- */
       (() => {
-        const btn = modalBody.querySelector('#boostBtn');
-        const toggle = modalBody.querySelector('#boostToggle');
-        const label = modalBody.querySelector('#boostPriceLabel');
+        // 1) Показване на суми
+        modalBody.querySelector('#boostBGNLabel').textContent = `${BOOST.priceBGN.toFixed(2)} BGN`;
+        modalBody.querySelector('#boostEURLabel').textContent = `${BOOST.priceEUR.toFixed(2)} EUR`;
 
-        function renderLabel(){
-          const cur = btn.dataset.cur;
-          const bgn = BOOST.priceBGN.toFixed(2);
-          const eur = BOOST.priceEUR.toFixed(2);
-          label.textContent = cur === 'EUR'
-            ? `(${eur} EUR / ${bgn} BGN)`
-            : `(${bgn} BGN / ${eur} EUR)`;
-        }
-        renderLabel();
-
-        toggle?.addEventListener('click', () => {
-          btn.dataset.cur = (btn.dataset.cur === 'BGN') ? 'EUR' : 'BGN';
-          renderLabel();
-        });
-
-        btn?.addEventListener('click', async () => {
+        // 2) Хендлър генератор с pre-open window
+        const makeBoost = (currency) => async () => {
+          let payWin = null;
+          try { payWin = window.open('about:blank','_blank'); } catch(_) {}
           try{
             const { data: { user } } = await sb.auth.getUser();
             if (!user){
+              if (payWin && !payWin.closed) payWin.close();
               const redirect = `auth.html?redirectTo=${encodeURIComponent(location.href)}`;
               location.href = redirect;
               return;
             }
-            // 1) запис за плащане (лог)
             const ins = await sb.from('boost_payments')
               .insert([{
                 ad_id: data.id,
                 user_id: user.id,
-                currency: btn.dataset.cur,
+                currency,
                 amount_bgn: BOOST.priceBGN,
                 amount_eur: BOOST.priceEUR
               }]).select().maybeSingle();
 
-            if (ins.error){ console.error(ins.error); alert('Грешка при заявката.'); return; }
+            if (ins.error){ console.error(ins.error); if (payWin && !payWin.closed) payWin.close(); alert('Грешка при заявката.'); return; }
 
-            // 2) линк според валутата
-            const link = (btn.dataset.cur === 'EUR') ? BOOST.linkEUR() : BOOST.linkBGN();
-            window.open(link, '_blank');
+            const link = currency === 'EUR' ? BOOST.linkEUR() : BOOST.linkBGN();
+            if (payWin && !payWin.closed) { payWin.location.href = link; payWin.focus?.(); }
+            else { location.href = link; }
           }catch(err){
             console.error(err);
+            if (payWin && !payWin.closed) payWin.close();
             alert('Грешка при стартиране на бустера.');
           }
-        });
+        };
+
+        modalBody.querySelector('#boostBGN')?.addEventListener('click', makeBoost('BGN'));
+        modalBody.querySelector('#boostEUR')?.addEventListener('click', makeBoost('EUR'));
       })();
 
       openModal();
