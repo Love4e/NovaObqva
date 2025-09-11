@@ -178,7 +178,11 @@
         return (window.ENV && window.ENV.BOOST_LINK_BGN)
           || 'https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798';
       },
-      linkEUR(){ return (window.ENV && window.ENV.BOOST_LINK_EUR) || this.linkBGN(); }
+      linkEUR(){
+        /* ВАЖНО: по подразбиране е истинският EUR линк, не пада към BGN */
+        return (window.ENV && window.ENV.BOOST_LINK_EUR)
+          || 'https://checkout.revolut.com/payment-link/9f203156-05b6-4ab9-aed1-3c918a22effa';
+      }
     };
 
     const utils = {
