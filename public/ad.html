@@ -141,13 +141,32 @@
   <script>
     const sb = supabase.createClient(window.ENV.SUPABASE_URL, window.ENV.SUPABASE_ANON_KEY);
     const FX = { EUR_BGN: 1.95583 };
+
+    /* ---- Booster config (чете от ENV, има и стойности по подразбиране) ---- */
+    const BOOST = {
+      get priceBGN(){ return Number((window.ENV && window.ENV.BOOST_PRICE_BGN) ?? 8); },
+      get priceEUR(){
+        const envEur = window.ENV && window.ENV.BOOST_PRICE_EUR;
+        if (envEur != null) return Number(envEur);
+        return +(this.priceBGN / FX.EUR_BGN);
+      },
+      linkBGN(){ 
+        return (window.ENV && window.ENV.BOOST_LINK_BGN) 
+          || 'https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798';
+      },
+      linkEUR(){ 
+        // ако няма EUR линк -> fallback към BGN линка
+        return (window.ENV && window.ENV.BOOST_LINK_EUR) || this.linkBGN();
+      }
+    };
+
     const utils = {
       fmt(n,c){ try{ return new Intl.NumberFormat('bg-BG',{style:'currency',currency:c}).format(Number(n)||0); }catch{ return `${Number(n||0).toFixed(2)} ${c}`; } },
       pair(n, base='BGN'){ let bgn, eur; if ((base||'BGN').toUpperCase()==='EUR'){ eur=Number(n)||0; bgn=eur*FX.EUR_BGN; } else { bgn=Number(n)||0; eur=bgn/FX.EUR_BGN; } return { bgn, eur }; },
       pairHTML(n, base='BGN', theme='light'){ const { bgn, eur } = utils.pair(n, base); const main = theme==='dark' ? 'text-emerald-300' : 'text-emerald-700'; const sub = theme==='dark' ? 'text-slate-300' : 'text-slate-500'; return `<span class="${main} font-bold whitespace-nowrap">${utils.fmt(bgn,'BGN')}</span><span class="${sub} text-xs ml-2 whitespace-nowrap">(${utils.fmt(eur,'EUR')})</span>`; }
     };
 
-    /* ===== FB Share helpers (от предишната интеграция) ===== */
+    /* ===== FB Share helpers ===== */
     function getAdPublicUrl(adId){
       const u = new URL(location.href);
       u.search = '';
@@ -167,7 +186,7 @@
       window.open(shareUrl, 'fbshare', opts);
     }
 
-    /* ===== View counter helpers (ново) ===== */
+    /* ===== View counter helpers ===== */
     const VIEW_THROTTLE_MS = 2 * 60 * 1000; // 2 минути
     function _viewsKey(){ return 'ad_views_ts'; }
     function _viewsMap(){
@@ -194,7 +213,6 @@
       if (error) { console.warn('increment_ad_views error', error); return null; }
       return typeof data === 'number' ? data : null;
     }
-    /* ====================================== */
 
     async function renderAuthAreas() {
       const { data: { user } } = await sb.auth.getUser();
@@ -470,12 +488,21 @@
           </div>
           <div class="prose max-w-none mt-4 text-slate-800 whitespace-pre-line">${esc(data.description||'')}</div>
 
-          <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
+          <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-end items-stretch">
             <button id="chatBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Пиши на продавача</button>
-            <!-- ново: Бустер бутон -->
-            <button id="boostBtn" class="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-semibold">
-              🚀 Бустер (8 BGN / <span id="boostEur">—</span> EUR)
-            </button>
+
+            <!-- Бустер с превключване на валута -->
+            <div class="inline-flex rounded-lg overflow-hidden border">
+              <button id="boostBtn"
+                class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 font-semibold flex items-center gap-2"
+                data-cur="BGN">
+                🚀 Бустер <span id="boostPriceLabel" class="font-bold"></span>
+              </button>
+              <button id="boostToggle"
+                class="px-3 py-2 bg-yellow-300 hover:bg-yellow-400 border-l"
+                title="Смени валута">⇄</button>
+            </div>
+
             <button id="shareBtn" class="px-4 py-2 rounded-lg border hover:bg-slate-50">Сподели</button>
             <a href="ad.html?id=${data.id}" class="px-4 py-2 rounded-lg border hover:bg-slate-50 text-center">Отвори отделна страница</a>
           </div>
@@ -494,7 +521,7 @@
       }
       modalBody.querySelector('#chatBtn')?.addEventListener('click', ()=> startChat(data.id, data.user_id));
 
-      /* ----- Share logic (съществуващо) ----- */
+      /* ----- Share logic ----- */
       const shareBtn = modalBody.querySelector('#shareBtn');
       if (shareBtn){
         const publicUrl = getAdPublicUrl(data.id);
@@ -512,7 +539,7 @@
         });
       }
 
-      /* ----- Views counter (съществуващо) ----- */
+      /* ----- Views counter ----- */
       (async ()=>{
         const el = modalBody.querySelector('#viewsCount');
         try{
@@ -529,18 +556,28 @@
         }
       })();
 
-      /* ----- Booster: EUR изчисление + insert + външен линк (ново) ----- */
-      (()=>{
-        const eurSpan = modalBody.querySelector('#boostEur');
-        if (eurSpan){
-          const eur = (8 / FX.EUR_BGN);
-          eurSpan.textContent = eur.toFixed(2);
-        }
-      })();
+      /* ----- Booster: UI + insert + външен линк според валутата ----- */
+      (() => {
+        const btn = modalBody.querySelector('#boostBtn');
+        const toggle = modalBody.querySelector('#boostToggle');
+        const label = modalBody.querySelector('#boostPriceLabel');
 
-      const boostBtn = modalBody.querySelector('#boostBtn');
-      if (boostBtn){
-        boostBtn.addEventListener('click', async ()=>{
+        function renderLabel(){
+          const cur = btn.dataset.cur;
+          const bgn = BOOST.priceBGN.toFixed(2);
+          const eur = BOOST.priceEUR.toFixed(2);
+          label.textContent = cur === 'EUR'
+            ? `(${eur} EUR / ${bgn} BGN)`
+            : `(${bgn} BGN / ${eur} EUR)`;
+        }
+        renderLabel();
+
+        toggle?.addEventListener('click', () => {
+          btn.dataset.cur = (btn.dataset.cur === 'BGN') ? 'EUR' : 'BGN';
+          renderLabel();
+        });
+
+        btn?.addEventListener('click', async () => {
           try{
             const { data: { user } } = await sb.auth.getUser();
             if (!user){
@@ -548,23 +585,27 @@
               location.href = redirect;
               return;
             }
-            // 1) създай pending запис за boost плащане
+            // 1) запис за плащане (лог)
             const ins = await sb.from('boost_payments')
-              .insert([{ ad_id: data.id, user_id: user.id }])
-              .select()
-              .maybeSingle();
+              .insert([{
+                ad_id: data.id,
+                user_id: user.id,
+                currency: btn.dataset.cur,
+                amount_bgn: BOOST.priceBGN,
+                amount_eur: BOOST.priceEUR
+              }]).select().maybeSingle();
 
             if (ins.error){ console.error(ins.error); alert('Грешка при заявката.'); return; }
 
-            // 2) отвори външен Revolut линк (BGN) – по заданието
-            window.open('https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798', '_blank');
+            // 2) линк според валутата
+            const link = (btn.dataset.cur === 'EUR') ? BOOST.linkEUR() : BOOST.linkBGN();
+            window.open(link, '_blank');
           }catch(err){
             console.error(err);
             alert('Грешка при стартиране на бустера.');
           }
         });
-      }
-      /* --------------------------------------- */
+      })();
 
       openModal();
     }
