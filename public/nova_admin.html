@@ -167,7 +167,7 @@
     const BOOST_LINK_BGN = 'https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798';
     const BOOST_LINK_EUR = 'https://checkout.revolut.com/payment-link/9f203156-05b6-4ab9-aed1-3c918a22effa';
 
-    // секции за сайт – без промяна по друг код
+    /* === NEW: опции за секция (Стойности, които минават CHECK в БД) === */
     const SECTION_OPTIONS = [
       { v:'main',   t:'Основна' },
       { v:'adult',  t:'18+' },
@@ -225,7 +225,7 @@
 
       await loadPending();
       await loadApproved();
-      await loadBoosters(); // ново
+      await loadBoosters();
 
       document.getElementById('searchEmail').addEventListener('input', () => loadPending());
       document.getElementById('approvedLimit').addEventListener('change', () => loadApproved());
@@ -238,7 +238,7 @@
           id,title,price,city,category,created_at,
           contact_name,contact_phone,contact_email,posted_by_email,
           plan_name,plan_currency,plan_price,payment_status,
-          site_section
+          site_section              -- NEW: нужната колона
         `).eq('ad_status','pending').order('created_at',{ascending:true});
       if (qEmail) query = query.ilike('posted_by_email','%' + qEmail + '%');
       const { data, error } = await query;
@@ -252,7 +252,7 @@
       const limit = Number(document.getElementById('approvedLimit').value || 10);
       const { data, error } = await sb
         .from('ads')
-        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description,site_section,boost_rank')
+        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description,site_section,boost_rank') /* site_section вече е тук */
         .eq('ad_status','approved')
         .order('approved_at',{ascending:false})
         .limit(limit);
@@ -262,9 +262,7 @@
       wrap.innerHTML = (data||[]).map(r => cardApproved(r)).join('') || '<p class="text-slate-500">Още няма.</p>';
     }
 
-    // ново: бустери
     async function loadBoosters(){
-      // зареждаме чакащи boost_payments + базова инфо за обявата
       const { data, error } = await sb
         .from('boost_payments')
         .select('id,ad_id,user_id,status,currency,amount_bgn,amount_eur,created_at,confirmed_at,expires_at, note, ads!inner(id,title,city,category,boost_rank)')
@@ -281,7 +279,7 @@
       return `<span class="ml-2 text-xs px-2 py-0.5 rounded ${paid?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${esc(status||'unpaid')}</span>`;
     }
 
-    // малък селектор за секция
+    /* === NEW: малък селектор за секция === */
     function sectionSelector(id, current){
       const opts = SECTION_OPTIONS
         .map(o => `<option value="${o.v}" ${String(current||'main')===o.v?'selected':''}>${o.t}</option>`)
@@ -308,7 +306,7 @@
             <div class="mt-1 flex items-center gap-3 flex-wrap">
               <span class="text-slate-700">План: ${esc(r.plan_name||'—')} · ${dual(r.plan_price||0, currency)}</span>
               ${pill(r.payment_status)}
-              ${sectionSelector(r.id, r.site_section)}
+              ${sectionSelector(r.id, r.site_section)} <!-- NEW -->
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
@@ -334,7 +332,7 @@
             <div class="font-medium">${esc(r.title)} ${boosted?'<span class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 align-middle">BUSTER</span>':''}</div>
             <div class="text-xs text-slate-500 flex items-center gap-3 flex-wrap">
               <span>Одобрена: ${when} · ${esc(r.city||'—')} · ${esc(r.category||'—')} · План: ${esc(r.plan_name||'—')} ${cur}</span>
-              ${sectionSelector(r.id, r.site_section)}
+              ${sectionSelector(r.id, r.site_section)} <!-- NEW -->
             </div>
           </div>
           <div class="flex gap-2">
@@ -346,12 +344,11 @@
       </div>`;
     }
 
-    // ново: карта за бустер
     function cardBooster(b){
       const ad = b.ads || {};
       const cur = (b.currency||'BGN').toUpperCase();
       const amountTxt = cur === 'EUR'
-        ? `${fmtEUR(b.amount_eur|| (8/EXRATE_EUR_BGN))} · ${fmtBGN((b.amount_eur|| (8/EXRATE_EUR_BGN))*EXRATE_EUR_BGN)}`
+        ? `${fmtEUR(b.amount_eur|| (8/EXRATE_EUR_BGN))} · ${fmtBGN((b.amount_eur|| (8/EXRATE_EUR_BGN))*EXRATE_EUR_BGN)`
         : `${fmtBGN(b.amount_bgn||8)} · ${fmtEUR((b.amount_bgn||8)/EXRATE_EUR_BGN)}`;
       return `
       <div class="border rounded-xl p-4">
@@ -377,12 +374,12 @@
       </div>`;
     }
 
-    // делегирано слушане за промяна на секцията
+    /* === NEW: запис на секцията при промяна (опитва RPC, иначе update) === */
     document.addEventListener('change', async (e)=>{
       const sel = e.target.closest('.sectionSel');
       if (!sel) return;
       const adId = sel.dataset.id;
-      const value = sel.value;
+      const value = sel.value; // 'main' | 'adult' | 'both' | 'hidden'
       sel.disabled = true;
       try{
         // 1) RPC, ако съществува
@@ -391,8 +388,7 @@
           const { error } = await sb.rpc('admin_set_site_section', { p_ad: adId, p_section: value });
           if (error) rpcErr = error;
         }catch(err){ rpcErr = err; }
-
-        // 2) fallback update (ако RLS ти позволява като админ)
+        // 2) fallback update
         if (rpcErr){
           const { error: upErr } = await sb.from('ads').update({ site_section: value }).eq('id', adId);
           if (upErr) throw upErr;
@@ -511,29 +507,23 @@
       }
     }
 
-    // ====== BOOSTER ACTIONS (ново) ======
+    // ====== BOOSTER ACTIONS ======
     async function confirmBooster(boostId, adId){
       try{
-        // 1) опитай RPC
         let rpcErr = null;
         try{
           const { error } = await sb.rpc('admin_confirm_boost', { p_boost_id: boostId, p_ad_id: adId, p_hours: 24 });
           if (error) rpcErr = error;
         }catch(e){ rpcErr = e; }
 
-        // 2) fallback: директни updates
         if (rpcErr){
           const now = new Date();
           const expires = new Date(now.getTime() + 24*60*60*1000).toISOString();
-          // a) mark boost confirmed
           const { error: bErr } = await sb.from('boost_payments')
             .update({ status:'confirmed', confirmed_at: now.toISOString(), expires_at: expires })
             .eq('id', boostId);
           if (bErr) throw bErr;
-          // b) lift ad
-          const { error: aErr } = await sb.from('ads')
-            .update({ boost_rank: 0 })
-            .eq('id', adId);
+          const { error: aErr } = await sb.from('ads').update({ boost_rank: 0 }).eq('id', adId);
           if (aErr) throw aErr;
         }
 
@@ -547,16 +537,14 @@
     }
     async function stopBooster(adId, boostId){
       try{
-        // 1) опитай RPC
         let rpcErr = null;
         try{
           const { error } = await sb.rpc('admin_stop_boost', { p_boost_id: boostId, p_ad_id: adId });
           if (error) rpcErr = error;
         }catch(e){ rpcErr = e; }
 
-        // 2) fallback: свали бустер от обявата и (ако може) отбележи boost като canceled
         const { error: aErr } = await sb.from('ads').update({ boost_rank: 999 }).eq('id', adId);
-        if (rpcErr){ /* ако RPC не е минал, пробвай да затвориш и записа */ 
+        if (rpcErr){
           try{ await sb.from('boost_payments').update({ status:'canceled' }).eq('id', boostId); }catch(_){}
         }
         if (aErr) throw aErr;
