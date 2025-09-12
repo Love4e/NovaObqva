@@ -167,7 +167,7 @@
     const BOOST_LINK_BGN = 'https://checkout.revolut.com/payment-link/ba2b72d9-8663-4f4e-896d-4a77eaf4f798';
     const BOOST_LINK_EUR = 'https://checkout.revolut.com/payment-link/9f203156-05b6-4ab9-aed1-3c918a22effa';
 
-    /* === NEW: опции за секция (Стойности, които минават CHECK в БД) === */
+    // Опции за секция (трябва да съвпадат с CHECK в БД)
     const SECTION_OPTIONS = [
       { v:'main',   t:'Основна' },
       { v:'adult',  t:'18+' },
@@ -238,7 +238,7 @@
           id,title,price,city,category,created_at,
           contact_name,contact_phone,contact_email,posted_by_email,
           plan_name,plan_currency,plan_price,payment_status,
-          site_section              -- NEW: нужната колона
+          site_section
         `).eq('ad_status','pending').order('created_at',{ascending:true});
       if (qEmail) query = query.ilike('posted_by_email','%' + qEmail + '%');
       const { data, error } = await query;
@@ -252,7 +252,7 @@
       const limit = Number(document.getElementById('approvedLimit').value || 10);
       const { data, error } = await sb
         .from('ads')
-        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description,site_section,boost_rank') /* site_section вече е тук */
+        .select('id,title,price,city,category,approved_at,plan_currency,plan_name,contact_email,images,cover_image,description,site_section,boost_rank')
         .eq('ad_status','approved')
         .order('approved_at',{ascending:false})
         .limit(limit);
@@ -262,10 +262,11 @@
       wrap.innerHTML = (data||[]).map(r => cardApproved(r)).join('') || '<p class="text-slate-500">Още няма.</p>';
     }
 
+    // Boosters
     async function loadBoosters(){
       const { data, error } = await sb
         .from('boost_payments')
-        .select('id,ad_id,user_id,status,currency,amount_bgn,amount_eur,created_at,confirmed_at,expires_at, note, ads!inner(id,title,city,category,boost_rank)')
+        .select('id,ad_id,user_id,status,currency,amount_bgn,amount_eur,created_at,confirmed_at,expires_at,note, ads!inner(id,title,city,category,boost_rank)')
         .eq('status','pending')
         .order('created_at',{ascending:true});
       if (error){ console.error(error); return; }
@@ -279,7 +280,6 @@
       return `<span class="ml-2 text-xs px-2 py-0.5 rounded ${paid?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${esc(status||'unpaid')}</span>`;
     }
 
-    /* === NEW: малък селектор за секция === */
     function sectionSelector(id, current){
       const opts = SECTION_OPTIONS
         .map(o => `<option value="${o.v}" ${String(current||'main')===o.v?'selected':''}>${o.t}</option>`)
@@ -306,7 +306,7 @@
             <div class="mt-1 flex items-center gap-3 flex-wrap">
               <span class="text-slate-700">План: ${esc(r.plan_name||'—')} · ${dual(r.plan_price||0, currency)}</span>
               ${pill(r.payment_status)}
-              ${sectionSelector(r.id, r.site_section)} <!-- NEW -->
+              ${sectionSelector(r.id, r.site_section)}
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
@@ -332,7 +332,7 @@
             <div class="font-medium">${esc(r.title)} ${boosted?'<span class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 align-middle">BUSTER</span>':''}</div>
             <div class="text-xs text-slate-500 flex items-center gap-3 flex-wrap">
               <span>Одобрена: ${when} · ${esc(r.city||'—')} · ${esc(r.category||'—')} · План: ${esc(r.plan_name||'—')} ${cur}</span>
-              ${sectionSelector(r.id, r.site_section)} <!-- NEW -->
+              ${sectionSelector(r.id, r.site_section)}
             </div>
           </div>
           <div class="flex gap-2">
@@ -348,8 +348,8 @@
       const ad = b.ads || {};
       const cur = (b.currency||'BGN').toUpperCase();
       const amountTxt = cur === 'EUR'
-        ? `${fmtEUR(b.amount_eur|| (8/EXRATE_EUR_BGN))} · ${fmtBGN((b.amount_eur|| (8/EXRATE_EUR_BGN))*EXRATE_EUR_BGN)`
-        : `${fmtBGN(b.amount_bgn||8)} · ${fmtEUR((b.amount_bgn||8)/EXRATE_EUR_BGN)}`;
+        ? `${fmtEUR(b.amount_eur || (8/EXRATE_EUR_BGN))} · ${fmtBGN((b.amount_eur || (8/EXRATE_EUR_BGN)) * EXRATE_EUR_BGN)}`
+        : `${fmtBGN(b.amount_bgn || 8)} · ${fmtEUR((b.amount_bgn || 8) / EXRATE_EUR_BGN)}`;
       return `
       <div class="border rounded-xl p-4">
         <div class="flex items-start justify-between gap-4">
@@ -374,21 +374,21 @@
       </div>`;
     }
 
-    /* === NEW: запис на секцията при промяна (опитва RPC, иначе update) === */
+    // Запис на избраната секция
     document.addEventListener('change', async (e)=>{
       const sel = e.target.closest('.sectionSel');
       if (!sel) return;
       const adId = sel.dataset.id;
-      const value = sel.value; // 'main' | 'adult' | 'both' | 'hidden'
+      const value = sel.value; // main | adult | both | hidden
       sel.disabled = true;
       try{
-        // 1) RPC, ако съществува
+        // 1) опитай RPC (ако съществува в БД)
         let rpcErr = null;
         try{
           const { error } = await sb.rpc('admin_set_site_section', { p_ad: adId, p_section: value });
           if (error) rpcErr = error;
         }catch(err){ rpcErr = err; }
-        // 2) fallback update
+        // 2) fallback директен update
         if (rpcErr){
           const { error: upErr } = await sb.from('ads').update({ site_section: value }).eq('id', adId);
           if (upErr) throw upErr;
